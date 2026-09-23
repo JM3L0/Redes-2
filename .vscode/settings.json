@@ -1,0 +1,38 @@
+{
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "pdflatex -> bibtex -> pdflatex x 2",
+      "tools": [
+        "pdflatex",
+        "bibtex",
+        "pdflatex",
+        "pdflatex"
+      ]
+    },
+    {
+      "name": "pdflatex",
+      "tools": [
+        "pdflatex"
+      ]
+    }
+  ],
+  "latex-workshop.latex.recipe.default": "first",
+  "latex-workshop.latex.clean.method": "glob",
+  "latex-workshop.view.pdf.viewer": "tab",
+  "[latex]": {
+    "editor.formatOnSave": false
+  },
+  "[tex]": {
+    "editor.formatOnSave": false
+  },
+  "files.exclude": {
+    "**/*.aux": true,
+    "**/*.log": true,
+    "**/*.bbl": true,
+    "**/*.blg": true,
+    "**/*.synctex.gz": true,
+    "**/*.fdb_latexmk": true,
+    "**/*.fls": true,
+    "**/*.out": true
+  }
+}
