@@ -1,7 +1,8 @@
 # 05. Roteiro de Gravação do Vídeo Técnico (15 Minutos Exatos)
 
 **Disciplina:** Redes de Computadores II (2026-2)  
-**Instituição:** UFPI — Bacharelado em Sistemas de Informação
+**Instituição:** UFPI — Bacharelado em Sistemas de Informação  
+**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)
 
 ---
 
@@ -10,7 +11,7 @@
 O edital exige uma apresentação técnica de **exatamente 15 minutos**. Abaixo está o cronômetro planejado para cobrir todos os itens obrigatórios sem estourar nem deixar tempo ocioso.
 
 ```text
-00:00 ───┬── 01:30 : Bloco 1 - Apresentação da Equipe & Contexto
+00:00 ───┬── 01:30 : Bloco 1 - Apresentação do Aluno & Contexto
 01:30 ───┼── 05:00 : Bloco 2 - Demonstração Guiada do Código-Fonte (Docker, NGINX, tc/netem)
 05:00 ───┼── 10:00 : Bloco 3 - Execução ao Vivo & Demonstração de Capturas (Wireshark / tshark)
 10:00 ───┼── 14:00 : Bloco 4 - Apresentação dos Gráficos Gerados & Discussão Científica
@@ -21,11 +22,11 @@ O edital exige uma apresentação técnica de **exatamente 15 minutos**. Abaixo 
 
 ## 🎙️ Roteiro Detalhado por Bloco
 
-### Bloco 1: Apresentação da Equipe e Contexto (00:00 – 01:30) [1 min 30s]
-- **Tela:** Slide de abertura com título formal, universidade (UFPI), curso, disciplina (Redes II) e nome dos integrantes.
+### Bloco 1: Apresentação do Aluno e Contexto (00:00 – 01:30) [1 min 30s]
+- **Tela:** Slide de abertura com título formal, universidade (UFPI), curso (Sistemas de Informação), disciplina (Redes II) e nome do autor (João Marcos Sousa Rufino Leal).
 - **Falas Chave:**
   - Saudação formal ao professor e avaliadores.
-  - Identificação de cada membro da equipe.
+  - Apresentação pessoal: João Marcos Sousa Rufino Leal.
   - Declaração do objetivo da prática: investigação experimental comparativa de desempenho e sobrecarga entre TCP (HTTP/1.1 e 2), UDP Puro (iperf3) e QUIC (HTTP/3) sob condições controladas de emulação com `tc/netem` em ambiente Linux Docker.
 
 ### Bloco 2: Demonstração Guiada do Código-Fonte (01:30 – 05:00) [3 min 30s]

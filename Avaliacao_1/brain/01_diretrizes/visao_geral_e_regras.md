@@ -2,6 +2,7 @@
 
 **Disciplina:** Redes de Computadores II (2026-2)  
 **Instituição:** UFPI — Bacharelado em Sistemas de Informação  
+**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)  
 **Trabalho:** Avaliação Prática: Avaliação de Desempenho e Sobrecarga de Transporte — TCP, UDP e QUIC com NGINX e Linux
 
 ---

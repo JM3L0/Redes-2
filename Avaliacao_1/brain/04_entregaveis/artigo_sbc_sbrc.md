@@ -1,7 +1,8 @@
 # 04. Diretrizes para o Artigo Científico (Padrão SBC / SBRC)
 
 **Disciplina:** Redes de Computadores II (2026-2)  
-**Instituição:** UFPI — Bacharelado em Sistemas de Informação
+**Instituição:** UFPI — Bacharelado em Sistemas de Informação  
+**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)
 
 O relatório técnico deve ser redigido estritamente no modelo oficial de artigos da **Sociedade Brasileira de Computação (SBC)**, amplamente utilizado no **Simpósio Brasileiro de Redes de Computadores e Sistemas Distribuídos (SBRC)**.
 
@@ -16,10 +17,13 @@ O relatório técnico deve ser redigido estritamente no modelo oficial de artigo
 
 ### Como Inserir no LaTeX:
 ```latex
-\author{Nome do Aluno 1\inst{1}, Nome do Aluno 2\inst{1}}
+\author{
+  João Marcos Sousa Rufino Leal\inst{1}
+}
 
-\address{Departamento de Computação -- Universidade Federal do Piauí (UFPI)
-  \email{\{aluno1, aluno2\}@ufpi.edu.br}
+\address{Departamento de Computação -- Universidade Federal do Piauí (UFPI)\\
+  Bacharelado em Sistemas de Informação\\
+  \email{jsousarufinoleal@ufpi.edu.br}
   \vspace{0.2cm}
   \newline
   \textbf{Vídeo de Demonstração e Apresentação (15 min):} \\

@@ -2,6 +2,11 @@
 
 Este diretório centraliza todo o conhecimento técnico, arquitetural, científico e operacional da **1ª Avaliação Prática de Redes de Computadores II (UFPI - 2026-2)**.
 
+- **Aluno:** João Marcos Sousa Rufino Leal
+- **E-mail:** `jsousarufinoleal@ufpi.edu.br`
+- **Curso:** Bacharelado em Sistemas de Informação
+- **Instituição:** Universidade Federal do Piauí (UFPI)
+
 A estrutura foi subdividida em categorias temáticas para facilitar o acesso por desenvolvedores e inteligências artificiais:
 
 ```text
