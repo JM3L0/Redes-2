@@ -12,12 +12,15 @@
 #   ./setup_netem.sh show               -> Exibe qdisc atual
 # ==============================================================================
 
-IFACE="eth0"
+IFACE="${NETEM_IFACE:-eth0}"
 CMD="$1"
 
 clear_rules() {
-    echo "[NETEM] Limpando regras qdisc em ${IFACE}..."
-    tc qdisc del dev ${IFACE} root 2>/dev/null || true
+    # Evita silenciamento cego com || true; verifica se há qdisc raiz customizada instalada
+    if tc qdisc show dev "${IFACE}" 2>/dev/null | grep -q "netem"; then
+        echo "[NETEM] Removendo regra netem em ${IFACE}..."
+        tc qdisc del dev "${IFACE}" root
+    fi
 }
 
 case "$CMD" in

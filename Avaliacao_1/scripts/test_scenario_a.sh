@@ -23,7 +23,14 @@ rm -f "${PCAP_SAMPLE}"
 echo "[CENARIO A] Iniciando captura de amostra tshark em ${PCAP_SAMPLE}..."
 tshark -i eth0 -f "udp port 5201" -w "${PCAP_SAMPLE}" > /dev/null 2>&1 &
 TSHARK_PID=$!
-sleep 1
+
+# Aguarda confirmacao do processo tshark ativo
+for _ in $(seq 1 10); do
+    if kill -0 "${TSHARK_PID}" 2>/dev/null; then
+        break
+    fi
+    sleep 0.2
+done
 
 RATES=("10M" "50M" "100M" "250M" "500M")
 REPETITIONS=10
@@ -33,19 +40,23 @@ echo " [CENARIO A] Iniciando Bateria de Testes UDP (5 taxas x 10 repeticoes)"
 echo "=========================================================="
 
 for RATE in "${RATES[@]}"; do
-    RATE_NUM=$(echo "${RATE}" | sed 's/M//')
+    RATE_NUM="${RATE%M}"
     echo "[*] Testando Taxa de Injecao: ${RATE}bps..."
     
     for i in $(seq 1 ${REPETITIONS}); do
-        # Executa iperf3 cliente UDP em formato JSON
-        JSON_OUT=$(iperf3 -c "${SERVER_IP}" -u -b "${RATE}" -t 5 -J 2>/dev/null)
+        JSON_OUT=$(iperf3 -c "${SERVER_IP}" -u -b "${RATE}" -t 5 -J 2>/dev/null || true)
         
-        # Extrair metricas com jq
+        # Validar se o retorno do iperf3 e um JSON valido com o bloco final
+        if ! echo "${JSON_OUT}" | jq -e '.end.sum_received' >/dev/null 2>&1; then
+            echo "    [-] Falha ao executar iperf3 na repeticao ${i}/${REPETITIONS} (${RATE}). Ignorando medicao corrompida."
+            continue
+        fi
+
         BYTES_SENT=$(echo "${JSON_OUT}" | jq '.end.sum.bytes // 0')
         BYTES_RECV=$(echo "${JSON_OUT}" | jq '.end.sum_received.bytes // 0')
         DURATION=$(echo "${JSON_OUT}" | jq '.end.sum_received.seconds // 5')
         BITS_PER_SEC=$(echo "${JSON_OUT}" | jq '.end.sum_received.bits_per_second // 0')
-        GOODPUT_MBPS=$(awk "BEGIN {print ${BITS_PER_SEC} / 1000000}")
+        GOODPUT_MBPS=$(awk "BEGIN {printf \"%.2f\", ${BITS_PER_SEC} / 1000000}")
         JITTER_MS=$(echo "${JSON_OUT}" | jq '.end.sum_received.jitter_ms // 0')
         LOST_PKTS=$(echo "${JSON_OUT}" | jq '.end.sum_received.lost_packets // 0')
         TOTAL_PKTS=$(echo "${JSON_OUT}" | jq '.end.sum_received.packets // 0')

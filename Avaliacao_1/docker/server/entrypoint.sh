@@ -6,8 +6,8 @@ mkdir -p /etc/nginx/certs
 
 # Gerar certificado autoassinado TLS 1.3 com SAN se nao existir
 if [ ! -f /etc/nginx/certs/server.crt ]; then
-    echo "[SERVER ENTRYPOINT] Gerando certificados autoassinados TLS 1.3..."
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    echo "[SERVER ENTRYPOINT] Gerando certificados autoassinados TLS 1.3 (ECDSA prime256v1)..."
+    openssl req -x509 -nodes -days 365 -newkey ec -pkeyopt ec_paramgen_curve:P-256 \
         -keyout /etc/nginx/certs/server.key \
         -out /etc/nginx/certs/server.crt \
         -subj "/C=BR/ST=PI/L=Teresina/O=UFPI/OU=Redes2/CN=server" \

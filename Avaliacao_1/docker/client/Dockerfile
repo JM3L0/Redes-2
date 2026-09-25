@@ -25,6 +25,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Instalar cURL moderno compilado nativamente com suporte a HTTP/3 (ngtcp2 + nghttp3 + TLS 1.3)
 RUN wget -q https://github.com/stunnel/static-curl/releases/download/8.22.0/curl-linux-x86_64-glibc-8.22.0.tar.xz -O /tmp/curl.tar.xz \
+    && wget -q https://github.com/stunnel/static-curl/releases/download/8.22.0/SHA256SUMS -O /tmp/SHA256SUMS \
+    && grep "curl-linux-x86_64-glibc-8.22.0.tar.xz" /tmp/SHA256SUMS | sha256sum -c - \
     && tar -xf /tmp/curl.tar.xz -C /tmp \
     && mv /tmp/curl /usr/local/bin/curl \
     && chmod +x /usr/local/bin/curl \
