@@ -1,202 +1,380 @@
 #!/usr/bin/env python3
 """
-generate_plots.py - Pipeline de Analise Estatistica e Geracao de Figuras Cientificas
-Gera graficos com padrao de publicacao (SBC/IEEE) e tabelas consolidadas em LaTeX.
+generate_plots.py - Geracao dos 6 Graficos Cientificos Obrigatorios
+====================================================================
+Redes de Computadores II (UFPI - 2026-2) — Avaliacao 1
+Aluno: Joao Marcos Sousa Rufino Leal
+
+Graficos gerados (conforme especificacao em metricas_e_analise_dados.md):
+  Graf. 1: Taxa de Injecao vs Goodput/Jitter — UDP Puro (Cenario A)
+  Graf. 2: Overhead de Cabecalho Comparativo — UDP vs TCP vs QUIC (Cenario A)
+  Graf. 3: Goodput e FCT — 100MB e 1GB com barras de erro (Cenario B)
+  Graf. 4: Tempo de Handshake e TTFB por Protocolo (Cenario B)
+  Graf. 5: FCT Medio e p95 sob Perdas — 0%, 2%, 5% (Cenario C)
+  Graf. 6: CDF do FCT — Evidencia do HoL Blocking (Cenario C, perda 5%)
+
+Uso:
+  python3 analysis/generate_plots.py [--proc-dir data/processed] [--out-dir data/plots]
 """
 
-import os
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy import stats
+import argparse
+import sys
+from pathlib import Path
 
-# Configuracao global de estetica cientifica para publicacao SBC
+import matplotlib
+matplotlib.use("Agg")   # Backend sem display (ideal para execucao em conteineres)
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+# ---------------------------------------------------------------------------
+# Estetica global da publicacao
+# ---------------------------------------------------------------------------
+PROTOCOL_COLORS = {
+    "http1.1":   "#E63946",   # Vermelho
+    "http2":     "#457B9D",   # Azul medio
+    "http3":     "#2A9D8F",   # Verde-azulado (QUIC)
+    "UDP":       "#F4A261",   # Laranja
+    "TCP (min)": "#457B9D",
+    "TCP (max)": "#1D3557",
+    "QUIC (Short Header)": "#2A9D8F",
+}
+PROTOCOL_LABELS = {
+    "http1.1": "HTTP/1.1 (TCP+TLS)",
+    "http2":   "HTTP/2 (TCP+TLS)",
+    "http3":   "HTTP/3 (QUIC)",
+    "UDP":     "UDP Puro",
+}
+
+DPI = 300
+FONT_TITLE = 13
+FONT_LABEL = 11
+FONT_TICK  = 9
+
 plt.rcParams.update({
-    'font.size': 11,
-    'font.family': 'serif',
-    'axes.labelsize': 12,
-    'axes.titlesize': 13,
-    'xtick.labelsize': 10,
-    'ytick.labelsize': 10,
-    'legend.fontsize': 10,
-    'figure.titlesize': 14,
-    'grid.linestyle': '--',
-    'grid.alpha': 0.6,
+    "font.family": "DejaVu Sans",
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "axes.grid": True,
+    "grid.alpha": 0.35,
+    "grid.linestyle": "--",
 })
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DATA_RAW = os.path.join(BASE_DIR, "data", "raw")
-PLOTS_DIR = os.path.join(BASE_DIR, "artigo", "figuras")
-TABLES_DIR = os.path.join(BASE_DIR, "artigo")
-os.makedirs(PLOTS_DIR, exist_ok=True)
 
-def calc_ci95(series):
-    """Calcula margem de erro do Intervalo de Confianca de 95%"""
-    n = len(series)
-    if n <= 1:
-        return 0.0
-    se = stats.sem(series)
-    h = se * stats.t.ppf((1 + 0.95) / 2., n - 1)
-    return h
+def savefig(fig: plt.Figure, path: Path, name: str) -> None:
+    dest = path / name
+    fig.savefig(dest, dpi=DPI, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  [+] Salvo: {dest}")
 
-def plot_scenario_a():
-    csv_path = os.path.join(DATA_RAW, "scenario_a_results.csv")
-    if not os.path.exists(csv_path):
-        print(f"[!] Arquivo nao encontrado: {csv_path}")
+
+# ---------------------------------------------------------------------------
+# Grafico 1: Taxa de Injecao vs Goodput e Jitter (Cenario A - UDP Puro)
+# ---------------------------------------------------------------------------
+def plot_scenario_a_goodput_jitter(proc_dir: Path, out_dir: Path) -> None:
+    g_path = proc_dir / "scenario_a_goodput.csv"
+    j_path = proc_dir / "scenario_a_jitter.csv"
+    if not g_path.exists() or not j_path.exists():
+        print("[AVISO] Dados do Cenario A ausentes. Pulando Grafico 1.")
         return
 
-    df = pd.read_csv(csv_path)
-    # Agrupar por taxa
-    grouped = df.groupby('target_rate_mbps').agg(
-        goodput_mean=('goodput_mbps', 'mean'),
-        goodput_std=('goodput_mbps', 'std'),
-        jitter_mean=('jitter_ms', 'mean'),
-        jitter_std=('jitter_ms', 'std'),
-        loss_mean=('loss_percent', 'mean')
-    ).reset_index()
+    gdf = pd.read_csv(g_path)
+    jdf = pd.read_csv(j_path)
 
-    fig, ax1 = plt.subplots(figsize=(7, 4.5))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+    fig.suptitle("Cenário A — UDP Puro: Taxa de Injeção vs Goodput e Jitter", fontsize=FONT_TITLE, fontweight="bold")
 
-    rates = grouped['target_rate_mbps']
-    ax1.plot(rates, grouped['goodput_mean'], marker='o', color='#1f77b4', linewidth=2, label='Goodput Efetivo (Mbps)')
-    ax1.plot(rates, rates, '--', color='#7f7f7f', alpha=0.7, label='Taxa Alvo Ideal (Sem Perda)')
-    ax1.set_xlabel('Taxa Alvo Injetada (Mbps)')
-    ax1.set_ylabel('Goodput Efetivo (Mbps)', color='#1f77b4')
-    ax1.tick_params(axis='y', labelcolor='#1f77b4')
-    ax1.grid(True)
+    rates = gdf["target_rate_mbps"]
 
-    ax2 = ax1.twinx()
-    ax2.plot(rates, grouped['jitter_mean'], marker='s', color='#d62728', linestyle=':', linewidth=2, label='Jitter (ms)')
-    ax2.set_ylabel('Jitter Médio (ms)', color='#d62728')
-    ax2.tick_params(axis='y', labelcolor='#d62728')
+    # Painel esquerdo: Goodput
+    ax1.plot(rates, gdf["mean"], "o-", color=PROTOCOL_COLORS["UDP"], linewidth=2, label="Goodput médio")
+    ax1.fill_between(rates, gdf["ic95_low"], gdf["ic95_high"], alpha=0.25, color=PROTOCOL_COLORS["UDP"], label="IC 95%")
+    ax1.plot(rates, rates, "k--", linewidth=1, alpha=0.5, label="Ideal (injeção = goodput)")
+    ax1.set_xlabel("Taxa de Injeção (Mbps)", fontsize=FONT_LABEL)
+    ax1.set_ylabel("Goodput Efetivo (Mbps)", fontsize=FONT_LABEL)
+    ax1.set_title("Vazão Efetiva vs Taxa Injetada", fontsize=FONT_LABEL)
+    ax1.legend(fontsize=FONT_TICK)
+    ax1.tick_params(labelsize=FONT_TICK)
 
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+    # Painel direito: Jitter
+    ax2.bar(rates, jdf["mean"], yerr=jdf["ic95_half"], color=PROTOCOL_COLORS["UDP"],
+            alpha=0.8, capsize=4, ecolor="gray", label="Jitter ± IC 95%")
+    ax2.set_xlabel("Taxa de Injeção (Mbps)", fontsize=FONT_LABEL)
+    ax2.set_ylabel("Jitter (ms)", fontsize=FONT_LABEL)
+    ax2.set_title("Jitter por Taxa de Injeção", fontsize=FONT_LABEL)
+    ax2.legend(fontsize=FONT_TICK)
+    ax2.tick_params(labelsize=FONT_TICK)
 
-    plt.title('Cenário A: Desempenho do UDP Puro sob Taxas Crescentes')
-    plt.tight_layout()
-    out_file = os.path.join(PLOTS_DIR, "cenario_a_udp_performance.pdf")
-    plt.savefig(out_file)
-    plt.savefig(out_file.replace('.pdf', '.png'), dpi=300)
-    plt.close()
-    print(f"[+] Gráfico Cenário A gerado: {out_file}")
+    savefig(fig, out_dir, "graf1_scenario_a_goodput_jitter.png")
 
-def plot_scenario_b():
-    csv_path = os.path.join(DATA_RAW, "scenario_b_results.csv")
-    if not os.path.exists(csv_path):
-        print(f"[!] Arquivo nao encontrado: {csv_path}")
+
+# ---------------------------------------------------------------------------
+# Grafico 2: Overhead de Cabecalho (Cenario A - comparativo de protocolos)
+# ---------------------------------------------------------------------------
+def plot_scenario_a_overhead(proc_dir: Path, out_dir: Path) -> None:
+    path = proc_dir / "scenario_a_header_overhead.csv"
+    if not path.exists():
+        print("[AVISO] Dados de overhead ausentes. Pulando Grafico 2.")
         return
 
-    df = pd.read_csv(csv_path)
-    grouped = df.groupby(['file_size_label', 'protocol']).agg(
-        fct_mean=('total_time_sec', 'mean'),
-        fct_std=('total_time_sec', 'std'),
-        goodput_mean=('goodput_mbps', 'mean'),
-        goodput_std=('goodput_mbps', 'std')
-    ).reset_index()
+    df = pd.read_csv(path)
+    fig, ax = plt.subplots(figsize=(8, 5))
+    fig.suptitle("Cenário A — Overhead de Cabeçalho por Protocolo de Transporte",
+                 fontsize=FONT_TITLE, fontweight="bold")
 
-    # Mapear rotulos amigaveis
-    proto_map = {'http1.1': 'HTTP/1.1 (TCP)', 'http2': 'HTTP/2 (TCP)', 'http3': 'HTTP/3 (QUIC)'}
-    grouped['proto_label'] = grouped['protocol'].map(proto_map)
+    colors = [PROTOCOL_COLORS.get(p, "#888") for p in df["protocol"]]
+    bars = ax.bar(df["protocol"], df["total_overhead_bytes"], color=colors, alpha=0.85, width=0.55)
 
-    # Grafico de FCT
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    x = np.arange(len(grouped['file_size_label'].unique()))
+    # Anotacoes de valor nas barras
+    for bar, val in zip(bars, df["total_overhead_bytes"]):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.5,
+                f"{val} B", ha="center", va="bottom", fontsize=FONT_TICK, fontweight="bold")
+
+    ax.set_ylabel("Overhead Total por Datagrama/Segmento (bytes)", fontsize=FONT_LABEL)
+    ax.set_xlabel("Protocolo", fontsize=FONT_LABEL)
+    ax.tick_params(labelsize=FONT_TICK)
+    ax.set_ylim(0, df["total_overhead_bytes"].max() * 1.25)
+
+    savefig(fig, out_dir, "graf2_scenario_a_header_overhead.png")
+
+
+# ---------------------------------------------------------------------------
+# Grafico 3: FCT e Goodput por protocolo e tamanho de arquivo (Cenario B)
+# ---------------------------------------------------------------------------
+def plot_scenario_b_fct_goodput(proc_dir: Path, out_dir: Path) -> None:
+    fct_path = proc_dir / "scenario_b_fct.csv"
+    gpt_path = proc_dir / "scenario_b_goodput.csv"
+    if not fct_path.exists() or not gpt_path.exists():
+        print("[AVISO] Dados do Cenario B ausentes. Pulando Grafico 3.")
+        return
+
+    fct_df = pd.read_csv(fct_path)
+    gpt_df = pd.read_csv(gpt_path)
+    files  = sorted(fct_df["file_size_label"].unique())
+    protos = ["http1.1", "http2", "http3"]
+
+    fig, axes = plt.subplots(2, len(files), figsize=(6 * len(files), 10))
+    fig.suptitle("Cenário B — FCT e Goodput: HTTP/1.1 vs HTTP/2 vs HTTP/3 (TCP vs QUIC)",
+                 fontsize=FONT_TITLE, fontweight="bold")
+
+    bar_width = 0.25
+
+    for col, f_label in enumerate(files):
+        fct_sub = fct_df[fct_df["file_size_label"] == f_label].set_index("protocol")
+        gpt_sub = gpt_df[gpt_df["file_size_label"] == f_label].set_index("protocol")
+
+        # FCT
+        ax_fct = axes[0][col]
+        for i, proto in enumerate(protos):
+            if proto not in fct_sub.index:
+                continue
+            row = fct_sub.loc[proto]
+            ax_fct.bar(i, row["mean"], width=bar_width * 2.5,
+                       color=PROTOCOL_COLORS.get(proto, "#888"), alpha=0.85,
+                       yerr=row["ic95_half"], capsize=5, ecolor="gray",
+                       label=PROTOCOL_LABELS.get(proto, proto))
+            ax_fct.text(i, row["mean"] + row["ic95_half"] + 0.1,
+                        f"p95={row['p95']:.1f}s", ha="center", fontsize=7)
+
+        ax_fct.set_title(f"FCT — {f_label}", fontsize=FONT_LABEL)
+        ax_fct.set_ylabel("Tempo de Conclusão (s)", fontsize=FONT_LABEL)
+        ax_fct.set_xticks(range(len(protos)))
+        ax_fct.set_xticklabels([PROTOCOL_LABELS.get(p, p) for p in protos], fontsize=FONT_TICK, rotation=10)
+        ax_fct.tick_params(labelsize=FONT_TICK)
+
+        # Goodput
+        ax_gpt = axes[1][col]
+        for i, proto in enumerate(protos):
+            if proto not in gpt_sub.index:
+                continue
+            row = gpt_sub.loc[proto]
+            ax_gpt.bar(i, row["mean"], width=bar_width * 2.5,
+                       color=PROTOCOL_COLORS.get(proto, "#888"), alpha=0.85,
+                       yerr=row["ic95_half"], capsize=5, ecolor="gray")
+            ax_gpt.text(i, row["mean"] + row["ic95_half"] + 0.2,
+                        f"{row['mean']:.1f}", ha="center", fontsize=7)
+
+        ax_gpt.set_title(f"Goodput — {f_label}", fontsize=FONT_LABEL)
+        ax_gpt.set_ylabel("Goodput (Mbps)", fontsize=FONT_LABEL)
+        ax_gpt.set_xticks(range(len(protos)))
+        ax_gpt.set_xticklabels([PROTOCOL_LABELS.get(p, p) for p in protos], fontsize=FONT_TICK, rotation=10)
+        ax_gpt.tick_params(labelsize=FONT_TICK)
+
+    handles = [plt.Rectangle((0, 0), 1, 1, color=PROTOCOL_COLORS.get(p, "#888"), alpha=0.85) for p in protos]
+    labels  = [PROTOCOL_LABELS.get(p, p) for p in protos]
+    fig.legend(handles, labels, loc="lower center", ncol=3, fontsize=FONT_TICK, bbox_to_anchor=(0.5, 0.01))
+    fig.tight_layout(rect=[0, 0.05, 1, 0.97])
+
+    savefig(fig, out_dir, "graf3_scenario_b_fct_goodput.png")
+
+
+# ---------------------------------------------------------------------------
+# Grafico 4: Handshake (TLS/QUIC) e TTFB por Protocolo (Cenario B)
+# ---------------------------------------------------------------------------
+def plot_scenario_b_handshake(proc_dir: Path, out_dir: Path) -> None:
+    hs_path   = proc_dir / "scenario_b_handshake.csv"
+    ttfb_path = proc_dir / "scenario_b_ttfb.csv"
+    if not hs_path.exists() or not ttfb_path.exists():
+        print("[AVISO] Dados de handshake ausentes. Pulando Grafico 4.")
+        return
+
+    hs_df   = pd.read_csv(hs_path)
+    ttfb_df = pd.read_csv(ttfb_path)
+    protos  = ["http1.1", "http2", "http3"]
+
+    # Handshake independe do tamanho do payload transferido
+    file_label = "100MB" if "100MB" in hs_df["file_size_label"].values else hs_df["file_size_label"].iloc[0]
+    hs_sub   = hs_df[hs_df["file_size_label"] == file_label].set_index("protocol")
+    ttfb_sub = ttfb_df[ttfb_df["file_size_label"] == file_label].set_index("protocol")
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11, 5))
+    fig.suptitle("Cenário B — Latência de Handshake e TTFB por Protocolo",
+                 fontsize=FONT_TITLE, fontweight="bold")
+
+    for ax, sub_df, ylabel, title in [
+        (ax1, hs_sub,   "Tempo de Handshake TLS/QUIC (s)", "Overhead de Estabelecimento de Sessão"),
+        (ax2, ttfb_sub, "Time To First Byte — TTFB (s)",   "TTFB (Latência do Primeiro Byte Útil)"),
+    ]:
+        means  = [sub_df.loc[p, "mean"]      if p in sub_df.index else 0 for p in protos]
+        errors = [sub_df.loc[p, "ic95_half"] if p in sub_df.index else 0 for p in protos]
+        colors = [PROTOCOL_COLORS.get(p, "#888") for p in protos]
+        bars   = ax.bar(range(len(protos)), means, yerr=errors, color=colors, alpha=0.85,
+                        capsize=5, ecolor="gray", width=0.5)
+        for bar, val in zip(bars, means):
+            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.001,
+                    f"{val*1000:.1f} ms", ha="center", va="bottom", fontsize=FONT_TICK)
+        ax.set_xticks(range(len(protos)))
+        ax.set_xticklabels([PROTOCOL_LABELS.get(p, p) for p in protos], fontsize=FONT_TICK)
+        ax.set_ylabel(ylabel, fontsize=FONT_LABEL)
+        ax.set_title(title, fontsize=FONT_LABEL)
+        ax.tick_params(labelsize=FONT_TICK)
+
+    fig.tight_layout()
+    savefig(fig, out_dir, "graf4_scenario_b_handshake_ttfb.png")
+
+
+# ---------------------------------------------------------------------------
+# Grafico 5: FCT Medio e p95 sob Perdas — Cenario C
+# ---------------------------------------------------------------------------
+def plot_scenario_c_fct_loss(proc_dir: Path, out_dir: Path) -> None:
+    path = proc_dir / "scenario_c_fct.csv"
+    if not path.exists():
+        print("[AVISO] Dados do Cenario C ausentes. Pulando Grafico 5.")
+        return
+
+    df     = pd.read_csv(path)
+    protos = ["http1.1", "http2", "http3"]
+    losses = sorted(df["loss_percent"].unique())
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5.5))
+    fig.suptitle("Cenário C — FCT do Lote de 100 Objetos sob Perda de Pacotes",
+                 fontsize=FONT_TITLE, fontweight="bold")
+
+    x     = np.arange(len(losses))
     width = 0.25
 
-    protos = ['http1.1', 'http2', 'http3']
-    colors = ['#2ca02c', '#1f77b4', '#ff7f0e']
+    for idx, proto in enumerate(protos):
+        sub    = df[df["protocol"] == proto].set_index("loss_percent")
+        means  = [sub.loc[l, "mean"]      if l in sub.index else 0 for l in losses]
+        errors = [sub.loc[l, "ic95_half"] if l in sub.index else 0 for l in losses]
+        p95s   = [sub.loc[l, "p95"]       if l in sub.index else 0 for l in losses]
 
-    for i, proto in enumerate(protos):
-        sub = grouped[grouped['protocol'] == proto]
-        pos = x + (i - 1) * width
-        ax.bar(pos, sub['fct_mean'], width, yerr=sub['fct_std'], capsize=5, label=proto_map[proto], color=colors[i], alpha=0.9)
+        offset = (idx - 1) * width
+        ax1.bar(x + offset, means, width, yerr=errors,
+                color=PROTOCOL_COLORS.get(proto, "#888"), alpha=0.85, capsize=4, ecolor="gray",
+                label=PROTOCOL_LABELS.get(proto, proto))
+        ax2.bar(x + offset, p95s, width,
+                color=PROTOCOL_COLORS.get(proto, "#888"), alpha=0.85,
+                label=PROTOCOL_LABELS.get(proto, proto))
 
-    ax.set_ylabel('Flow Completion Time Médio (segundos)')
-    ax.set_title('Cenário B: FCT para Ficheiros Massivos (100 MB e 1 GB)')
-    ax.set_xticks(x)
-    ax.set_xticklabels(grouped['file_size_label'].unique())
-    ax.legend()
-    ax.grid(True, axis='y')
+    for ax, title, ylabel in [
+        (ax1, "FCT Médio ± IC 95%",           "FCT Médio (s)"),
+        (ax2, "Percentil p95 do FCT do Lote",  "FCT p95 (s)"),
+    ]:
+        ax.set_xticks(x)
+        ax.set_xticklabels([f"{l}% perda" for l in losses], fontsize=FONT_TICK)
+        ax.set_ylabel(ylabel, fontsize=FONT_LABEL)
+        ax.set_title(title, fontsize=FONT_LABEL)
+        ax.legend(fontsize=FONT_TICK)
+        ax.tick_params(labelsize=FONT_TICK)
 
-    plt.tight_layout()
-    out_file = os.path.join(PLOTS_DIR, "cenario_b_fct_comparison.pdf")
-    plt.savefig(out_file)
-    plt.savefig(out_file.replace('.pdf', '.png'), dpi=300)
-    plt.close()
-    print(f"[+] Gráfico Cenário B gerado: {out_file}")
+    fig.tight_layout()
+    savefig(fig, out_dir, "graf5_scenario_c_fct_loss.png")
 
-def plot_scenario_c():
-    csv_path = os.path.join(DATA_RAW, "scenario_c_results.csv")
-    if not os.path.exists(csv_path):
-        print(f"[!] Arquivo nao encontrado: {csv_path}")
+
+# ---------------------------------------------------------------------------
+# Grafico 6: CDF do FCT — Evidencia do HoL Blocking (Cenario C, 5% perda)
+# ---------------------------------------------------------------------------
+def plot_scenario_c_cdf(proc_dir: Path, out_dir: Path) -> None:
+    path = proc_dir / "scenario_c_cdf_loss5.csv"
+    if not path.exists():
+        print("[AVISO] Dados de CDF ausentes. Pulando Grafico 6.")
         return
 
-    df = pd.read_csv(csv_path)
-    grouped = df.groupby(['loss_percent', 'protocol']).agg(
-        fct_mean=('total_batch_fct_sec', 'mean'),
-        fct_std=('total_batch_fct_sec', 'std'),
-        goodput_mean=('goodput_mbps', 'mean'),
-        goodput_std=('goodput_mbps', 'std')
-    ).reset_index()
+    df = pd.read_csv(path)
+    fig, ax = plt.subplots(figsize=(9, 5.5))
+    fig.suptitle("Cenário C — CDF do FCT (100 Objetos, 5% Perda)\nEvidência do Head-of-Line Blocking",
+                 fontsize=FONT_TITLE, fontweight="bold")
 
-    proto_map = {'http1.1': 'HTTP/1.1 (TCP)', 'http2': 'HTTP/2 (TCP)', 'http3': 'HTTP/3 (QUIC)'}
+    for proto in df["protocol"].unique():
+        sub = df[df["protocol"] == proto].sort_values("fct_sec")
+        ax.plot(sub["fct_sec"], sub["cdf"],
+                color=PROTOCOL_COLORS.get(proto, "#888"),
+                linewidth=2, label=PROTOCOL_LABELS.get(proto, proto))
 
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    losses = [0, 2, 5]
-    colors = {'http1.1': '#2ca02c', 'http2': '#1f77b4', 'http3': '#d62728'}
-    markers = {'http1.1': '^', 'http2': 's', 'http3': 'o'}
+    # Linha de referencia p95
+    ax.axhline(0.95, color="gray", linestyle=":", linewidth=1, alpha=0.7)
+    x_min, x_max = ax.get_xlim()
+    ax.text(x_min + 0.02 * (x_max - x_min), 0.96, "p95", fontsize=FONT_TICK, color="gray")
 
-    for proto in ['http1.1', 'http2', 'http3']:
-        sub = grouped[grouped['protocol'] == proto]
-        ax.errorbar(sub['loss_percent'], sub['fct_mean'], yerr=sub['fct_std'],
-                    marker=markers[proto], color=colors[proto], linewidth=2, capsize=5,
-                    label=proto_map[proto])
+    ax.set_xlabel("FCT do Lote (s)", fontsize=FONT_LABEL)
+    ax.set_ylabel("CDF — Fração Acumulada das Medições", fontsize=FONT_LABEL)
+    ax.legend(fontsize=FONT_TICK)
+    ax.tick_params(labelsize=FONT_TICK)
+    ax.set_ylim(0, 1.05)
 
-    ax.set_xlabel('Taxa de Perda Aleatória de Pacotes (%)')
-    ax.set_ylabel('FCT Total do Lote (100 Objetos) [s]')
-    ax.set_title('Cenário C: Impacto do Head-of-Line Blocking sob Perdas no Canal')
-    ax.set_xticks(losses)
-    ax.legend()
-    ax.grid(True)
+    savefig(fig, out_dir, "graf6_scenario_c_cdf_hol_blocking.png")
 
-    plt.tight_layout()
-    out_file = os.path.join(PLOTS_DIR, "cenario_c_hol_blocking.pdf")
-    plt.savefig(out_file)
-    plt.savefig(out_file.replace('.pdf', '.png'), dpi=300)
-    plt.close()
-    print(f"[+] Gráfico Cenário C gerado: {out_file}")
 
-def generate_latex_tables():
-    """Gera tabelas consolidadas em formato LaTeX para inclusao no sbc-template.tex"""
-    tex_path = os.path.join(TABLES_DIR, "tabelas_consolidadas.tex")
-    
-    with open(tex_path, "w", encoding="utf-8") as f:
-        f.write("% Tabelas consolidadas geradas automaticamente pelo pipeline de dados\n\n")
-        f.write("% ==========================================\n")
-        f.write("% Tabela 1: Sobrecarga Teórica e Prática de Cabeçalhos\n")
-        f.write("% ==========================================\n")
-        f.write("\\begin{table}[ht]\n\\centering\n\\small\n")
-        f.write("\\caption{Comparativo Estrutural de Sobrecarga (Overhead) dos Protocolos de Transporte}\n")
-        f.write("\\label{tab:overhead_comparativo}\n")
-        f.write("\\begin{tabular}{lcccc}\n\\hline\n")
-        f.write("\\textbf{Protocolo} & \\textbf{Camada} & \\textbf{Tamanho Cabeçalho} & \\textbf{Handshake Inicial} & \\textbf{Criptografia} \\\\ \\hline\n")
-        f.write("UDP Puro & Transporte & 8 bytes & 0 RTT (Sem estado) & Ausente \\\\\n")
-        f.write("TCP Tradicional & Transporte & 20 a 60 bytes & 1 RTT (3-way) & Opcional (TLS externo) \\\\\n")
-        f.write("TCP + TLS 1.3 & Transporte + Seg. & 20B + Record TLS & 2 RTT (1 TCP + 1 TLS) & Obrigatório \\\\\n")
-        f.write("QUIC (HTTP/3) & Aplicação/Transp. & Variável (10 a 25B) & 1 RTT (Unificado TLS 1.3) & Nativa (TLS 1.3) \\\\ \\hline\n")
-        f.write("\\end{tabular}\n\\end{table}\n\n")
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Gera os 6 graficos cientificos da avaliacao.")
+    parser.add_argument("--proc-dir", default="data/processed", help="Diretorio com dados processados")
+    parser.add_argument("--out-dir",  default="data/plots",     help="Diretorio de saida dos graficos")
+    args = parser.parse_args()
 
-    print(f"[+] Tabelas LaTeX consolidadas geradas em: {tex_path}")
+    proc_dir = Path(args.proc_dir)
+    out_dir  = Path(args.out_dir)
 
-def main():
-    print("[*] Iniciando geração de figuras científicas e tabelas...")
-    plot_scenario_a()
-    plot_scenario_b()
-    plot_scenario_c()
-    generate_latex_tables()
-    print("[*] Pipeline concluído com sucesso!")
+    if not proc_dir.exists():
+        print(f"[ERRO] Execute 'parse_logs.py' primeiro para gerar os dados processados em '{proc_dir}'.")
+        sys.exit(1)
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    print(f"[*] Gerando graficos de '{proc_dir}' -> '{out_dir}' ({DPI} DPI)\n")
+
+    print("[Graf. 1] Taxa de Injecao vs Goodput e Jitter (Cenario A)")
+    plot_scenario_a_goodput_jitter(proc_dir, out_dir)
+
+    print("[Graf. 2] Overhead de Cabecalho por Protocolo (Cenario A)")
+    plot_scenario_a_overhead(proc_dir, out_dir)
+
+    print("[Graf. 3] FCT e Goodput — 100MB e 1GB (Cenario B)")
+    plot_scenario_b_fct_goodput(proc_dir, out_dir)
+
+    print("[Graf. 4] Handshake TLS/QUIC e TTFB (Cenario B)")
+    plot_scenario_b_handshake(proc_dir, out_dir)
+
+    print("[Graf. 5] FCT Medio e p95 sob Perdas 0/2/5% (Cenario C)")
+    plot_scenario_c_fct_loss(proc_dir, out_dir)
+
+    print("[Graf. 6] CDF do FCT — Evidencia do HoL Blocking (Cenario C, 5%)")
+    plot_scenario_c_cdf(proc_dir, out_dir)
+
+    print(f"\n[OK] {6} graficos gerados em '{out_dir}'")
+
 
 if __name__ == "__main__":
     main()

@@ -47,8 +47,13 @@ echo "  Dados brutos salvos em /workspace/data/raw/"
 echo "  Capturas pcapng salvas em /workspace/data/pcaps/"
 echo "======================================================================"
 
-# Executar pipeline de analise e geracao de graficos se existir
+# Executar pipeline de analise e geracao de graficos se existirem
+if [ -f /workspace/analysis/parse_logs.py ]; then
+    echo "[ANALISE] Consolidando estatisticas com parse_logs.py..."
+    python3 /workspace/analysis/parse_logs.py
+fi
+
 if [ -f /workspace/analysis/generate_plots.py ]; then
-    echo "[ANALISE] Processando estatisticas e gerando graficos cientificos..."
+    echo "[ANALISE] Gerando graficos cientificos com generate_plots.py..."
     python3 /workspace/analysis/generate_plots.py
 fi

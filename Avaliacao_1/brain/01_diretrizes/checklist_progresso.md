@@ -12,9 +12,9 @@
 | :--- | :--- | :---: |
 | **Fase 1** | Análise minuciosa do edital e criação do Cérebro do Projeto |  CONCLUÍDA |
 | **Fase 2** | Infraestrutura Docker (NGINX HTTP/3 + iperf3 + curl HTTP/3 + tc) |  CONCLUÍDA |
-| **Fase 3** | Scripts de Automação, Emulação de Canal (`tc/netem`) e Capturas | ⏳ A INICIAR |
+| **Fase 3** | Scripts de Automação, Emulação de Canal (`tc/netem`) e Capturas |  CONCLUÍDA |
 | **Fase 4** | Execução das Baterias Experimentais (Cenários A, B e C com $N=10$) | ⏳ A INICIAR |
-| **Fase 5** | Pipeline Python: Processamento de Dados, Estatística e Gráficos | ⏳ A INICIAR |
+| **Fase 5** | Pipeline Python: Processamento de Dados, Estatística e Gráficos |  CONCLUÍDA |
 | **Fase 6** | Redação do Artigo Científico no Padrão SBC/SBRC (LaTeX) | ⏳ A INICIAR |
 | **Fase 7** | Gravação e Hospedagem do Vídeo Técnico (15 minutos exatos) | ⏳ A INICIAR |
 | **Fase 8** | Verificação Crítica Pré-Submissão (Critérios Eliminatórios) | ⏳ A INICIAR |
@@ -47,7 +47,7 @@
 - [x] Criar `scripts/test_scenario_b.sh` (10 repetições de download massivo HTTP/1.1 vs HTTP/2 vs HTTP/3).
 - [x] Criar `scripts/test_scenario_c.sh` (10 repetições de 100 objetos simultâneos sob perda de 2% a 5%).
 - [x] Criar orquestrador mestre `scripts/run_experiments.sh` que dispara tudo de ponta a ponta sem intervenção manual.
-- [ ] Validar a sincronização de gravação dos `.pcapng` com `tshark`.
+- [x] Validar a sincronização de gravação dos `.pcapng` com `tshark` (substituído `sleep 1` por polling de PID).
 
 ### Fase 4: Execução Experimental e Coleta
 - [ ] Executar bateria completa do Cenário A ($10 \times 5 = 50$ execuções).
@@ -56,14 +56,15 @@
 - [ ] Conferir integridade de todos os arquivos de logs CSV/JSON e `.pcapng` em `data/`.
 
 ### Fase 5: Análise Estatística e Gráficos (Python)
-- [ ] Criar `analysis/parse_logs.py` para processar métricas de Goodput, FCT e Overhead (via tshark).
-- [ ] Calcular média, desvio padrão e intervalo de confiança de 95% para cada ponto.
-- [ ] Criar `analysis/generate_plots.py` e gerar:
-  - [ ] Gráfico 1: UDP Taxa de Injeção vs Goodput/Jitter (Cenário A).
-  - [ ] Gráfico 2: Sobrecarga de cabeçalho comparativa (UDP 8B vs TCP vs QUIC).
-  - [ ] Gráfico 3: FCT e Goodput de 100MB/1GB com barras de erro (Cenário B).
-  - [ ] Gráfico 4: FCT sob perdas contínuas (Cenário C).
-  - [ ] Gráfico 5: Curva CDF demonstrando mitigação do HoL Blocking no QUIC (Cenário C).
+- [x] Criar `analysis/parse_logs.py` para processar métricas de Goodput, FCT e Overhead (via tshark).
+- [x] Calcular média, desvio padrão e intervalo de confiança de 95% para cada ponto (t-Student, t_crit=2.262, N=10).
+- [x] Criar `analysis/generate_plots.py` e gerar:
+  - [x] Gráfico 1: UDP Taxa de Injeção vs Goodput/Jitter (Cenário A).
+  - [x] Gráfico 2: Sobrecarga de cabeçalho comparativa (UDP 8B vs TCP vs QUIC).
+  - [x] Gráfico 3: FCT e Goodput de 100MB/1GB com barras de erro (Cenário B).
+  - [x] Gráfico 4: Handshake TLS/QUIC e TTFB por protocolo (Cenário B).
+  - [x] Gráfico 5: FCT Médio e p95 sob perdas contínuas (Cenário C).
+  - [x] Gráfico 6: Curva CDF demonstrando mitigação do HoL Blocking no QUIC (Cenário C).
 
 ### Fase 6: Redação do Artigo Científico (LaTeX SBC)
 - [ ] Baixar/configurar template oficial da SBC (`sbc-template.tex` e `sbc.sty`).
