@@ -11,7 +11,7 @@
 | Fase | Descrição | Status |
 | :--- | :--- | :---: |
 | **Fase 1** | Análise minuciosa do edital e criação do Cérebro do Projeto |  CONCLUÍDA |
-| **Fase 2** | Infraestrutura Docker (NGINX HTTP/3 + iperf3 + curl HTTP/3 + tc) | ⏳ A INICIAR |
+| **Fase 2** | Infraestrutura Docker (NGINX HTTP/3 + iperf3 + curl HTTP/3 + tc) |  CONCLUÍDA |
 | **Fase 3** | Scripts de Automação, Emulação de Canal (`tc/netem`) e Capturas | ⏳ A INICIAR |
 | **Fase 4** | Execução das Baterias Experimentais (Cenários A, B e C com $N=10$) | ⏳ A INICIAR |
 | **Fase 5** | Pipeline Python: Processamento de Dados, Estatística e Gráficos | ⏳ A INICIAR |
@@ -30,23 +30,23 @@
 - [x] Elaboração do guia de prompts para delegação a IAs.
 
 ### Fase 2: Infraestrutura Docker & NGINX
-- [ ] Validar ambiente no host: Docker Desktop com motor WSL 2 ativo.
-- [ ] Garantir que scripts `.sh` e arquivos de config usem quebra de linha `LF` (e não `CRLF`).
-- [ ] Criar pasta `docker/` e subpastas `server/` e `client/`.
-- [ ] Configurar `docker/server/Dockerfile` (NGINX com suporte a HTTP/3 + `iperf3 -s`).
-- [ ] Configurar `docker/server/nginx.conf` com TLS 1.3, QUIC e cabeçalho `Alt-Svc`.
-- [ ] Criar script para gerar certificados autoassinados via OpenSSL.
-- [ ] Gerar dados de teste estáticos (arquivos de 100MB, 1GB e 100 objetos web).
-- [ ] Configurar `docker/client/Dockerfile` (Ubuntu com cURL HTTP/3, iperf3, tshark, Python).
-- [ ] Criar `docker/docker-compose.yml` com rede bridge 172.28.0.0/16 e `cap_add: [NET_ADMIN]`.
-- [ ] Testar se `docker compose up -d` sobe limpo e ambos contêineres se comunicam.
+- [x] Validar ambiente no host: Docker Desktop com motor WSL 2 ativo.
+- [x] Garantir que scripts `.sh` e arquivos de config usem quebra de linha `LF` (e não `CRLF`).
+- [x] Criar pasta `docker/` e subpastas `server/` e `client/`.
+- [x] Configurar `docker/server/Dockerfile` (NGINX com suporte a HTTP/3 + `iperf3 -s`).
+- [x] Configurar `docker/server/nginx.conf` com TLS 1.3, QUIC e cabeçalho `Alt-Svc`.
+- [x] Criar script para gerar certificados autoassinados via OpenSSL (`entrypoint.sh`).
+- [x] Gerar dados de teste estáticos (arquivos de 100MB, 1GB e 100 objetos web via `generate_static_data.py`).
+- [x] Configurar `docker/client/Dockerfile` (Ubuntu com cURL HTTP/3 nativo, iperf3, tshark, Python).
+- [x] Criar `docker/docker-compose.yml` com rede bridge 172.28.0.0/16 e `cap_add: [NET_ADMIN]`.
+- [x] Testar se `docker compose up -d` sobe limpo e ambos contêineres se comunicam.
 
 ### Fase 3: Scripts de Automação e Emulação
-- [ ] Criar `scripts/setup_netem.sh` para alternar entre as condições dos Cenários A, B e C.
-- [ ] Criar `scripts/test_scenario_a.sh` (10 repetições de UDP em taxas de 10 a 500 Mbps).
-- [ ] Criar `scripts/test_scenario_b.sh` (10 repetições de download massivo HTTP/1.1 vs HTTP/2 vs HTTP/3).
-- [ ] Criar `scripts/test_scenario_c.sh` (10 repetições de 100 objetos simultâneos sob perda de 2% a 5%).
-- [ ] Criar orquestrador mestre `scripts/run_experiments.sh` que dispara tudo de ponta a ponta sem intervenção manual.
+- [x] Criar `scripts/setup_netem.sh` para alternar entre as condições dos Cenários A, B e C.
+- [x] Criar `scripts/test_scenario_a.sh` (10 repetições de UDP em taxas de 10 a 500 Mbps).
+- [x] Criar `scripts/test_scenario_b.sh` (10 repetições de download massivo HTTP/1.1 vs HTTP/2 vs HTTP/3).
+- [x] Criar `scripts/test_scenario_c.sh` (10 repetições de 100 objetos simultâneos sob perda de 2% a 5%).
+- [x] Criar orquestrador mestre `scripts/run_experiments.sh` que dispara tudo de ponta a ponta sem intervenção manual.
 - [ ] Validar a sincronização de gravação dos `.pcapng` com `tshark`.
 
 ### Fase 4: Execução Experimental e Coleta

@@ -18,3 +18,11 @@
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Arquivos pesados de testes de redes (gerados localmente via generate_static_data.py)
+Avaliacao_1/data/static/*.bin
+Avaliacao_1/data/static/objects/
+Avaliacao_1/data/raw/
+Avaliacao_1/data/pcaps/
+*.pcapng
+*.pcap

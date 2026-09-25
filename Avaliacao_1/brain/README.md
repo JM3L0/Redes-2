@@ -28,8 +28,13 @@ brain/
 │   ├── artigo_sbc_sbrc.md                     # Estrutura do artigo LaTeX, RFCs mandatórias (793, 768, 9000, 9001, 8446)
 │   └── roteiro_video_15min.md                 # Roteiro cronometrado minuto a minuto para o vídeo de 15 minutos
 │
-└── 05_prompts_ia/                             # Aceleração e automação com IAs
-    └── guia_de_prompts_ia.md                  # Prompts prontos para geração de Docker, scripts, Python e LaTeX
+├── 05_prompts_ia/                             # Aceleração e automação com IAs
+│   └── guia_de_prompts_ia.md                  # Prompts prontos para geração de Docker, scripts, Python e LaTeX
+│
+└── 06_relatorios_de_fases/                    # Diário de bordo detalhado fase a fase
+    ├── README.md                              # Índice das fases registradas
+    ├── fase_01_analise_e_estruturacao.md      # Relatório da Fase 1 (Concluída)
+    └── fase_02_infraestrutura_docker.md       # Relatório da Fase 2 (Em andamento)
 ```
 
 ---
@@ -53,3 +58,6 @@ brain/
 
 ### 🤖 5. Prompts para IAs
 - [**`05_prompts_ia/guia_de_prompts_ia.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avaliacao_1/brain/05_prompts_ia/guia_de_prompts_ia.md): Prompts modulares prontos para orquestrar e acelerar o desenvolvimento.
+
+### 📑 6. Relatórios de Execução por Fase (Diário de Bordo)
+- [**`06_relatorios_de_fases/README.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avaliacao_1/brain/06_relatorios_de_fases/README.md): Relatórios detalhados com histórico e decisões de engenharia de cada uma das 8 fases.
