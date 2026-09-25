@@ -1,0 +1,5 @@
+protocol,transport_header_bytes,crypto_overhead_bytes,total_overhead_bytes
+UDP,8,0,8
+TCP (min),20,0,20
+TCP (max),60,0,60
+QUIC (Short Header),4,16,20

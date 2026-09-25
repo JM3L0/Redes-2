@@ -13,7 +13,7 @@
 | **Fase 1** | Análise minuciosa do edital e criação do Cérebro do Projeto |  CONCLUÍDA |
 | **Fase 2** | Infraestrutura Docker (NGINX HTTP/3 + iperf3 + curl HTTP/3 + tc) |  CONCLUÍDA |
 | **Fase 3** | Scripts de Automação, Emulação de Canal (`tc/netem`) e Capturas |  CONCLUÍDA |
-| **Fase 4** | Execução das Baterias Experimentais (Cenários A, B e C com $N=10$) | ⏳ A INICIAR |
+| **Fase 4** | Execução das Baterias Experimentais (Cenários A, B e C com $N=10$) |  CONCLUÍDA |
 | **Fase 5** | Pipeline Python: Processamento de Dados, Estatística e Gráficos |  CONCLUÍDA |
 | **Fase 6** | Redação do Artigo Científico no Padrão SBC/SBRC (LaTeX) | ⏳ A INICIAR |
 | **Fase 7** | Gravação e Hospedagem do Vídeo Técnico (15 minutos exatos) | ⏳ A INICIAR |
@@ -50,10 +50,10 @@
 - [x] Validar a sincronização de gravação dos `.pcapng` com `tshark` (substituído `sleep 1` por polling de PID).
 
 ### Fase 4: Execução Experimental e Coleta
-- [ ] Executar bateria completa do Cenário A ($10 \times 5 = 50$ execuções).
-- [ ] Executar bateria completa do Cenário B ($10 \times 3 \times 2 = 60$ execuções).
-- [ ] Executar bateria completa do Cenário C ($10 \times 3 \times 3 = 90$ execuções).
-- [ ] Conferir integridade de todos os arquivos de logs CSV/JSON e `.pcapng` em `data/`.
+- [x] Executar bateria completa do Cenário A ($10 \times 5 = 50$ execuções).
+- [x] Executar bateria completa do Cenário B ($10 \times 3 \times 2 = 60$ execuções).
+- [x] Executar bateria completa do Cenário C ($10 \times 3 \times 3 = 90$ execuções).
+- [x] Conferir integridade de todos os arquivos de logs CSV/JSON e `.pcapng` em `data/`.
 
 ### Fase 5: Análise Estatística e Gráficos (Python)
 - [x] Criar `analysis/parse_logs.py` para processar métricas de Goodput, FCT e Overhead (via tshark).
