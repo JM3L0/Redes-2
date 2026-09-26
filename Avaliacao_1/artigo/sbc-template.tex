@@ -69,14 +69,83 @@
 \section{Resultados Experimentais e Discussão}
 % ============================================================
 
-\subsection{Cenário A — Desempenho do UDP Puro em Baixa Latência}
-% A ser preenchido
+Os experimentos foram conduzidos em ambiente controlado com \emph{Docker}, \emph{tc/netem} e NGINX configurado para suportar HTTP/1.1, HTTP/2 e HTTP/3, permitindo uma comparação direta entre TCP, UDP puro e QUIC sob condições equivalentes de rede. A análise combina vazão útil, latência, jitter, overhead de cabeçalho e tempo de conclusão de fluxo (FCT), com foco em verificar como cada protocolo responde a cenários de rede com baixa latência, alta largura de banda e perdas aleatórias.
+
+\subsection{Cenário A — UDP Puro em Baixa Latência}
+
+No Cenário A, avaliou-se a capacidade do UDP puro em transportar datagramas pequenos sob latência ultra-baixa e sem perdas, variando a taxa de injeção de 10 a 500 Mbps. A Figura~\ref{fig:cenarioA} mostra, à esquerda, a relação entre taxa de injeção e goodput efetivo, e, à direita, o comportamento do jitter. A curva de goodput segue de perto a linha ideal, i.e., o protocolo entrega praticamente toda a carga de entrada até o ponto em que a taxa de envio atinge a capacidade disponível do canal. O jitter permanece baixo e estável ao longo do intervalo avaliado, indicando que o UDP puro é altamente eficiente em redes com baixa latência e sem perdas, mas também expõe a ausência de mecanismos de controle de congestionamento e recuperação de erros.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.48\textwidth]{graf1a_goodput_vs_taxa.png}
+\includegraphics[width=0.48\textwidth]{graf1b_jitter_vs_taxa.png}
+\caption{Vazão efetiva e jitter para o UDP puro em função da taxa de injeção.}
+\label{fig:cenarioA}
+\end{figure}
+
+A Figura~\ref{fig:overhead} complementa a análise ao comparar o overhead de cabeçalho em bytes para UDP, TCP e QUIC. O UDP puro exibe o menor custo de transporte, com cabeçalho fixo de 8 bytes, enquanto o TCP exige 20 bytes no mínimo e pode ultrapassar 60 bytes quando opções como SACK e timestamps são ativadas. O QUIC também apresenta overhead moderado, mas incorpora criptografia e multiplexação em uma arquitetura que reduz alguns custos de sincronização em fluxos concorrentes. Esse resultado reforça a hipótese de que o UDP é muito eficiente em vazão líquida, mas sacrifica confiabilidade e controle de congestionamento.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.75\textwidth]{graf2_overhead_cabecalho.png}
+\caption{Comparação do overhead de cabeçalho entre UDP, TCP e QUIC.}
+\label{fig:overhead}
+\end{figure}
 
 \subsection{Cenário B — Eficiência do TCP em Transferências Massivas}
-% A ser preenchido
+
+No Cenário B, o foco foi comparar HTTP/1.1, HTTP/2 e HTTP/3 em transferências massivas de 100 MB e 1 GB sob rede estável, com RTT em torno de 20 ms. Os resultados mostram que o TCP mantém alto desempenho em canais limpos e bem dimensionados, com bom uso do bandwidth disponível e operação eficiente devido às otimizações de kernel, como TSO, GRO e processamento em espaço de kernel. A Figura~\ref{fig:cenarioB_fct} apresenta os valores de FCT para os três protocolos, enquanto a Figura~\ref{fig:cenarioB_goodput} mostra o goodput obtido em cada caso.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.48\textwidth]{graf3a_fct_cenario_b.png}
+\includegraphics[width=0.48\textwidth]{graf3b_goodput_cenario_b.png}
+\caption{FCT e goodput para transferências de 100 MB e 1 GB em HTTP/1.1, HTTP/2 e HTTP/3.}
+\label{fig:cenarioB_fct}
+\end{figure}
+
+A comparação de latência de handshake e tempo até o primeiro byte útil (TTFB) também revela diferenças importantes entre as pilhas. A Figura~\ref{fig:cenarioB_latency} indica que o QUIC reduz significativamente o tempo de estabelecimento da conexão quando comparado ao TCP + TLS, especialmente em cenários em que a criptografia e a negociação de chaves são costosas. O TTFB, exibido à direita, confirma que o HTTP/3 consegue iniciar a entrega de conteúdo mais cedo do que o TCP em configurações de alta taxa e baixa perda. Esse comportamento é consistente com a arquitetura do QUIC, em que a conexão e os mecanismos criptográficos são integrados ao próprio transporte.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.48\textwidth]{graf4a_handshake.png}
+\includegraphics[width=0.48\textwidth]{graf4b_ttfb.png}
+\caption{Comparação de handshake e TTFB entre HTTP/1.1, HTTP/2 e HTTP/3.}
+\label{fig:cenarioB_latency}
+\end{figure}
+
+Apesar de o TCP permanecer altamente competitivo em canais sem perdas, os resultados apontam que o QUIC torna-se vantajoso quando a arquitetura exige menor latência de abertura de conexão e melhor aproveitamento de fluxos multiplexados. Em outras palavras, o TCP ainda se destaca em eficiência bruto em canais limpos, mas o QUIC oferece ganhos relevantes em latência e no custo de estabelecimento de sessão.
 
 \subsection{Cenário C — Resiliência do QUIC em Redes Instáveis}
-% A ser preenchido
+
+O Cenário C foi concebido para avaliar a resiliência dos protocolos em presença de perda de pacotes e latência mais elevada. A rede foi configurada com RTT em torno de 100 ms e perdas de 0\%, 2\% e 5\%, simulando condições mais adversas do ambiente de Internet. A Figura~\ref{fig:cenarioC_fct} apresenta o FCT médio e o percentil p95 para cada protocolo sob diferentes níveis de perda. Observa-se que o TCP sofre maior degradação quando há perdas contínuas e múltiplos objetos concorrentes, enquanto o QUIC mantém melhor estabilidade e menor tempo de conclusão de fluxo.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.48\textwidth]{graf5a_fct_medio_perdas.png}
+\includegraphics[width=0.48\textwidth]{graf5b_fct_p95_perdas.png}
+\caption{FCT médio e p95 em cenários com perda de pacotes de 0\%, 2\% e 5\%.}
+\label{fig:cenarioC_fct}
+\end{figure}
+
+A Figura~\ref{fig:hol} reforça essa conclusão ao comparar a distribuição cumulativa do FCT entre os protocolos. O comportamento do HTTP/3 é mais estável e apresenta menor variabilidade em presença de perdas, o que é um indício de mitigação do \emph{head-of-line blocking} no nível do transporte. Em contraste, o TCP e o HTTP/2 sofrem piora mais acentuada quando um pacote perdido ou atrasado afeta blocos de dados dependentes. A análise com capturas de pacote, representada nas Figuras~\ref{fig:pcap_overhead} e~\ref{fig:pcap_retrans}, confirma que a recuperação de perdas e a retransmissão variam em complexidade e custo entre as arquiteturas, sendo o QUIC mais resiliente em cenários de perdas intermitentes.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{graf6_cdf_hol_blocking.png}
+\caption{CDF do FCT para HTTP/1.1, HTTP/2 e HTTP/3 sob perda de pacotes, evidenciando o efeito de HoL blocking.}
+\label{fig:hol}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.48\textwidth]{graf7a_pcap_overhead.png}
+\includegraphics[width=0.48\textwidth]{graf7b_pcap_retransmissoes.png}
+\caption{Análise de tráfego em PCAP: overhead de protocolo e comportamento de retransmissão por camada de transporte.}
+\label{fig:pcap_overhead}
+\end{figure}
+
+Em conjunto, os resultados mostram que não existe um único protocolo absolutamente superior em todos os cenários. O UDP puro se destaca em eficiência bruta e overhead mínimo, mas sem confiabilidade. O TCP mantém excelente desempenho em redes estáveis e é robusto em fluxos massivos bem controlados. O QUIC, por sua vez, oferece melhor equilíbrio entre latência, multiplexação e resiliência em cenários com perdas, sendo especialmente vantajoso em aplicações web e redes heterogêneas. A avaliação experimental confirma, portanto, que a escolha do protocolo depende diretamente das condições do canal e dos requisitos de latência e confiabilidade da aplicação.
 
 
 % ============================================================
