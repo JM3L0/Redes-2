@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# test_scenario_a.sh - Bateria Experimental do Cenário A (UDP Puro)
+# test_scenario_a.sh - Bateria Experimental do Cenario A (UDP Puro)
 # ==============================================================================
 set -e
 
@@ -17,11 +17,11 @@ echo "scenario,protocol,target_rate_mbps,iteration,duration_sec,bytes_sent,bytes
 # Configurar canal para Cenario A
 /workspace/scripts/setup_netem.sh scenario_a
 
-# Iniciar captura de pcap de amostra com tshark em segundo plano
+# Iniciar captura de pcap de amostra com tshark em segundo plano (snaplen 160B para cabecalhos)
 PCAP_SAMPLE="${PCAP_DIR}/scenario_a_udp_sample.pcapng"
 rm -f "${PCAP_SAMPLE}"
 echo "[CENARIO A] Iniciando captura de amostra tshark em ${PCAP_SAMPLE}..."
-tshark -i eth0 -f "udp port 5201" -w "${PCAP_SAMPLE}" > /dev/null 2>&1 &
+tshark -i eth0 -s 160 -f "udp port 5201" -w "${PCAP_SAMPLE}" > /dev/null 2>&1 &
 TSHARK_PID=$!
 
 # Aguarda confirmacao do processo tshark ativo

@@ -4,11 +4,11 @@
 # ==============================================================================
 # Uso:
 #   ./setup_netem.sh clear              -> Remove todas as regras na eth0
-#   ./setup_netem.sh scenario_a         -> Cenário A: Latencia < 5ms, 0% perda
-#   ./setup_netem.sh scenario_b         -> Cenário B: RTT 20ms, 0% perda
-#   ./setup_netem.sh scenario_c_loss0   -> Cenário C: RTT 100ms, 0% perda
-#   ./setup_netem.sh scenario_c_loss2   -> Cenário C: RTT 100ms, 2% perda
-#   ./setup_netem.sh scenario_c_loss5   -> Cenário C: RTT 100ms, 5% perda
+#   ./setup_netem.sh scenario_a         -> Cenario A: Latencia < 5ms, 0% perda
+#   ./setup_netem.sh scenario_b         -> Cenario B: RTT 20ms, 0% perda
+#   ./setup_netem.sh scenario_c_loss0   -> Cenario C: RTT 100ms, 0% perda
+#   ./setup_netem.sh scenario_c_loss2   -> Cenario C: RTT 100ms, 2% perda
+#   ./setup_netem.sh scenario_c_loss5   -> Cenario C: RTT 100ms, 5% perda
 #   ./setup_netem.sh show               -> Exibe qdisc atual
 # ==============================================================================
 
@@ -16,7 +16,7 @@ IFACE="${NETEM_IFACE:-eth0}"
 CMD="$1"
 
 clear_rules() {
-    # Evita silenciamento cego com || true; verifica se há qdisc raiz customizada instalada
+    # Evita silenciamento cego com || true; verifica se ha qdisc raiz customizada instalada
     if tc qdisc show dev "${IFACE}" 2>/dev/null | grep -q "netem"; then
         echo "[NETEM] Removendo regra netem em ${IFACE}..."
         tc qdisc del dev "${IFACE}" root

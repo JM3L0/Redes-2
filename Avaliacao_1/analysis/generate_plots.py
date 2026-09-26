@@ -337,10 +337,58 @@ def plot_scenario_c_cdf(proc_dir: Path, out_dir: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Grafico 7: Sobrecarga Empirica e Retransmissoes via tshark (Capturas PCAP)
+# ---------------------------------------------------------------------------
+def plot_pcap_overhead_analysis(proc_dir: Path, out_dir: Path) -> None:
+    path = proc_dir / "pcap_overhead_analysis.csv"
+    if not path.exists():
+        print("[INFO] pcap_overhead_analysis.csv nao encontrado. Pulando Grafico 7.")
+        return
+
+    df = pd.read_csv(path)
+    if df.empty:
+        return
+
+    df["overhead_percent"] = pd.to_numeric(df["overhead_percent"], errors="coerce")
+    df["tcp_retransmissions"] = pd.to_numeric(df["tcp_retransmissions"], errors="coerce").fillna(0)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
+    fig.suptitle("Analise Empirica de Trafego via Capturas PCAP (tshark)",
+                 fontsize=FONT_TITLE, fontweight="bold")
+
+    labels = [f.replace(".pcapng", "") for f in df["pcap_file"]]
+    x = range(len(labels))
+
+    # Painel 1: Percentual de Overhead de Cabecalho
+    ax1.bar(x, df["overhead_percent"], color="#457B9D", alpha=0.85, width=0.5)
+    for i, val in enumerate(df["overhead_percent"]):
+        if not np.isnan(val):
+            ax1.text(i, val + 0.05, f"{val:.2f}%", ha="center", va="bottom", fontsize=FONT_TICK)
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(labels, rotation=20, ha="right", fontsize=FONT_TICK)
+    ax1.set_ylabel("Overhead de Cabecalho Estimado (%)", fontsize=FONT_LABEL)
+    ax1.set_title("Sobrecarga de Protocolo (Overhead Ratio)", fontsize=FONT_LABEL)
+    ax1.tick_params(labelsize=FONT_TICK)
+
+    # Painel 2: Retransmissoes TCP
+    ax2.bar(x, df["tcp_retransmissions"], color="#E63946", alpha=0.85, width=0.5)
+    for i, val in enumerate(df["tcp_retransmissions"]):
+        ax2.text(i, val + 0.5, f"{int(val)}", ha="center", va="bottom", fontsize=FONT_TICK)
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(labels, rotation=20, ha="right", fontsize=FONT_TICK)
+    ax2.set_ylabel("Segmentos TCP Retransmitidos", fontsize=FONT_LABEL)
+    ax2.set_title("Comportamento de Retransmissao / Perda", fontsize=FONT_LABEL)
+    ax2.tick_params(labelsize=FONT_TICK)
+
+    fig.tight_layout()
+    savefig(fig, out_dir, "graf7_pcap_overhead_analysis.png")
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Gera os 6 graficos cientificos da avaliacao.")
+    parser = argparse.ArgumentParser(description="Gera os graficos cientificos da avaliacao.")
     parser.add_argument("--proc-dir", default="data/processed", help="Diretorio com dados processados")
     parser.add_argument("--out-dir",  default="data/plots",     help="Diretorio de saida dos graficos")
     args = parser.parse_args()
@@ -373,8 +421,12 @@ def main() -> None:
     print("[Graf. 6] CDF do FCT — Evidencia do HoL Blocking (Cenario C, 5%)")
     plot_scenario_c_cdf(proc_dir, out_dir)
 
-    print(f"\n[OK] {6} graficos gerados em '{out_dir}'")
+    print("[Graf. 7] Analise de Capturas PCAP (Overhead e Retransmissoes)")
+    plot_pcap_overhead_analysis(proc_dir, out_dir)
+
+    print(f"\n[OK] Graficos gerados com sucesso em '{out_dir}'")
 
 
 if __name__ == "__main__":
     main()
+

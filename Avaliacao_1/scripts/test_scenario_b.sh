@@ -1,6 +1,6 @@
 #!/bin/bash
 # ==============================================================================
-# test_scenario_b.sh - Bateria Experimental do Cenário B (TCP Massivo vs QUIC)
+# test_scenario_b.sh - Bateria Experimental do Cenario B (TCP Massivo vs QUIC)
 # ==============================================================================
 set -e
 
@@ -17,11 +17,11 @@ echo "scenario,file_size_label,file_size_bytes,protocol,iteration,dns_time_sec,c
 # Configurar canal para Cenario B
 /workspace/scripts/setup_netem.sh scenario_b
 
-# Iniciar captura de pcap de amostra
+# Iniciar captura de pcap de amostra (snaplen 160B para preservar cabecalhos e wire length)
 PCAP_SAMPLE="${PCAP_DIR}/scenario_b_sample.pcapng"
 rm -f "${PCAP_SAMPLE}"
 echo "[CENARIO B] Iniciando captura de amostra tshark em ${PCAP_SAMPLE}..."
-tshark -i eth0 -f "tcp port 443 or udp port 443" -w "${PCAP_SAMPLE}" > /dev/null 2>&1 &
+tshark -i eth0 -s 160 -f "tcp port 443 or udp port 443" -w "${PCAP_SAMPLE}" > /dev/null 2>&1 &
 TSHARK_PID=$!
 
 # Aguarda confirmacao do processo tshark ativo

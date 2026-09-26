@@ -1,0 +1,6 @@
+scenario,pcap_file,total_packets,total_bytes_raw,tcp_packets,tcp_retransmissions,udp_packets,quic_packets,ip_header_bytes_est,overhead_percent
+"A - UDP Puro",scenario_a_udp_sample.pcapng,3927089,5851221098,0,0,3927089,0,109958492,1.88
+"B - TCP/QUIC Massivo",scenario_b_sample.pcapng,112104,324439038,23086,0,89018,89018,3415944,1.05
+"C - QUIC HoL Blocking",scenario_c_loss0.pcapng,95775,165663781,49865,0,45910,45910,3280080,1.98
+"C - QUIC HoL Blocking",scenario_c_loss2.pcapng,96740,166468127,50313,142,46427,46427,3312476,1.99
+"C - QUIC HoL Blocking",scenario_c_loss5.pcapng,95194,167363729,50259,330,44935,44935,3268540,1.95
