@@ -33,10 +33,12 @@ O edital exige uma apresentação técnica de **exatamente 15 minutos**. Mantenh
 * **O que falar (Roteiro sugerido):**
   > *"Olá a todos, olá professor. Meu nome é João Marcos Sousa Rufino Leal, aluno do curso de Bacharelado em Sistemas de Informação da Universidade Federal do Piauí (UFPI). Esta é a apresentação técnica da Avaliação 1 da disciplina de Redes de Computadores II (período 2026-2).*  
   > *O objetivo desta atividade é realizar uma investigação experimental e empírica comparando três paradigmas de transporte na Internet: o TCP tradicional com TLS 1.3 (avaliado via HTTP/1.1 e HTTP/2), o UDP Puro sem confirmação (avaliado via iperf3), e o protocolo moderno QUIC, executado sobre UDP com criptografia integrada (avaliado via HTTP/3 no NGINX).*  
-  > *Para garantir total rigor científico e reprodutibilidade, todo o ambiente foi construído sobre Linux em contêineres Docker isolados, utilizando o subsistema de Traffic Control do kernel (tc com netem) para emulação determinística de atraso, descarte de pacotes e jitter em três cenários planejados: o Cenário A favorável ao UDP puro, o Cenário B favorável ao TCP e o Cenário C favorável ao QUIC. Vamos agora à inspeção detalhada do código-fonte e da arquitetura do projeto."*
+  > *Para garantir total rigor científico e reprodutibilidade, todo o ambiente de testes foi construído sobre o ecossistema Linux em contêineres Docker isolados. Um detalhe importante de conformidade com o edital: embora a minha máquina host de desenvolvimento seja Windows, a execução atende 100% à exigência do edital porque o Docker Desktop opera integrado ao motor WSL 2 (Windows Subsystem for Linux), utilizando um kernel Linux real mantido pela Microsoft. Assim, os contêineres cliente e servidor executam imagens Linux nativas (Ubuntu e Alpine), e todas as regras de controle de tráfego, filas do kernel e medições via tc/netem operam nativamente sobre a pilha de rede do Linux.*  
+  > *Os ensaios foram organizados em três cenários planejados: o Cenário A favorável ao UDP puro, o Cenário B favorável ao TCP e o Cenário C favorável ao QUIC. Vamos agora à inspeção detalhada do código-fonte e da arquitetura do projeto."*
 * **Como evidenciar o edital:**
   * Apresentação individual explícita do aluno.
   * Citação formal dos três protocolos e da metodologia com Docker e Linux NetEm.
+  * Esclarecimento prévio e transparente sobre a conformidade de ambiente: Host Windows com Docker Desktop sobre WSL 2 (kernel Linux real e contêineres Linux nativos).
 
 ---
 
@@ -99,7 +101,7 @@ O edital exige uma apresentação técnica de **exatamente 15 minutos**. Mantenh
   curl -k --http3-only https://server/health -I
   ```
 * **O que falar:**
-  > *"Observem a resposta do cURL: `HTTP/3 200` e o cabeçalho `alt-svc: h3=\":443\"`. Isso comprova de imediato que o handshake QUIC sobre UDP na porta 443 foi concluído com sucesso."*
+  > *"Observem que estamos diretamente dentro do terminal nativo Linux Ubuntu (`root@client:/workspace#`). A resposta do cURL confirma: `HTTP/3 200` e o cabeçalho `alt-svc: h3=\":443\"`. Isso comprova de imediato que o handshake QUIC sobre UDP na porta 443 foi concluído com sucesso e que toda a execução roda sob o kernel Linux."*
 
 #### 2. Disparo de Amostra dos Cenários — [06:15 a 07:30]
 * **Comandos no Terminal:**
