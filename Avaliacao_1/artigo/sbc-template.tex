@@ -3,10 +3,11 @@
 \usepackage{sbc-template}
 \usepackage{graphicx,url}
 \graphicspath{{imagens/}}
-\usepackage[brazil]{babel}
+\usepackage[brazilian]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage{enumitem}
 \usepackage{placeins}
+\usepackage{booktabs}
 
 \sloppy
 
@@ -31,109 +32,252 @@
 \maketitle
 
 \begin{abstract}
-% A ser preenchido conforme o desenvolvimento do trabalho.
+This paper presents an experimental evaluation comparing TCP, pure UDP, and QUIC under controlled network conditions. Using Docker containers, NGINX, and Linux traffic control (tc/netem), we systematically evaluate goodput, flow completion time (FCT), jitter, transport overhead, and packet loss recovery across three distinct scenarios. The first scenario investigates lightweight UDP datagrams under increasing injection rates. The second scenario assesses large-scale HTTP transfers (100 MB and 1 GB) using HTTP/1.1, HTTP/2, and HTTP/3. The third scenario explores concurrent object requests in a high-latency channel subject to packet loss. Results indicate that pure UDP achieves minimal transport header overhead, TCP leverages kernel-space optimizations to sustain high throughput in stable channels, and QUIC mitigates head-of-line blocking while offering faster connection establishment via integrated TLS 1.3.
+
+\vspace{0.15cm}
+\noindent \textbf{Keywords:} TCP, UDP, QUIC, HTTP/3, TLS 1.3, Performance Evaluation, NetEm.
 \end{abstract}
 
 \begin{resumo}
-% A ser preenchido conforme o desenvolvimento do trabalho.
+Este trabalho apresenta uma avaliação experimental comparativa entre os protocolos TCP, UDP puro e QUIC sob condições controladas de rede. Utilizando contêineres Docker, NGINX e o subsistema de controle de tráfego do Linux (tc/netem), foram mensurados goodput, tempo de conclusão de fluxo (FCT), jitter, sobrecarga de cabeçalho e comportamento sob perdas de pacotes em três cenários planejados. O primeiro cenário analisa o transporte de pequenos datagramas UDP sob taxas crescentes de injeção. O segundo investiga transferências volumosas de 100 MB e 1 GB em HTTP/1.1, HTTP/2 e HTTP/3. O terceiro examina requisições concorrentes de objetos sob alta latência e descarte de pacotes. Os resultados demonstram que o UDP puro atinge a menor sobrecarga de transporte, o TCP sustenta alto throughput em canais estáveis por meio de otimizações no espaço de kernel, e o QUIC mitiga o bloqueio de cabeça de linha, além de acelerar o estabelecimento de conexão com TLS 1.3 integrado.
+
+\vspace{0.15cm}
+\noindent \textbf{Palavras-chave:} TCP, UDP, QUIC, HTTP/3, TLS 1.3, Avaliação de Desempenho, NetEm.
 \end{resumo}
 
 
 % ============================================================
 \section{Introdução e Objetivos}
 % ============================================================
-% A ser preenchido
+
+As aplicações de rede contemporâneas impõem exigências heterogêneas sobre a camada de transporte. Sistemas de telemetria e sensores industriais priorizam baixa latência e reduzida sobrecarga de cabeçalho, aceitando perdas eventuais. Em contraste, transferências de arquivos e distribuição de conteúdo em larga escala necessitam de entrega confiável, ordenação estrita e saturação eficiente da largura de banda disponível. Ao mesmo tempo, serviços web interativos demandam rapidez no estabelecimento de conexões seguras e resiliência a perdas transitórias em enlaces sem fio.
+
+Historicamente, o protocolo TCP atendeu à maior parte do tráfego da Internet. Contudo, em enlaces de alta latência e sujeitos a ruído, o TCP exibe limitações intrínsecas decorrentes de seu aperto de mão em múltiplas etapas e do bloqueio de cabeça de linha (\emph{Head-of-Line Blocking}). Nesse contexto, a padronização do protocolo QUIC pelo IETF buscou contornar esses gargalos operando sobre datagramas UDP, integrando nativamente a criptografia TLS 1.3 e viabilizando fluxos multiplexados independentes \cite{rfc9000,rfc9001}.
+
+Este trabalho conduz uma investigação experimental comparativa entre três abordagens de transporte:
+\begin{enumerate}[label=\alph*)]
+  \item \textbf{TCP com TLS 1.3:} avaliado por meio dos protocolos HTTP/1.1 e HTTP/2 servidos pelo NGINX \cite{rfc9113};
+  \item \textbf{UDP Puro:} avaliado por meio de fluxos sintéticos de datagramas gerados pelo iperf3;
+  \item \textbf{QUIC:} avaliado por meio do protocolo HTTP/3 sobre UDP no NGINX \cite{rfc9114}.
+\end{enumerate}
+
+O objetivo central consiste em mensurar o comportamento de cada protocolo em condições controladas de rede, relacionando os resultados empíricos às decisões arquiteturais de cada pilha. A investigação organiza-se em três cenários planejados: o Cenário A favorece o UDP puro em baixa latência e alta taxa de envio; o Cenário B avalia transferências massivas em canal limpo; e o Cenário C examina o comportamento dos protocolos perante perdas aleatórias de pacotes e requisições concorrentes.
 
 
 % ============================================================
 \section{Fundamentação Teórica}
 % ============================================================
 
-\subsection{TCP — RFC 793}
-% A ser preenchido
+Esta seção apresenta os conceitos necessários para interpretar os resultados experimentais. Primeiro, são discutidas as propriedades de confiabilidade e ordenação do TCP; em seguida, o baixo overhead e a ausência de garantias do UDP; por fim, a multiplexação, a segurança e o estabelecimento de conexão do QUIC.
 
-\subsection{UDP Puro — RFC 768}
-% A ser preenchido
+\subsection{TCP (Transmission Control Protocol) -- RFC 793}
+
+O TCP provê um serviço de transporte orientado à conexão, com garantia de entrega ordenada e controle de integridade sobre um fluxo contínuo de bytes \cite{rfc793}. O estabelecimento da comunicação ocorre por meio do aperto de mão de três vias (\emph{three-way handshake}: SYN, SYN-ACK, ACK), no qual cliente e servidor sincronizam seus números de sequência iniciais e negociam parâmetros de canal.
+
+A confiabilidade apoia-se em confirmações cumulativas (\emph{Cumulative ACKs}) e temporizadores de retransmissão. Para evitar a sobrecarga do receptor, o TCP utiliza o controle de fluxo baseado em janela deslizante. Já o controle de congestionamento da rede é gerenciado por algoritmos que alternam entre as fases de partida lenta (\emph{Slow Start}), prevenção de congestionamento (\emph{Congestion Avoidance}), retransmissão rápida (\emph{Fast Retransmit}) e recuperação rápida (\emph{Fast Recovery}).
+
+Embora o HTTP/2 permita multiplexar várias requisições na mesma conexão TCP \cite{rfc9113}, essa camada de transporte mantém uma abstração de fila única e sequencial. Caso um único segmento TCP seja descartado pelo canal, a camada de transporte retém os segmentos subsequentes até a retransmissão do pacote faltante, bloqueando a entrega de todos os fluxos multiplexados. Esse fenômeno denomina-se bloqueio de cabeça de linha no transporte.
+
+\subsection{UDP Puro (User Datagram Protocol) -- RFC 768}
+
+O UDP é um protocolo de transporte simples, não orientado à conexão e sem garantias de entrega, confirmação ou preservação de ordem \cite{rfc768}. Seu cabeçalho possui tamanho fixo de apenas 8 bytes, estruturado em quatro campos de 16 bits: Porta de Origem, Porta de Destino, Comprimento do Datagrama e Checksum.
+
+A ausência de mecanismos de controle de congestionamento, controle de fluxo e temporizadores permite que o UDP transmita dados com atraso de enfileiramento mínimo e sem overhead de sincronização de estado. Essas características tornam o UDP adequado para tráfego em tempo real (como VoIP e transmissão de sensores), no qual a retransmissão de dados obsoletos é indesejada e o custo computacional por pacote deve ser mantido no menor nível possível.
 
 \subsection{QUIC (RFC 9000/9001) e TLS 1.3 (RFC 8446)}
-% A ser preenchido
+
+O QUIC é um protocolo de transporte multiplexado e seguro construído sobre o UDP no espaço de usuário \cite{rfc9000}. O protocolo reestrutura o paradigma de transporte ao desacoplar a entrega de dados em fluxos (\emph{streams}) independentes. Cada stream opera com controle de fluxo próprio. Dessa forma, a perda de pacotes de um stream não impede, no nível do transporte, o encaminhamento dos dados íntegros pertencentes a outros streams da mesma conexão, mitigando o bloqueio de cabeça de linha.
+
+Diferentemente do TCP, no qual o número de sequência identifica a posição dos bytes no fluxo global, os números de pacote do QUIC avançam monotonamente dentro de cada espaço de números de pacote; dados retransmitidos são enviados em novos pacotes. Isso evita reutilizar números de pacote e contribui para a medição do RTT e a detecção de perdas. Adicionalmente, as conexões utilizam identificadores específicos (\emph{Connection IDs}), que podem apoiar a continuidade de conexões durante mudanças de caminho.
+
+A segurança do QUIC decorre da integração direta com o protocolo TLS 1.3 \cite{rfc9001,rfc8446}. Em vez de executar o aperto de mão criptográfico sobre uma conexão de transporte previamente estabelecida, o QUIC encapsula as mensagens de negociação do TLS 1.3 em seus pacotes iniciais. Essa unificação conclui a sincronização de chaves Diffie-Hellman e os parâmetros de transporte em apenas uma viagem de ida e volta (1-RTT), com suporte a envio imediato de dados em conexões prévias (0-RTT).
 
 
 % ============================================================
 \section{Metodologia Experimental e Topologia}
 % ============================================================
-% A ser preenchido
+
+A metodologia combina uma topologia isolada em contêineres, emulação controlada das condições do canal e repetição sistemática dos ensaios. Essa organização permite comparar os protocolos mantendo constantes a carga, o ambiente de execução e os critérios de medição.
+
+\subsection{Topologia e Ambiente Docker}
+
+Os experimentos foram conduzidos em um ambiente virtualizado isolado, composto por dois contêineres conectados via rede bridge Docker personalizada com sub-rede \texttt{172.28.0.0/16}. A Figura~\ref{fig:topologia} ilustra a topologia do ambiente e a distribuição dos serviços.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.92\textwidth]{topologia_docker.png}
+\caption{Topologia experimental baseada em contêineres Docker e emulação de canal.}
+\label{fig:topologia}
+\end{figure}
+
+O nó servidor (\texttt{172.28.0.10}) executa o NGINX 1.27 compilado com o módulo oficial \texttt{ngx\_http\_v3\_module}. Esse serviço atende requisições HTTP/1.1 e HTTP/2 na porta 443 TCP, e requisições HTTP/3 na porta 443 UDP, com diretiva \texttt{reuseport} habilitada. Os certificados de teste foram gerados via OpenSSL com chave ECDSA na curva P-256 para uso com TLS 1.3. O contêiner servidor também disponibiliza o daemon \texttt{iperf3 -s} na porta 5201 UDP e armazena os artefatos estáticos de teste.
+
+O nó cliente (\texttt{172.28.0.20}) possui o utilitário \texttt{curl} compilado com suporte nativo a HTTP/3 (utilizando as bibliotecas \texttt{ngtcp2} e \texttt{nghttp3}), cliente \texttt{iperf3}, ferramenta de captura \texttt{tshark} (Wireshark CLI), utilitários de rede \texttt{iproute2} e interpretador Python 3 com bibliotecas estatísticas.
+
+\subsection{Emulação de Canal e Parâmetros dos Cenários}
+
+A emulação das condições do enlace foi implementada na interface virtual \texttt{eth0} do contêiner cliente, utilizando o subsistema de controle de tráfego do kernel Linux (\texttt{tc}) com o módulo \texttt{netem} (\emph{Network Emulator}). A Tabela~\ref{tab:cenarios} resume a configuração aplicada a cada cenário.
+
+\begin{table}[htbp]
+\centering
+\caption{Parâmetros de emulação e cargas de trabalho por cenário experimental.}
+\label{tab:cenarios}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lllll}
+\toprule
+\textbf{Cenário} & \textbf{Condições do Canal} & \textbf{Protocolos} & \textbf{Padrão de Carga} & \textbf{Ferramenta} \\
+\midrule
+Cenário A & RTT $\approx$ 4 ms, Perda 0\% & UDP Puro & Datagramas 128 B (10--500 Mbps) & iperf3 \\
+Cenário B & RTT $\approx$ 20 ms, Perda 0\% & H1.1, H2, H3 & Arquivos de 100 MB e 1 GB & curl \\
+Cenário C & RTT $\approx$ 100 ms, Perda 0\%, 2\%, 5\% & H1.1, H2, H3 & 100 objetos concorrentes & curl \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+No Cenário A, aplicou-se atraso unidirecional de 2 ms (produzindo RTT de aproximadamente 4 ms) sem descarte, com injeção de taxas de 10, 50, 100, 250 e 500 Mbps em rajadas contínuas de 5 segundos. No Cenário B, configurou-se atraso de 10 ms (RTT de 20 ms) e perda nula para avaliar transferências de 100 MB e 1 GB. No Cenário C, configurou-se atraso de 50 ms (RTT de 100 ms) e perda aleatória de 0\%, 2\% e 5\%, requisitando 100 arquivos independentes em paralelo.
+
+\subsection{Procedimento de Coleta e Rigor Estatístico}
+
+Para assegurar validade estatística, cada ponto experimental foi executado em 10 repetições independentes. As capturas de tráfego foram gravadas em formato PCAPNG via \texttt{tshark}, utilizando tamanho de captura truncado (\emph{snaplen}) em 160 bytes para preservar todos os cabeçalhos de enlace, rede e transporte sem gerar arquivos excessivamente volumosos de carga útil.
+
+A vazão útil (\emph{goodput}) das transferências HTTP foi calculada pela relação entre o volume útil de dados recebidos com sucesso e o tempo total de transferência:
+\begin{equation}
+G = \frac{8 \cdot B}{T \cdot 10^6},
+\end{equation}
+em que $B$ expressa o tamanho do recurso em bytes, $T$ indica o tempo de conclusão de fluxo (FCT) em segundos e $G$ representa o goodput em megabits por segundo (Mbps). O pipeline Python computou a média amostral ($\mu$), o desvio padrão amostral ($\sigma$), os percentis p90 e p95, além do intervalo de confiança de 95\% sob distribuição t-Student.
 
 
 % ============================================================
 \section{Resultados Experimentais e Discussão}
 % ============================================================
 
-Os experimentos foram conduzidos em ambiente controlado com \emph{Docker}, \emph{tc/netem} e NGINX configurado para suportar HTTP/1.1, HTTP/2 e HTTP/3, permitindo uma comparação direta entre TCP, UDP puro e QUIC sob condições equivalentes de rede. A análise combina vazão útil, latência, jitter, overhead de cabeçalho e tempo de conclusão de fluxo (FCT), com foco em verificar como cada protocolo responde a cenários de rede com baixa latência, alta largura de banda e perdas aleatórias.
+Os resultados são organizados de acordo com os três cenários definidos na metodologia. A análise começa pelo custo e pela vazão do UDP em baixa latência, passa pelas transferências volumosas em canal estável e termina com o comportamento dos protocolos sob perdas e requisições concorrentes.
 
-\subsection{Cenário A — UDP Puro em Baixa Latência}
+\subsection{Cenário A -- Desempenho do UDP Puro em Baixa Latência}
 
-No Cenário A, avaliou-se a capacidade do UDP puro em transportar datagramas pequenos sob latência ultra-baixa e sem perdas, variando a taxa de injeção de 10 a 500 Mbps. A Figura~\ref{fig:cenarioA} mostra, à esquerda, a relação entre taxa de injeção e goodput efetivo, e, à direita, o comportamento do jitter. A curva de goodput segue de perto a linha ideal, i.e., o protocolo entrega praticamente toda a carga de entrada até o ponto em que a taxa de envio atinge a capacidade disponível do canal. O jitter permanece baixo e estável ao longo do intervalo avaliado, indicando que o UDP puro é altamente eficiente em redes com baixa latência e sem perdas, mas também expõe a ausência de mecanismos de controle de congestionamento e recuperação de erros.
+O Cenário A analisou o comportamento do UDP puro sob condições de latência baixa e ausência de perdas artificiais. As Figuras~\ref{fig:cenarioA_goodput} e~\ref{fig:cenarioA_jitter} apresentam, respectivamente, a relação entre a taxa de injeção e o goodput efetivo e a dispersão do jitter.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.48\textwidth]{graf1a_goodput_vs_taxa.png}
-\includegraphics[width=0.48\textwidth]{graf1b_jitter_vs_taxa.png}
-\caption{Vazão efetiva e jitter para o UDP puro em função da taxa de injeção.}
-\label{fig:cenarioA}
+\includegraphics[width=0.72\textwidth]{graf1a_goodput_vs_taxa.png}
+\caption{Vazão efetiva do UDP puro em função da taxa de injeção.}
+\label{fig:cenarioA_goodput}
 \end{figure}
 
-A Figura~\ref{fig:overhead} complementa a análise ao comparar o overhead de cabeçalho em bytes para UDP, TCP e QUIC. O UDP puro exibe o menor custo de transporte, com cabeçalho fixo de 8 bytes, enquanto o TCP exige 20 bytes no mínimo e pode ultrapassar 60 bytes quando opções como SACK e timestamps são ativadas. O QUIC também apresenta overhead moderado, mas incorpora criptografia e multiplexação em uma arquitetura que reduz alguns custos de sincronização em fluxos concorrentes. Esse resultado reforça a hipótese de que o UDP é muito eficiente em vazão líquida, mas sacrifica confiabilidade e controle de congestionamento.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.72\textwidth]{graf1b_jitter_vs_taxa.png}
+\caption{Jitter do UDP puro em função da taxa de injeção.}
+\label{fig:cenarioA_jitter}
+\end{figure}
+
+Nas taxas de 10, 50, 100 e 250 Mbps, o goodput acompanhou linearmente a taxa solicitada, atingindo médias de 9,99 Mbps, 49,97 Mbps, 99,82 Mbps e 249,82 Mbps, respectivamente. O jitter médio permaneceu abaixo de 0,13 ms em todos os ensaios, situando-se em 0,004 ms na taxa de 250 Mbps. Ao atingir 500 Mbps, o goodput médio situou-se em $492{,}62 \pm 12{,}82$ Mbps, com perda média residual de 1,40\%. Os dados são compatíveis com uma limitação de processamento causada pelo grande número de pacotes de 128 bytes, mas não foram coletadas métricas de CPU suficientes para atribuir o descarte exclusivamente ao subsistema de rede do contêiner.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.75\textwidth]{graf2_overhead_cabecalho.png}
-\caption{Comparação do overhead de cabeçalho entre UDP, TCP e QUIC.}
+\includegraphics[width=0.72\textwidth]{graf2_overhead_cabecalho.png}
+\caption{Comparação do overhead de cabeçalho de transporte entre UDP, TCP e QUIC.}
 \label{fig:overhead}
 \end{figure}
 
-\subsection{Cenário B — Eficiência do TCP em Transferências Massivas}
+A Figura~\ref{fig:overhead} apresenta a sobrecarga de cabeçalho de transporte. O UDP puro impõe custo fixo de apenas 8 bytes por datagrama. Em contrapartida, o cabeçalho base do TCP requer 20 bytes, alcançando 32 a 40 bytes quando acompanhado de opções comuns como confirmação seletiva (SACK) e marcas de tempo (\emph{timestamps}). O QUIC introduz sobrecarga moderada em virtude do formato flexível de pacotes curtos e longos, mas compensa esse overhead integrando criptografia e multiplexação nativa. O ensaio confirma a eficiência do UDP para fluxos em tempo real com cargas pequenas, desde que a aplicação tolere a ausência de controle de entrega.
 
-No Cenário B, o foco foi comparar HTTP/1.1, HTTP/2 e HTTP/3 em transferências massivas de 100 MB e 1 GB sob rede estável, com RTT em torno de 20 ms. Os resultados mostram que o TCP mantém alto desempenho em canais limpos e bem dimensionados, com bom uso do bandwidth disponível e operação eficiente devido às otimizações de kernel, como TSO, GRO e processamento em espaço de kernel. A Figura~\ref{fig:cenarioB_fct} apresenta os valores de FCT para os três protocolos, enquanto a Figura~\ref{fig:cenarioB_goodput} mostra o goodput obtido em cada caso.
+\subsection{Cenário B -- Eficiência do TCP em Transferências Massivas}
+
+O Cenário B comparou o desempenho das pilhas em transferências contínuas de 100 MB e 1 GB em canal estável (RTT de 20 ms, perda de 0\%). A Tabela~\ref{tab:cenario_b} consolida as medições obtidas para as três variantes de HTTP.
+
+\begin{table}[htbp]
+\centering
+\caption{Resultados consolidados do Cenário B (Média $\pm$ Desvio Padrão).}
+\label{tab:cenario_b}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Arquivo} & \textbf{Protocolo} & \textbf{Handshake (ms)} & \textbf{TTFB (ms)} & \textbf{Goodput (Mbps)} & \textbf{FCT (s)} \\
+\midrule
+100 MB & HTTP/1.1 & $28{,}41 \pm 3{,}40$ & $49{,}46 \pm 3{,}86$ & $255{,}66 \pm 59{,}65$ & $3{,}46 \pm 0{,}88$ \\
+100 MB & HTTP/2   & $28{,}19 \pm 2{,}34$ & $44{,}37 \pm 3{,}09$ & $287{,}93 \pm 59{,}83$ & $3{,}02 \pm 0{,}57$ \\
+100 MB & HTTP/3   & $17{,}39 \pm 2{,}40$ & $34{,}89 \pm 3{,}72$ & $46{,}36 \pm 1{,}20$   & $18{,}10 \pm 0{,}48$ \\
+\midrule
+1 GB   & HTTP/1.1 & $29{,}19 \pm 5{,}53$ & $50{,}03 \pm 5{,}83$ & $381{,}71 \pm 76{,}31$ & $23{,}58 \pm 6{,}11$ \\
+1 GB   & HTTP/2   & $26{,}98 \pm 2{,}96$ & $41{,}67 \pm 3{,}25$ & $376{,}65 \pm 44{,}91$ & $23{,}07 \pm 2{,}51$ \\
+1 GB   & HTTP/3   & $18{,}93 \pm 3{,}40$ & $36{,}78 \pm 5{,}45$ & $45{,}24 \pm 2{,}82$   & $190{,}58 \pm 12{,}16$ \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+A Figura~\ref{fig:cenarioB_fct} ilustra o FCT e o goodput para ambos os arquivos. Em transferências volumosas, o TCP sobre HTTP/1.1 e HTTP/2 demonstrou superioridade de vazão líquida, sustentando taxas médias de 287,93 Mbps (100 MB) e 381,71 Mbps (1 GB). O HTTP/3 atingiu goodput estável em torno de 46 Mbps, completando o arquivo de 100 MB em 18,10 segundos e o de 1 GB em 190,58 segundos.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.48\textwidth]{graf3a_fct_cenario_b.png}
 \includegraphics[width=0.48\textwidth]{graf3b_goodput_cenario_b.png}
-\caption{FCT e goodput para transferências de 100 MB e 1 GB em HTTP/1.1, HTTP/2 e HTTP/3.}
+\caption{FCT e goodput para transferências de 100 MB e 1 GB em canal estável.}
 \label{fig:cenarioB_fct}
 \end{figure}
 
-A comparação de latência de handshake e tempo até o primeiro byte útil (TTFB) também revela diferenças importantes entre as pilhas. A Figura~\ref{fig:cenarioB_latency} indica que o QUIC reduz significativamente o tempo de estabelecimento da conexão quando comparado ao TCP + TLS, especialmente em cenários em que a criptografia e a negociação de chaves são costosas. O TTFB, exibido à direita, confirma que o HTTP/3 consegue iniciar a entrega de conteúdo mais cedo do que o TCP em configurações de alta taxa e baixa perda. Esse comportamento é consistente com a arquitetura do QUIC, em que a conexão e os mecanismos criptográficos são integrados ao próprio transporte.
+Essa diferença de taxa de transmissão reflete as características arquiteturais das implementações. O TCP é executado diretamente no núcleo do sistema operacional e se beneficia de otimizações de descarregamento de hardware consolidadas no Linux, como o \emph{TCP Segmentation Offload} (TSO) e o \emph{Generic Receive Offload} (GRO) \cite{linuxoffloads}. Esses recursos agregam dados na camada de rede e reduzem drasticamente as trocas de contexto. Em contrapartida, a pilha QUIC utilizada opera em espaço de usuário, exigindo maior número de chamadas de sistema (\emph{syscalls}) e processamento de criptografia datagrama a datagrama, o que limita a taxa máxima sustentável em canais de alta capacidade.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.48\textwidth]{graf4a_handshake.png}
 \includegraphics[width=0.48\textwidth]{graf4b_ttfb.png}
-\caption{Comparação de handshake e TTFB entre HTTP/1.1, HTTP/2 e HTTP/3.}
+\caption{Comparação de latência de handshake e TTFB no Cenário B.}
 \label{fig:cenarioB_latency}
 \end{figure}
 
-Apesar de o TCP permanecer altamente competitivo em canais sem perdas, os resultados apontam que o QUIC torna-se vantajoso quando a arquitetura exige menor latência de abertura de conexão e melhor aproveitamento de fluxos multiplexados. Em outras palavras, o TCP ainda se destaca em eficiência bruto em canais limpos, mas o QUIC oferece ganhos relevantes em latência e no custo de estabelecimento de sessão.
+Por outro lado, a Figura~\ref{fig:cenarioB_latency} evidencia a vantagem do QUIC no estabelecimento de conexão. Para transferências de 100 MB, o tempo medido pelo curl até a conclusão da negociação de aplicação e TLS (\texttt{time\_appconnect}) foi de 17,39 ms no HTTP/3, contra 28,19 ms no HTTP/2 e 28,41 ms no HTTP/1.1. Em relação ao HTTP/2, essa diferença corresponde a uma redução de aproximadamente 38,3\%. De forma correspondente, o TTFB do HTTP/3 foi 21,4\% inferior ao do HTTP/2 ($34{,}89$ ms frente a $44{,}37$ ms). Esses valores são compatíveis com o estabelecimento integrado do QUIC e do TLS 1.3, mas não constituem uma medição isolada de todos os componentes do handshake.
 
-\subsection{Cenário C — Resiliência do QUIC em Redes Instáveis}
+\subsection{Cenário C -- Comportamento dos Protocolos sob Perdas e Concorrência}
 
-O Cenário C foi concebido para avaliar a resiliência dos protocolos em presença de perda de pacotes e latência mais elevada. A rede foi configurada com RTT em torno de 100 ms e perdas de 0\%, 2\% e 5\%, simulando condições mais adversas do ambiente de Internet. A Figura~\ref{fig:cenarioC_fct} apresenta o FCT médio e o percentil p95 para cada protocolo sob diferentes níveis de perda. Observa-se que o TCP sofre maior degradação quando há perdas contínuas e múltiplos objetos concorrentes, enquanto o QUIC mantém melhor estabilidade e menor tempo de conclusão de fluxo.
+O Cenário C avaliou o comportamento perante condições adversas de rede, combinando RTT de 100 ms com descarte aleatório de pacotes em 0\%, 2\% e 5\% durante o download paralelo de 100 objetos independentes. A Tabela~\ref{tab:cenario_c} consolida o FCT médio do lote, o percentil p95 e os eventos de retransmissão detectados pelo \texttt{tshark}.
+
+\begin{table}[htbp]
+\centering
+\caption{Resultados do Cenário C com 100 objetos concorrentes. O FCT médio é apresentado como média $\pm$ desvio padrão; o p95 é um valor pontual.}
+\label{tab:cenario_c}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+\textbf{Perda (\%)} & \textbf{Protocolo} & \textbf{FCT Médio (s)} & \textbf{FCT p95 (s)} \\
+\midrule
+0\% & HTTP/1.1 & $1{,}67 \pm 0{,}26$ & 1,96 \\
+0\% & HTTP/2   & $1{,}01 \pm 0{,}25$ & 1,44 \\
+0\% & HTTP/3   & $1{,}40 \pm 0{,}29$ & 1,92 \\
+\midrule
+2\% & HTTP/1.1 & $1{,}59 \pm 0{,}34$ & 2,17 \\
+2\% & HTTP/2   & $1{,}08 \pm 0{,}20$ & 1,36 \\
+2\% & HTTP/3   & $1{,}60 \pm 0{,}48$ & 2,43 \\
+\midrule
+5\% & HTTP/1.1 & $2{,}01 \pm 0{,}56$ & 2,79 \\
+5\% & HTTP/2   & $1{,}16 \pm 0{,}22$ & 1,51 \\
+5\% & HTTP/3   & $1{,}84 \pm 0{,}68$ & 3,09 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+A Figura~\ref{fig:cenarioC_fct} apresenta o FCT médio e o percentil p95 em função da taxa de descarte. No HTTP/1.1, a perda de 5\% elevou o FCT médio para $2{,}01 \pm 0{,}56$ s com p95 de 2,79 s, refletindo a necessidade de abrir múltiplos canais TCP independentes sujeitos a retransmissões repetidas.
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.48\textwidth]{graf5a_fct_medio_perdas.png}
 \includegraphics[width=0.48\textwidth]{graf5b_fct_p95_perdas.png}
-\caption{FCT médio e p95 em cenários com perda de pacotes de 0\%, 2\% e 5\%.}
+\caption{FCT médio e percentil p95 sob perdas de pacotes de 0\%, 2\% e 5\%.}
 \label{fig:cenarioC_fct}
 \end{figure}
 
-A Figura~\ref{fig:hol} reforça essa conclusão ao comparar a distribuição cumulativa do FCT entre os protocolos. O comportamento do HTTP/3 é mais estável e apresenta menor variabilidade em presença de perdas, o que é um indício de mitigação do \emph{head-of-line blocking} no nível do transporte. Em contraste, o TCP e o HTTP/2 sofrem piora mais acentuada quando um pacote perdido ou atrasado afeta blocos de dados dependentes. A análise com capturas de pacote, representada nas Figuras~\ref{fig:pcap_overhead} e~\ref{fig:pcap_retrans}, confirma que a recuperação de perdas e a retransmissão variam em complexidade e custo entre as arquiteturas, sendo o QUIC mais resiliente em cenários de perdas intermitentes.
+A Figura~\ref{fig:hol} destaca a função de distribuição cumulativa (CDF) do FCT dos lotes de 100 objetos sob 5\% de perda. A independência dos streams no QUIC evita o bloqueio de cabeça de linha no transporte: a perda de dados em um stream não bloqueia, por si só, a entrega de dados já disponíveis em outros streams. Entretanto, essa vantagem arquitetural não se traduziu em menor FCT do lote nesta implementação. Os dados agregados mostram que o HTTP/2 apresentou menor FCT médio e menor p95 nos três níveis de perda, enquanto o HTTP/3 apresentou maior dispersão, especialmente a 5\%. Esse resultado indica que o custo da implementação QUIC, o padrão de concorrência e as condições específicas do ambiente virtualizado influenciaram o tempo total observado.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.8\textwidth]{graf6_cdf_hol_blocking.png}
-\caption{CDF do FCT para HTTP/1.1, HTTP/2 e HTTP/3 sob perda de pacotes, evidenciando o efeito de HoL blocking.}
+\includegraphics[width=0.74\textwidth]{graf6_cdf_hol_blocking.png}
+\caption{CDF do FCT dos lotes de 100 objetos sob 5\% de perda.}
 \label{fig:hol}
 \end{figure}
 
@@ -141,21 +285,36 @@ A Figura~\ref{fig:hol} reforça essa conclusão ao comparar a distribuição cum
 \centering
 \includegraphics[width=0.48\textwidth]{graf7a_pcap_overhead.png}
 \includegraphics[width=0.48\textwidth]{graf7b_pcap_retransmissoes.png}
-\caption{Análise de tráfego em PCAP: overhead de protocolo e comportamento de retransmissão por camada de transporte.}
+\caption{Análise de tráfego PCAP: overhead de protocolo e contagem de retransmissões.}
 \label{fig:pcap_overhead}
 \end{figure}
 
-Em conjunto, os resultados mostram que não existe um único protocolo absolutamente superior em todos os cenários. O UDP puro se destaca em eficiência bruta e overhead mínimo, mas sem confiabilidade. O TCP mantém excelente desempenho em redes estáveis e é robusto em fluxos massivos bem controlados. O QUIC, por sua vez, oferece melhor equilíbrio entre latência, multiplexação e resiliência em cenários com perdas, sendo especialmente vantajoso em aplicações web e redes heterogêneas. A avaliação experimental confirma, portanto, que a escolha do protocolo depende diretamente das condições do canal e dos requisitos de latência e confiabilidade da aplicação.
+A Figura~\ref{fig:pcap_overhead} complementa a investigação com a análise das capturas em nível de enlace. Nas capturas agregadas de cada nível de perda, foram identificados 142 segmentos TCP retransmitidos sob perda de 2\% e 330 sob perda de 5\%. Esses valores não podem ser atribuídos individualmente a HTTP/1.1 ou HTTP/2, pois cada PCAP reúne o tráfego das execuções daquele nível de perda. A contagem também não representa retransmissões QUIC: o pipeline utilizado contabiliza o campo de análise de retransmissão do TCP, portanto os eventos de recuperação do QUIC não foram quantificados com a mesma métrica. No QUIC, a recuperação ocorre por novos pacotes que podem transportar novamente dados de um stream, e sua identificação exige análise específica de números de pacote, offsets e quadros ACK. O overhead agregado das capturas permaneceu entre 1,95\% e 1,99\% no Cenário C; esse valor deve ser interpretado como uma medida do tráfego capturado no conjunto do experimento, e não como uma prova isolada de menor custo do QUIC.
 
 
 % ============================================================
 \section{Considerações Finais e Conclusão}
 % ============================================================
-% A ser preenchido
+
+Este trabalho realizou uma avaliação experimental comparativa entre TCP, UDP puro e QUIC sob condições emuladas de rede com contêineres Docker e Linux NetEm. Os ensaios permitiram relacionar de forma empírica o desempenho de cada protocolo às suas decisões arquiteturais.
+
+No Cenário A, o UDP puro confirmou sua aptidão para cenários de tempo real e baixa latência, sustentando transferências de até 500 Mbps com sobrecarga fixa de apenas 8 bytes por pacote e jitter médio contido em frações de milissegundo. Essa eficiência, todavia, prescinde de garantias de entrega e exige que a aplicação gerencie perdas quando necessário.
+
+No Cenário B, o TCP sobre HTTP/1.1 e HTTP/2 demonstrou superioridade na vazão bruta para arquivos massivos (100 MB e 1 GB) em canal limpo, alcançando taxas entre 255 e 381 Mbps. Essa vantagem decorre da maturidade das otimizações de descarregamento no kernel Linux (TSO e GRO). Por sua vez, o QUIC (HTTP/3) destacou-se no tempo de estabelecimento de sessão, reduzindo o tempo de aperto de mão em cerca de 38,3\% e o TTFB em 21,4\% em relação ao TCP com TLS 1.3, em razão de seu handshake unificado em 1-RTT.
+
+No Cenário C, a avaliação confirmou a diferença arquitetural entre HTTP/2 sobre TCP e HTTP/3 sobre QUIC, mas não confirmou uma vantagem de desempenho do HTTP/3 para o lote medido. Sob 5\% de perda, o HTTP/2 apresentou FCT médio de $1{,}16$ s e p95 de $1{,}51$ s, enquanto o HTTP/3 apresentou $1{,}84$ s e p95 de $3{,}09$ s. Portanto, o resultado experimental deve ser reportado como uma vantagem potencial do QUIC em isolamento entre streams, acompanhada de desempenho inferior nesta configuração específica.
+
+Em síntese, os resultados evidenciam que inexiste um protocolo universalmente superior:
+\begin{itemize}
+  \item O \textbf{UDP puro} é a escolha mais eficiente para fluxos contínuos de pequeno porte onde a simplicidade e a ausência de atraso de controle são prioritárias;
+  \item O \textbf{TCP} permanece altamente eficaz para fluxos contínuos de grande porte em redes estáveis, aproveitando a aceleração nativa de kernel;
+  \item O \textbf{QUIC} combina segurança integrada, rapidez no estabelecimento de conexões e independência entre streams; contudo, sua vantagem de desempenho sob perdas não foi confirmada pelo lote medido neste ambiente.
+\end{itemize}
+
+Como trabalhos futuros, sugere-se estender a avaliação para comparar algoritmos modernos de controle de congestionamento no QUIC (como BBRv3 frente ao CUBIC), mensurar o consumo detalhado de ciclos de CPU utilizando instrumentação com eBPF, e investigar o impacto de técnicas de offloading para UDP (como UDP GSO) na mitigação da sobrecarga de processamento do QUIC em espaço de usuário.
 
 
 % ============================================================
-\nocite{*}
 \bibliographystyle{sbc}
 \bibliography{sbc-template}
 % ============================================================
