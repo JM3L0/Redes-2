@@ -516,12 +516,30 @@ def _plot_pcap(proc_dir: Path, out_dir: Path,
     if df.empty:
         return
 
+    # Capturas agregadas misturam protocolos e não servem para comparação individual.
+    if "protocol" in df.columns:
+        df = df[df["protocol"] != "agregado"].copy()
+    if df.empty:
+        return
+
     df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-    labels  = [f.replace(".pcapng", "") for f in df["pcap_file"]]
+    protocol_labels = {"HTTP/1.1": "H1.1", "HTTP/2": "H2", "HTTP/3": "H3"}
+    labels = []
+    for _, row in df.iterrows():
+        name = str(row["pcap_file"])
+        protocol = protocol_labels.get(str(row.get("protocol", "")), "")
+        if name.startswith("scenario_b_"):
+            size = "100 MB" if "100MB" in name else "1 GB"
+            labels.append(f"B\n{size}\n{protocol}")
+        elif name.startswith("scenario_c_"):
+            loss = next((value for value in ("0", "2", "5") if f"loss{value}_" in name), "?")
+            labels.append(f"C\n{loss}%\n{protocol}")
+        else:
+            labels.append(protocol or "UDP")
     x       = range(len(labels))
     top_val = df[col].max()
 
-    fig, ax = _new_fig()
+    fig, ax = plt.subplots(figsize=(10, 4.8))
     ax.bar(x, df[col], color=color, alpha=0.85, width=0.5)
 
     margin = top_val * 0.02 if top_val > 0 else 0.01
@@ -531,7 +549,7 @@ def _plot_pcap(proc_dir: Path, out_dir: Path,
                 ha="center", va="bottom", fontsize=FONT_ANNOT)
 
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation=20, ha="right", fontsize=FONT_TICK)
+    ax.set_xticklabels(labels, rotation=0, ha="center", fontsize=FONT_TICK - 1)
     ax.set_ylabel(ylabel, fontsize=FONT_LABEL)
     ax.tick_params(labelsize=FONT_TICK)
     ax.set_ylim(0, top_val * 1.35 if top_val > 0 else 1)

@@ -1,0 +1,7 @@
+file_size_label,protocol,cpu_user_sec,cpu_sys_sec
+100MB,http1.1,0.096,0.053000000000000005
+100MB,http2,0.11399999999999999,0.05900000000000001
+100MB,http3,0.536,0.326
+1GB,http1.1,1.022,0.597
+1GB,http2,1.173,0.72
+1GB,http3,5.696,3.531

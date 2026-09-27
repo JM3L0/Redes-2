@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     jq \
     dnsutils \
     iputils-ping \
+    time \
     && rm -rf /var/lib/apt/lists/*
 
 # Instalar cURL moderno compilado nativamente com suporte a HTTP/3 (ngtcp2 + nghttp3 + TLS 1.3)

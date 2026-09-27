@@ -148,6 +148,10 @@ G = \frac{8 \cdot B}{T \cdot 10^6},
 \end{equation}
 em que $B$ expressa o tamanho do recurso em bytes, $T$ indica o tempo de conclusão de fluxo (FCT) em segundos e $G$ representa o goodput em megabits por segundo (Mbps). O pipeline Python computou a média amostral ($\mu$), o desvio padrão amostral ($\sigma$), os percentis p90 e p95, além do intervalo de confiança de 95\% sob distribuição t-Student.
 
+As baterias também passaram a registrar o tempo de CPU em espaço de usuário e em modo de sistema por execução, utilizando o utilitário \texttt{/usr/bin/time}. Esses valores são consolidados pelo pipeline em arquivos específicos de CPU para os três cenários. As capturas de tráfego dos Cenários B e C são produzidas separadamente por protocolo, evitando misturar HTTP/1.1, HTTP/2 e HTTP/3 na mesma amostra de overhead.
+
+Como verificação adicional, foi incluído um teste de reconexões HTTP/3 com processos \texttt{curl} independentes. Esse teste mede novas conexões e seus tempos de estabelecimento, mas não é apresentado como prova de 0-RTT: a confirmação de envio antecipado de dados exige instrumentação específica do handshake ou um cliente que exponha esse evento.
+
 
 % ============================================================
 \section{Resultados Experimentais e Discussão}
@@ -173,7 +177,7 @@ O Cenário A analisou o comportamento do UDP puro sob condições de latência b
 \label{fig:cenarioA_jitter}
 \end{figure}
 
-Nas taxas de 10, 50, 100 e 250 Mbps, o goodput acompanhou linearmente a taxa solicitada, atingindo médias de 9,99 Mbps, 49,97 Mbps, 99,82 Mbps e 249,82 Mbps, respectivamente. O jitter médio permaneceu abaixo de 0,13 ms em todos os ensaios, situando-se em 0,004 ms na taxa de 250 Mbps. Ao atingir 500 Mbps, o goodput médio situou-se em $492{,}62 \pm 12{,}82$ Mbps, com perda média residual de 1,40\%. Os dados são compatíveis com uma limitação de processamento causada pelo grande número de pacotes de 128 bytes, mas não foram coletadas métricas de CPU suficientes para atribuir o descarte exclusivamente ao subsistema de rede do contêiner.
+Nas taxas de 10, 50, 100 e 250 Mbps, o goodput acompanhou linearmente a taxa solicitada, atingindo médias de 9,99 Mbps, 49,95 Mbps, 99,93 Mbps e 249,73 Mbps, respectivamente. O jitter médio permaneceu abaixo de 0,13 ms em todos os ensaios. Ao atingir 500 Mbps, o goodput médio situou-se em $498{,}31 \pm 2{,}05$ Mbps. A coleta de CPU registrou também 3,50 s em modo de usuário e 1,55 s em modo de sistema nessa taxa; esses valores devem ser interpretados como tempo acumulado de CPU do processo medido.
 
 \begin{figure}[htbp]
 \centering
@@ -182,7 +186,7 @@ Nas taxas de 10, 50, 100 e 250 Mbps, o goodput acompanhou linearmente a taxa sol
 \label{fig:overhead}
 \end{figure}
 
-A Figura~\ref{fig:overhead} apresenta a sobrecarga de cabeçalho de transporte. O UDP puro impõe custo fixo de apenas 8 bytes por datagrama. Em contrapartida, o cabeçalho base do TCP requer 20 bytes, alcançando 32 a 40 bytes quando acompanhado de opções comuns como confirmação seletiva (SACK) e marcas de tempo (\emph{timestamps}). O QUIC introduz sobrecarga moderada em virtude do formato flexível de pacotes curtos e longos, mas compensa esse overhead integrando criptografia e multiplexação nativa. O ensaio confirma a eficiência do UDP para fluxos em tempo real com cargas pequenas, desde que a aplicação tolere a ausência de controle de entrega.
+A Figura~\ref{fig:overhead} apresenta a sobrecarga teórica de cabeçalho de transporte. O UDP puro impõe custo fixo de apenas 8 bytes por datagrama. Em contrapartida, o cabeçalho base do TCP requer 20 bytes, alcançando 32 a 40 bytes quando acompanhado de opções comuns como confirmação seletiva (SACK) e marcas de tempo (\emph{timestamps}). O QUIC introduz sobrecarga moderada em virtude do formato flexível de pacotes curtos e longos, além da proteção criptográfica. As capturas separadas por protocolo adicionadas ao pipeline permitem uma estimativa empírica complementar, mas o gráfico desta figura não representa a razão completa entre bytes brutos e bytes úteis da aplicação.
 
 \subsection{Cenário B -- Eficiência do TCP em Transferências Massivas}
 
@@ -198,19 +202,19 @@ O Cenário B comparou o desempenho das pilhas em transferências contínuas de 1
 \toprule
 \textbf{Arquivo} & \textbf{Protocolo} & \textbf{Handshake (ms)} & \textbf{TTFB (ms)} & \textbf{Goodput (Mbps)} & \textbf{FCT (s)} \\
 \midrule
-100 MB & HTTP/1.1 & $28{,}41 \pm 3{,}40$ & $49{,}46 \pm 3{,}86$ & $255{,}66 \pm 59{,}65$ & $3{,}46 \pm 0{,}88$ \\
-100 MB & HTTP/2   & $28{,}19 \pm 2{,}34$ & $44{,}37 \pm 3{,}09$ & $287{,}93 \pm 59{,}83$ & $3{,}02 \pm 0{,}57$ \\
-100 MB & HTTP/3   & $17{,}39 \pm 2{,}40$ & $34{,}89 \pm 3{,}72$ & $46{,}36 \pm 1{,}20$   & $18{,}10 \pm 0{,}48$ \\
+100 MB & HTTP/1.1 & $27{,}12 \pm 4{,}47$ & $48{,}14 \pm 4{,}81$ & $561{,}19 \pm 64{,}67$ & $1{,}52 \pm 0{,}20$ \\
+100 MB & HTTP/2   & $25{,}02 \pm 0{,}99$ & $40{,}65 \pm 1{,}11$ & $594{,}13 \pm 50{,}69$ & $1{,}42 \pm 0{,}13$ \\
+100 MB & HTTP/3   & $16{,}78 \pm 2{,}33$ & $33{,}59 \pm 3{,}23$ & $45{,}95 \pm 0{,}27$   & $18{,}26 \pm 0{,}11$ \\
 \midrule
-1 GB   & HTTP/1.1 & $29{,}19 \pm 5{,}53$ & $50{,}03 \pm 5{,}83$ & $381{,}71 \pm 76{,}31$ & $23{,}58 \pm 6{,}11$ \\
-1 GB   & HTTP/2   & $26{,}98 \pm 2{,}96$ & $41{,}67 \pm 3{,}25$ & $376{,}65 \pm 44{,}91$ & $23{,}07 \pm 2{,}51$ \\
-1 GB   & HTTP/3   & $18{,}93 \pm 3{,}40$ & $36{,}78 \pm 5{,}45$ & $45{,}24 \pm 2{,}82$   & $190{,}58 \pm 12{,}16$ \\
+1 GB   & HTTP/1.1 & $24{,}69 \pm 0{,}76$ & $49{,}23 \pm 8{,}23$ & $587{,}77 \pm 31{,}70$ & $14{,}66 \pm 0{,}85$ \\
+1 GB   & HTTP/2   & $25{,}12 \pm 1{,}26$ & $41{,}34 \pm 2{,}31$ & $596{,}64 \pm 39{,}53$ & $14{,}46 \pm 1{,}07$ \\
+1 GB   & HTTP/3   & $16{,}88 \pm 2{,}06$ & $36{,}31 \pm 5{,}78$ & $45{,}84 \pm 0{,}26$   & $187{,}38 \pm 1{,}07$ \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
 
-A Figura~\ref{fig:cenarioB_fct} ilustra o FCT e o goodput para ambos os arquivos. Em transferências volumosas, o TCP sobre HTTP/1.1 e HTTP/2 demonstrou superioridade de vazão líquida, sustentando taxas médias de 287,93 Mbps (100 MB) e 381,71 Mbps (1 GB). O HTTP/3 atingiu goodput estável em torno de 46 Mbps, completando o arquivo de 100 MB em 18,10 segundos e o de 1 GB em 190,58 segundos.
+A Figura~\ref{fig:cenarioB_fct} ilustra o FCT e o goodput para ambos os arquivos. Em transferências volumosas, o TCP sobre HTTP/1.1 e HTTP/2 demonstrou superioridade de vazão líquida, sustentando taxas médias de 561,19 Mbps e 594,13 Mbps para 100 MB, e 587,77 Mbps e 596,64 Mbps para 1 GB, respectivamente. O HTTP/3 atingiu goodput estável em torno de 46 Mbps, completando os arquivos de 100 MB e 1 GB em 18,26 e 187,38 segundos, respectivamente.
 
 \begin{figure}[htbp]
 \centering
@@ -222,6 +226,27 @@ A Figura~\ref{fig:cenarioB_fct} ilustra o FCT e o goodput para ambos os arquivos
 
 Essa diferença de taxa de transmissão reflete as características arquiteturais das implementações. O TCP é executado diretamente no núcleo do sistema operacional e se beneficia de otimizações de descarregamento de hardware consolidadas no Linux, como o \emph{TCP Segmentation Offload} (TSO) e o \emph{Generic Receive Offload} (GRO) \cite{linuxoffloads}. Esses recursos agregam dados na camada de rede e reduzem drasticamente as trocas de contexto. Em contrapartida, a pilha QUIC utilizada opera em espaço de usuário, exigindo maior número de chamadas de sistema (\emph{syscalls}) e processamento de criptografia datagrama a datagrama, o que limita a taxa máxima sustentável em canais de alta capacidade.
 
+A coleta de CPU realizada durante as transferências de 100 MB e 1 GB registrou, para o arquivo de 1 GB, tempos médios de CPU de 1,62 s no HTTP/1.1, 1,89 s no HTTP/2 e 9,23 s no HTTP/3, calculados pela soma dos tempos de usuário e de sistema. Essa diferença é compatível com o maior custo de processamento da implementação QUIC neste ambiente. Como a métrica representa tempo de CPU, e não percentual de utilização normalizado pela duração da transferência, ela deve ser interpretada em conjunto com o FCT e o goodput.
+
+\begin{table}[htbp]
+\centering
+\caption{Tempo médio de CPU no Cenário B (usuário + sistema).}
+\label{tab:cenario_b_cpu}
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Arquivo} & \textbf{Protocolo} & \textbf{CPU (s)} \\
+\midrule
+100 MB & HTTP/1.1 & 0,15 \\
+100 MB & HTTP/2   & 0,17 \\
+100 MB & HTTP/3   & 0,86 \\
+1 GB   & HTTP/1.1 & 1,62 \\
+1 GB   & HTTP/2   & 1,89 \\
+1 GB   & HTTP/3   & 9,23 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.48\textwidth]{graf4a_handshake.png}
@@ -230,7 +255,7 @@ Essa diferença de taxa de transmissão reflete as características arquiteturai
 \label{fig:cenarioB_latency}
 \end{figure}
 
-Por outro lado, a Figura~\ref{fig:cenarioB_latency} evidencia a vantagem do QUIC no estabelecimento de conexão. Para transferências de 100 MB, o tempo medido pelo curl até a conclusão da negociação de aplicação e TLS (\texttt{time\_appconnect}) foi de 17,39 ms no HTTP/3, contra 28,19 ms no HTTP/2 e 28,41 ms no HTTP/1.1. Em relação ao HTTP/2, essa diferença corresponde a uma redução de aproximadamente 38,3\%. De forma correspondente, o TTFB do HTTP/3 foi 21,4\% inferior ao do HTTP/2 ($34{,}89$ ms frente a $44{,}37$ ms). Esses valores são compatíveis com o estabelecimento integrado do QUIC e do TLS 1.3, mas não constituem uma medição isolada de todos os componentes do handshake.
+Por outro lado, a Figura~\ref{fig:cenarioB_latency} evidencia a vantagem do QUIC no estabelecimento de conexão. Para transferências de 100 MB, o tempo medido pelo curl até a conclusão da negociação de aplicação e TLS (\texttt{time\_appconnect}) foi de 16,78 ms no HTTP/3, contra 25,02 ms no HTTP/2 e 27,12 ms no HTTP/1.1. Em relação ao HTTP/2, essa diferença corresponde a uma redução de aproximadamente 33,0\%. De forma correspondente, o TTFB do HTTP/3 foi 17,4\% inferior ao do HTTP/2 (33,59 ms frente a 40,65 ms). Esses valores são compatíveis com o estabelecimento integrado do QUIC e do TLS 1.3, mas não constituem uma medição isolada de todos os componentes do handshake.
 
 \subsection{Cenário C -- Comportamento dos Protocolos sob Perdas e Concorrência}
 
@@ -241,28 +266,26 @@ O Cenário C avaliou o comportamento perante condições adversas de rede, combi
 \caption{Resultados do Cenário C com 100 objetos concorrentes. O FCT médio é apresentado como média $\pm$ desvio padrão; o p95 é um valor pontual.}
 \label{tab:cenario_c}
 \small
-\resizebox{\textwidth}{!}{%
 \begin{tabular}{lccc}
 \toprule
 \textbf{Perda (\%)} & \textbf{Protocolo} & \textbf{FCT Médio (s)} & \textbf{FCT p95 (s)} \\
 \midrule
-0\% & HTTP/1.1 & $1{,}67 \pm 0{,}26$ & 1,96 \\
-0\% & HTTP/2   & $1{,}01 \pm 0{,}25$ & 1,44 \\
-0\% & HTTP/3   & $1{,}40 \pm 0{,}29$ & 1,92 \\
+0\% & HTTP/1.1 & $1{,}74 \pm 0{,}19$ & 1,96 \\
+0\% & HTTP/2   & $1{,}26 \pm 0{,}21$ & 1,52 \\
+0\% & HTTP/3   & $1{,}52 \pm 0{,}20$ & 1,85 \\
 \midrule
-2\% & HTTP/1.1 & $1{,}59 \pm 0{,}34$ & 2,17 \\
-2\% & HTTP/2   & $1{,}08 \pm 0{,}20$ & 1,36 \\
-2\% & HTTP/3   & $1{,}60 \pm 0{,}48$ & 2,43 \\
+2\% & HTTP/1.1 & $1{,}80 \pm 0{,}14$ & 1,98 \\
+2\% & HTTP/2   & $1{,}24 \pm 0{,}23$ & 1,63 \\
+2\% & HTTP/3   & $1{,}41 \pm 0{,}07$ & 1,51 \\
 \midrule
-5\% & HTTP/1.1 & $2{,}01 \pm 0{,}56$ & 2,79 \\
-5\% & HTTP/2   & $1{,}16 \pm 0{,}22$ & 1,51 \\
-5\% & HTTP/3   & $1{,}84 \pm 0{,}68$ & 3,09 \\
+5\% & HTTP/1.1 & $1{,}85 \pm 0{,}28$ & 2,30 \\
+5\% & HTTP/2   & $1{,}27 \pm 0{,}28$ & 1,71 \\
+5\% & HTTP/3   & $1{,}39 \pm 0{,}08$ & 1,51 \\
 \bottomrule
-\end{tabular}%
-}
+\end{tabular}
 \end{table}
 
-A Figura~\ref{fig:cenarioC_fct} apresenta o FCT médio e o percentil p95 em função da taxa de descarte. No HTTP/1.1, a perda de 5\% elevou o FCT médio para $2{,}01 \pm 0{,}56$ s com p95 de 2,79 s, refletindo a necessidade de abrir múltiplos canais TCP independentes sujeitos a retransmissões repetidas.
+A Figura~\ref{fig:cenarioC_fct} apresenta o FCT médio e o percentil p95 em função da taxa de descarte. No HTTP/1.1, a perda de 5\% elevou o FCT médio para $1{,}85 \pm 0{,}28$ s com p95 de 2,30 s. O HTTP/2 manteve o menor FCT médio ($1{,}27$ s), enquanto o HTTP/3 apresentou FCT médio de $1{,}39$ s e p95 de 1,51 s.
 
 \begin{figure}[htbp]
 \centering
@@ -272,7 +295,7 @@ A Figura~\ref{fig:cenarioC_fct} apresenta o FCT médio e o percentil p95 em fun�
 \label{fig:cenarioC_fct}
 \end{figure}
 
-A Figura~\ref{fig:hol} destaca a função de distribuição cumulativa (CDF) do FCT dos lotes de 100 objetos sob 5\% de perda. A independência dos streams no QUIC evita o bloqueio de cabeça de linha no transporte: a perda de dados em um stream não bloqueia, por si só, a entrega de dados já disponíveis em outros streams. Entretanto, essa vantagem arquitetural não se traduziu em menor FCT do lote nesta implementação. Os dados agregados mostram que o HTTP/2 apresentou menor FCT médio e menor p95 nos três níveis de perda, enquanto o HTTP/3 apresentou maior dispersão, especialmente a 5\%. Esse resultado indica que o custo da implementação QUIC, o padrão de concorrência e as condições específicas do ambiente virtualizado influenciaram o tempo total observado.
+A Figura~\ref{fig:hol} destaca a função de distribuição cumulativa (CDF) do FCT dos lotes de 100 objetos sob 5\% de perda. A independência dos streams no QUIC evita o bloqueio de cabeça de linha no transporte: a perda de dados em um stream não bloqueia, por si só, a entrega de dados já disponíveis em outros streams. Nesta nova execução, o HTTP/2 apresentou o menor FCT médio, mas o HTTP/3 apresentou p95 semelhante e menor que o HTTP/1.1. Assim, a vantagem arquitetural do QUIC não implicou automaticamente menor FCT médio, embora tenha reduzido a cauda em comparação com o HTTP/1.1 neste nível de perda.
 
 \begin{figure}[htbp]
 \centering
@@ -289,7 +312,7 @@ A Figura~\ref{fig:hol} destaca a função de distribuição cumulativa (CDF) do 
 \label{fig:pcap_overhead}
 \end{figure}
 
-A Figura~\ref{fig:pcap_overhead} complementa a investigação com a análise das capturas em nível de enlace. Nas capturas agregadas de cada nível de perda, foram identificados 142 segmentos TCP retransmitidos sob perda de 2\% e 330 sob perda de 5\%. Esses valores não podem ser atribuídos individualmente a HTTP/1.1 ou HTTP/2, pois cada PCAP reúne o tráfego das execuções daquele nível de perda. A contagem também não representa retransmissões QUIC: o pipeline utilizado contabiliza o campo de análise de retransmissão do TCP, portanto os eventos de recuperação do QUIC não foram quantificados com a mesma métrica. No QUIC, a recuperação ocorre por novos pacotes que podem transportar novamente dados de um stream, e sua identificação exige análise específica de números de pacote, offsets e quadros ACK. O overhead agregado das capturas permaneceu entre 1,95\% e 1,99\% no Cenário C; esse valor deve ser interpretado como uma medida do tráfego capturado no conjunto do experimento, e não como uma prova isolada de menor custo do QUIC.
+A Figura~\ref{fig:pcap_overhead} complementa a investigação com a análise das capturas em nível de enlace. Com a nova captura por protocolo, a análise passou a separar HTTP/1.1, HTTP/2 e HTTP/3. Nas capturas agregadas da execução anterior, foram identificados 142 segmentos TCP retransmitidos sob perda de 2\% e 330 sob perda de 5\%; as novas capturas permitem atribuir a contagem ao protocolo correspondente quando a bateria é processada novamente. A contagem não representa retransmissões QUIC: o pipeline contabiliza o campo de análise de retransmissão do TCP, portanto os eventos de recuperação do QUIC exigem análise específica de números de pacote, offsets e quadros ACK. O overhead calculado pelo script é uma estimativa de cabeçalhos sobre bytes capturados e deve ser interpretado separadamente da razão completa entre bytes brutos e bytes úteis da aplicação.
 
 
 % ============================================================
@@ -300,9 +323,9 @@ Este trabalho realizou uma avaliação experimental comparativa entre TCP, UDP p
 
 No Cenário A, o UDP puro confirmou sua aptidão para cenários de tempo real e baixa latência, sustentando transferências de até 500 Mbps com sobrecarga fixa de apenas 8 bytes por pacote e jitter médio contido em frações de milissegundo. Essa eficiência, todavia, prescinde de garantias de entrega e exige que a aplicação gerencie perdas quando necessário.
 
-No Cenário B, o TCP sobre HTTP/1.1 e HTTP/2 demonstrou superioridade na vazão bruta para arquivos massivos (100 MB e 1 GB) em canal limpo, alcançando taxas entre 255 e 381 Mbps. Essa vantagem decorre da maturidade das otimizações de descarregamento no kernel Linux (TSO e GRO). Por sua vez, o QUIC (HTTP/3) destacou-se no tempo de estabelecimento de sessão, reduzindo o tempo de aperto de mão em cerca de 38,3\% e o TTFB em 21,4\% em relação ao TCP com TLS 1.3, em razão de seu handshake unificado em 1-RTT.
+No Cenário B, o TCP sobre HTTP/1.1 e HTTP/2 demonstrou superioridade na vazão bruta para arquivos massivos, alcançando entre 561 e 597 Mbps, enquanto o HTTP/3 permaneceu próximo de 46 Mbps. Essa vantagem é compatível com a maturidade das otimizações de descarregamento no kernel Linux (TSO e GRO). Por sua vez, o QUIC (HTTP/3) destacou-se no tempo de estabelecimento de sessão, reduzindo o tempo medido por \texttt{time\_appconnect} em aproximadamente 33,0\% em relação ao HTTP/2.
 
-No Cenário C, a avaliação confirmou a diferença arquitetural entre HTTP/2 sobre TCP e HTTP/3 sobre QUIC, mas não confirmou uma vantagem de desempenho do HTTP/3 para o lote medido. Sob 5\% de perda, o HTTP/2 apresentou FCT médio de $1{,}16$ s e p95 de $1{,}51$ s, enquanto o HTTP/3 apresentou $1{,}84$ s e p95 de $3{,}09$ s. Portanto, o resultado experimental deve ser reportado como uma vantagem potencial do QUIC em isolamento entre streams, acompanhada de desempenho inferior nesta configuração específica.
+No Cenário C, a avaliação confirmou a diferença arquitetural entre HTTP/2 sobre TCP e HTTP/3 sobre QUIC, mas mostrou que os efeitos dependem da métrica. Sob 5\% de perda, o HTTP/2 apresentou o menor FCT médio ($1{,}27$ s), enquanto o HTTP/3 apresentou menor p95 que o HTTP/1.1 (1,51 s contra 2,30 s). Portanto, o resultado experimental sugere benefício do QUIC na cauda da distribuição, mas não superioridade geral no tempo médio do lote.
 
 Em síntese, os resultados evidenciam que inexiste um protocolo universalmente superior:
 \begin{itemize}
@@ -311,7 +334,7 @@ Em síntese, os resultados evidenciam que inexiste um protocolo universalmente s
   \item O \textbf{QUIC} combina segurança integrada, rapidez no estabelecimento de conexões e independência entre streams; contudo, sua vantagem de desempenho sob perdas não foi confirmada pelo lote medido neste ambiente.
 \end{itemize}
 
-Como trabalhos futuros, sugere-se estender a avaliação para comparar algoritmos modernos de controle de congestionamento no QUIC (como BBRv3 frente ao CUBIC), mensurar o consumo detalhado de ciclos de CPU utilizando instrumentação com eBPF, e investigar o impacto de técnicas de offloading para UDP (como UDP GSO) na mitigação da sobrecarga de processamento do QUIC em espaço de usuário.
+Como trabalhos futuros, sugere-se validar explicitamente o envio 0-RTT durante a retomada de sessões, comparar algoritmos modernos de controle de congestionamento no QUIC (como BBRv3 frente ao CUBIC), aprofundar a medição de ciclos de CPU com instrumentação eBPF e investigar o impacto de técnicas de offloading para UDP (como UDP GSO) na sobrecarga de processamento do QUIC em espaço de usuário.
 
 
 % ============================================================

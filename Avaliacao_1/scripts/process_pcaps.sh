@@ -43,7 +43,7 @@ if [ "${PCAP_COUNT}" -eq 0 ]; then
     exit 0
 fi
 
-echo "scenario,pcap_file,total_packets,total_bytes_raw,tcp_packets,tcp_retransmissions,udp_packets,quic_packets,ip_header_bytes_est,overhead_percent" > "${OUTPUT_CSV}"
+echo "scenario,protocol,pcap_file,total_packets,total_bytes_raw,tcp_packets,tcp_retransmissions,udp_packets,quic_packets,ip_header_bytes_est,overhead_percent" > "${OUTPUT_CSV}"
 
 echo ""
 echo "Encontrados ${PCAP_COUNT} arquivo(s) pcapng para processar..."
@@ -59,6 +59,13 @@ for PCAP_FILE in "${PCAP_DIR}"/*.pcapng; do
         scenario_b*) SCENARIO="B - TCP/QUIC Massivo" ;;
         scenario_c*) SCENARIO="C - QUIC HoL Blocking" ;;
         *)           SCENARIO="desconhecido" ;;
+    esac
+
+    case "${BASENAME}" in
+        *http1.1*) PROTOCOL="HTTP/1.1" ;;
+        *http2*)   PROTOCOL="HTTP/2" ;;
+        *http3*)   PROTOCOL="HTTP/3" ;;
+        *)         PROTOCOL="agregado" ;;
     esac
 
     echo "[*] Processando: ${BASENAME}.pcapng  (Cenario: ${SCENARIO})"
@@ -101,7 +108,7 @@ for PCAP_FILE in "${PCAP_DIR}"/*.pcapng; do
 
     IFS=',' read -r TOTAL_PACKETS TOTAL_BYTES TCP_PACKETS TCP_RETRANS UDP_PACKETS QUIC_PACKETS IP_HEADER_BYTES OVERHEAD_PCT <<< "${METRICS}"
 
-    echo "\"${SCENARIO}\",${BASENAME}.pcapng,${TOTAL_PACKETS},${TOTAL_BYTES},${TCP_PACKETS},${TCP_RETRANS},${UDP_PACKETS},${QUIC_PACKETS},${IP_HEADER_BYTES},${OVERHEAD_PCT}" >> "${OUTPUT_CSV}"
+    echo "\"${SCENARIO}\",\"${PROTOCOL}\",${BASENAME}.pcapng,${TOTAL_PACKETS},${TOTAL_BYTES},${TCP_PACKETS},${TCP_RETRANS},${UDP_PACKETS},${QUIC_PACKETS},${IP_HEADER_BYTES},${OVERHEAD_PCT}" >> "${OUTPUT_CSV}"
 
     echo "    Pacotes totais  : ${TOTAL_PACKETS}"
     echo "    Bytes brutos    : ${TOTAL_BYTES}"

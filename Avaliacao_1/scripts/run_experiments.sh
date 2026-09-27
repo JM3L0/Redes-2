@@ -78,6 +78,14 @@ echo ""
 echo "[ETAPA 3/3] Executando Cenario C (QUIC & HoL Blocking)..."
 /workspace/scripts/test_scenario_c.sh
 
+# Teste adicional de reconexao HTTP/3; nao equivale a uma prova de 0-RTT
+if [ -f /workspace/scripts/test_reconnection_http3.sh ]; then
+    echo ""
+    echo "[EXTRA] Medindo reconexoes HTTP/3..."
+    chmod +x /workspace/scripts/test_reconnection_http3.sh
+    /workspace/scripts/test_reconnection_http3.sh
+fi
+
 # Limpar regras netem ao finalizar
 /workspace/scripts/setup_netem.sh clear
 

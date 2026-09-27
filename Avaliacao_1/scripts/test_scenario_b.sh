@@ -12,25 +12,10 @@ CSV_FILE="${OUTPUT_DIR}/scenario_b_results.csv"
 mkdir -p "${OUTPUT_DIR}" "${PCAP_DIR}"
 
 # Cabecalho do CSV
-echo "scenario,file_size_label,file_size_bytes,protocol,iteration,dns_time_sec,connect_time_sec,tls_time_sec,ttfb_sec,total_time_sec,speed_download_bps,goodput_mbps" > "${CSV_FILE}"
+echo "scenario,file_size_label,file_size_bytes,protocol,iteration,dns_time_sec,connect_time_sec,tls_time_sec,ttfb_sec,total_time_sec,speed_download_bps,goodput_mbps,cpu_user_sec,cpu_sys_sec" > "${CSV_FILE}"
 
 # Configurar canal para Cenario B
 /workspace/scripts/setup_netem.sh scenario_b
-
-# Iniciar captura de pcap de amostra (snaplen 160B para preservar cabecalhos e wire length)
-PCAP_SAMPLE="${PCAP_DIR}/scenario_b_sample.pcapng"
-rm -f "${PCAP_SAMPLE}"
-echo "[CENARIO B] Iniciando captura de amostra tshark em ${PCAP_SAMPLE}..."
-tshark -i eth0 -s 160 -f "tcp port 443 or udp port 443" -w "${PCAP_SAMPLE}" > /dev/null 2>&1 &
-TSHARK_PID=$!
-
-# Aguarda confirmacao do processo tshark ativo
-for _ in $(seq 1 10); do
-    if kill -0 "${TSHARK_PID}" 2>/dev/null; then
-        break
-    fi
-    sleep 0.2
-done
 
 FILES=("100MB.bin" "1GB.bin")
 PROTOCOLS=("--http1.1" "--http2" "--http3-only")
@@ -52,8 +37,21 @@ for FILE in "${FILES[@]}"; do
         PROTO_NAME="${PROTO_NAME%-only}"
         echo "  [+] Protocolo: ${PROTO_NAME}..."
 
+        PCAP_SAMPLE="${PCAP_DIR}/scenario_b_${FILE_LABEL}_${PROTO_NAME}.pcapng"
+        rm -f "${PCAP_SAMPLE}"
+        tshark -i eth0 -s 160 -f "tcp port 443 or udp port 443" -w "${PCAP_SAMPLE}" > /dev/null 2>&1 &
+        TSHARK_PID=$!
+        for _ in $(seq 1 10); do
+            if kill -0 "${TSHARK_PID}" 2>/dev/null; then break; fi
+            sleep 0.2
+        done
+
         for i in $(seq 1 ${REPETITIONS}); do
-            RES=$(curl -k -s -o /dev/null -w "${CURL_FORMAT}" ${PROTO} "${SERVER_URL}/${FILE}" || true)
+            CPU_STATS_FILE=$(mktemp)
+            RES=$(/usr/bin/time -f "%U;%S" -o "${CPU_STATS_FILE}" \
+                curl -k -s -o /dev/null -w "${CURL_FORMAT}" ${PROTO} "${SERVER_URL}/${FILE}" || true)
+            IFS=';' read -r CPU_USER_SEC CPU_SYS_SEC < "${CPU_STATS_FILE}" || true
+            rm -f "${CPU_STATS_FILE}"
             
             IFS=';' read -r HTTP_CODE DNS CONN TLS TTFB TOTAL SPEED SIZE <<< "${RES}"
             
@@ -64,14 +62,13 @@ for FILE in "${FILES[@]}"; do
 
             GOODPUT_MBPS=$(awk "BEGIN {printf \"%.2f\", (${SPEED} * 8) / 1000000}")
             
-            echo "scenario_b,${FILE_LABEL},${SIZE},${PROTO_NAME},${i},${DNS},${CONN},${TLS},${TTFB},${TOTAL},${SPEED},${GOODPUT_MBPS}" >> "${CSV_FILE}"
+            echo "scenario_b,${FILE_LABEL},${SIZE},${PROTO_NAME},${i},${DNS},${CONN},${TLS},${TTFB},${TOTAL},${SPEED},${GOODPUT_MBPS},${CPU_USER_SEC:-0},${CPU_SYS_SEC:-0}" >> "${CSV_FILE}"
             echo "      -> Repeticao ${i}/${REPETITIONS}: FCT=${TOTAL}s, Goodput=${GOODPUT_MBPS} Mbps"
             sleep 0.5
         done
+
+        kill -INT "${TSHARK_PID}" 2>/dev/null || true
+        wait "${TSHARK_PID}" 2>/dev/null || true
     done
 done
-
-# Parar tshark
-kill -INT ${TSHARK_PID} 2>/dev/null || true
-wait ${TSHARK_PID} 2>/dev/null || true
 echo "[CENARIO B] Bateria concluida. Resultados em: ${CSV_FILE}"

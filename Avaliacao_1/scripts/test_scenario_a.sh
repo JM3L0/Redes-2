@@ -12,7 +12,7 @@ CSV_FILE="${OUTPUT_DIR}/scenario_a_results.csv"
 mkdir -p "${OUTPUT_DIR}" "${PCAP_DIR}"
 
 # Cabecalho do CSV
-echo "scenario,protocol,target_rate_mbps,iteration,duration_sec,bytes_sent,bytes_received,goodput_mbps,jitter_ms,lost_packets,total_packets,loss_percent" > "${CSV_FILE}"
+echo "scenario,protocol,target_rate_mbps,iteration,duration_sec,bytes_sent,bytes_received,goodput_mbps,jitter_ms,lost_packets,total_packets,loss_percent,cpu_user_sec,cpu_sys_sec" > "${CSV_FILE}"
 
 # Configurar canal para Cenario A
 /workspace/scripts/setup_netem.sh scenario_a
@@ -44,7 +44,11 @@ for RATE in "${RATES[@]}"; do
     echo "[*] Testando Taxa de Injecao: ${RATE}bps..."
     
     for i in $(seq 1 ${REPETITIONS}); do
-        JSON_OUT=$(iperf3 -c "${SERVER_IP}" -u -b "${RATE}" -t 5 -J 2>/dev/null || true)
+        CPU_STATS_FILE=$(mktemp)
+        JSON_OUT=$(/usr/bin/time -f "%U;%S" -o "${CPU_STATS_FILE}" \
+            iperf3 -c "${SERVER_IP}" -u -b "${RATE}" -t 5 -J 2>/dev/null || true)
+        IFS=';' read -r CPU_USER_SEC CPU_SYS_SEC < "${CPU_STATS_FILE}" || true
+        rm -f "${CPU_STATS_FILE}"
         
         # Validar se o retorno do iperf3 e um JSON valido com o bloco final
         if ! echo "${JSON_OUT}" | jq -e '.end.sum_received' >/dev/null 2>&1; then
@@ -62,7 +66,7 @@ for RATE in "${RATES[@]}"; do
         TOTAL_PKTS=$(echo "${JSON_OUT}" | jq '.end.sum_received.packets // 0')
         LOSS_PCT=$(echo "${JSON_OUT}" | jq '.end.sum_received.lost_percent // 0')
         
-        echo "scenario_a,UDP,${RATE_NUM},${i},${DURATION},${BYTES_SENT},${BYTES_RECV},${GOODPUT_MBPS},${JITTER_MS},${LOST_PKTS},${TOTAL_PKTS},${LOSS_PCT}" >> "${CSV_FILE}"
+        echo "scenario_a,UDP,${RATE_NUM},${i},${DURATION},${BYTES_SENT},${BYTES_RECV},${GOODPUT_MBPS},${JITTER_MS},${LOST_PKTS},${TOTAL_PKTS},${LOSS_PCT},${CPU_USER_SEC:-0},${CPU_SYS_SEC:-0}" >> "${CSV_FILE}"
         echo "    -> Repeticao ${i}/${REPETITIONS} (${RATE}): Goodput=${GOODPUT_MBPS} Mbps, Jitter=${JITTER_MS} ms, Perda=${LOSS_PCT}%"
         sleep 0.5
     done

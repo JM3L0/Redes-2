@@ -23,7 +23,7 @@ CSV_FILE="${OUTPUT_DIR}/scenario_c_results.csv"
 mkdir -p "${OUTPUT_DIR}" "${PCAP_DIR}"
 
 # Cabecalho do CSV
-echo "scenario,loss_percent,protocol,iteration,total_batch_fct_sec,total_bytes_downloaded,goodput_mbps" > "${CSV_FILE}"
+echo "scenario,loss_percent,protocol,iteration,total_batch_fct_sec,total_bytes_downloaded,goodput_mbps,cpu_user_sec,cpu_sys_sec" > "${CSV_FILE}"
 
 LOSS_SCENARIOS=("scenario_c_loss0" "scenario_c_loss2" "scenario_c_loss5")
 PROTOCOLS=("--http1.1" "--http2" "--http3-only")
@@ -49,23 +49,6 @@ for SCENARIO in "${LOSS_SCENARIOS[@]}"; do
     /workspace/scripts/setup_netem.sh "${SCENARIO}"
 
     # -----------------------------------------------------------------
-    # Iniciar captura tshark para este nivel de perda (TCP + UDP/QUIC)
-    # -----------------------------------------------------------------
-    PCAP_FILE="${PCAP_DIR}/scenario_c_loss${LOSS_LABEL}.pcapng"
-    rm -f "${PCAP_FILE}"
-    echo "[CENARIO C] Iniciando captura tshark em: ${PCAP_FILE}..."
-    tshark -i eth0 -s 160 -f "tcp port 443 or udp port 443" -w "${PCAP_FILE}" > /dev/null 2>&1 &
-    TSHARK_PID=$!
-
-    # Aguardar o processo tshark subir (polling por PID)
-    for _ in $(seq 1 10); do
-        if kill -0 "${TSHARK_PID}" 2>/dev/null; then
-            break
-        fi
-        sleep 0.2
-    done
-
-    # -----------------------------------------------------------------
     # Rodar as baterias de protocolo para este nivel de perda
     # -----------------------------------------------------------------
     for PROTO in "${PROTOCOLS[@]}"; do
@@ -73,15 +56,28 @@ for SCENARIO in "${LOSS_SCENARIOS[@]}"; do
         PROTO_NAME="${PROTO_NAME%-only}"
         echo "  [+] Protocolo: ${PROTO_NAME} | Perda: ${LOSS_LABEL}%"
 
+        PCAP_FILE="${PCAP_DIR}/scenario_c_loss${LOSS_LABEL}_${PROTO_NAME}.pcapng"
+        rm -f "${PCAP_FILE}"
+        tshark -i eth0 -s 160 -f "tcp port 443 or udp port 443" -w "${PCAP_FILE}" > /dev/null 2>&1 &
+        TSHARK_PID=$!
+        for _ in $(seq 1 10); do
+            if kill -0 "${TSHARK_PID}" 2>/dev/null; then break; fi
+            sleep 0.2
+        done
+
         for i in $(seq 1 ${REPETITIONS}); do
             START_TIME=$(date +%s.%N)
+            CPU_STATS_FILE=$(mktemp)
 
             # Baixar todos os 100 objetos via curl concorrente usando globbing de URL;
             # -w "%{size_download}\n" extrai bytes recebidos por objeto
-            REAL_BYTES=$(curl -k -s --parallel --parallel-max 100 -o /dev/null \
+            REAL_BYTES=$(/usr/bin/time -f "%U;%S" -o "${CPU_STATS_FILE}" \
+                curl -k -s --parallel --parallel-max 100 -o /dev/null \
                 --connect-timeout 10 --max-time 120 \
                 -w "%{size_download}\n" ${PROTO} "${SERVER_URL}/obj_[001-100].bin" 2>/dev/null \
                 | awk '{s+=$1} END {print s+0}' || echo 0)
+            IFS=';' read -r CPU_USER_SEC CPU_SYS_SEC < "${CPU_STATS_FILE}" || true
+            rm -f "${CPU_STATS_FILE}"
 
             END_TIME=$(date +%s.%N)
             BATCH_FCT=$(awk "BEGIN {printf \"%.4f\", ${END_TIME} - ${START_TIME}}")
@@ -93,23 +89,20 @@ for SCENARIO in "${LOSS_SCENARIOS[@]}"; do
 
             GOODPUT_MBPS=$(awk "BEGIN {printf \"%.2f\", (${REAL_BYTES} * 8) / (${BATCH_FCT} * 1000000)}")
 
-            echo "scenario_c,${LOSS_LABEL},${PROTO_NAME},${i},${BATCH_FCT},${REAL_BYTES},${GOODPUT_MBPS}" >> "${CSV_FILE}"
+            echo "scenario_c,${LOSS_LABEL},${PROTO_NAME},${i},${BATCH_FCT},${REAL_BYTES},${GOODPUT_MBPS},${CPU_USER_SEC:-0},${CPU_SYS_SEC:-0}" >> "${CSV_FILE}"
             echo "      -> Rep ${i}/${REPETITIONS}: FCT=${BATCH_FCT}s | Bytes=${REAL_BYTES} | Goodput=${GOODPUT_MBPS} Mbps"
             sleep 0.5
         done
-    done
 
-    # -----------------------------------------------------------------
-    # Parar tshark ao finalizar este nivel de perda
-    # -----------------------------------------------------------------
-    kill -INT ${TSHARK_PID} 2>/dev/null || true
-    wait ${TSHARK_PID} 2>/dev/null || true
-    echo "[CENARIO C] Captura salva em: ${PCAP_FILE}"
+        kill -INT "${TSHARK_PID}" 2>/dev/null || true
+        wait "${TSHARK_PID}" 2>/dev/null || true
+        echo "[CENARIO C] Captura salva em: ${PCAP_FILE}"
+    done
 
 done
 
 echo ""
 echo "=========================================================="
 echo "[CENARIO C] Bateria concluida. Resultados em: ${CSV_FILE}"
-echo "  PCaps salvos em: ${PCAP_DIR}/scenario_c_loss{0,2,5}.pcapng"
+echo "  PCaps salvos em: ${PCAP_DIR}/scenario_c_loss{0,2,5}_{http1.1,http2,http3}.pcapng"
 echo "=========================================================="

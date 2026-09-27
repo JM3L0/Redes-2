@@ -81,6 +81,10 @@ def process_scenario_a(raw_dir: Path, out_dir: Path) -> None:
     loss = aggregate(df, ["target_rate_mbps"], "loss_percent")
     loss.to_csv(out_dir / "scenario_a_loss.csv", index=False)
 
+    if {"cpu_user_sec", "cpu_sys_sec"}.issubset(df.columns):
+        cpu = df.groupby(["target_rate_mbps"])[["cpu_user_sec", "cpu_sys_sec"]].mean().reset_index()
+        cpu.to_csv(out_dir / "scenario_a_cpu.csv", index=False)
+
     # Overhead de cabecalho UDP vs TCP (calculado teoricamente)
     overhead = pd.DataFrame({
         "protocol": ["UDP", "TCP (min)", "TCP (max)", "QUIC (Short Header)"],
@@ -122,6 +126,10 @@ def process_scenario_b(raw_dir: Path, out_dir: Path) -> None:
     ttfb = aggregate(df, ["file_size_label", "protocol"], "ttfb_sec")
     ttfb.to_csv(out_dir / "scenario_b_ttfb.csv", index=False)
 
+    if {"cpu_user_sec", "cpu_sys_sec"}.issubset(df.columns):
+        cpu = df.groupby(["file_size_label", "protocol"])[["cpu_user_sec", "cpu_sys_sec"]].mean().reset_index()
+        cpu.to_csv(out_dir / "scenario_b_cpu.csv", index=False)
+
     print(f"[B] Resultados salvos em {out_dir}")
 
 
@@ -146,6 +154,10 @@ def process_scenario_c(raw_dir: Path, out_dir: Path) -> None:
     # Goodput do lote por protocolo e nivel de perda
     goodput = aggregate(df, ["loss_percent", "protocol"], "goodput_mbps")
     goodput.to_csv(out_dir / "scenario_c_goodput.csv", index=False)
+
+    if {"cpu_user_sec", "cpu_sys_sec"}.issubset(df.columns):
+        cpu = df.groupby(["loss_percent", "protocol"])[["cpu_user_sec", "cpu_sys_sec"]].mean().reset_index()
+        cpu.to_csv(out_dir / "scenario_c_cpu.csv", index=False)
 
     # CDF por protocolo para nivel de perda de 5% (pior caso = mais relevante)
     loss5_df = df[df["loss_percent"] == 5].copy()
