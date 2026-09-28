@@ -27,7 +27,7 @@ O relatório técnico deve ser redigido estritamente no modelo oficial de artigo
   \vspace{0.2cm}
   \newline
   \textbf{Vídeo de Demonstração e Apresentação (15 min):} \\
-  \url{https://youtu.be/SEU_LINK_AQUI} % Ou link aberto do Google Drive
+  \url{https://youtu.be/Q8O8OcI9GoU}
 }
 ```
 

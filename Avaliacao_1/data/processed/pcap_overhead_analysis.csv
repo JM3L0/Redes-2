@@ -1,21 +1,21 @@
 scenario,protocol,pcap_file,total_packets,total_bytes_raw,tcp_packets,tcp_retransmissions,udp_packets,quic_packets,ip_header_bytes_est,overhead_percent
-"A - UDP Puro","agregado",scenario_a_udp_sample.pcapng,3926805,5850797938,0,0,3926805,0,109950540,1.88
-"B - TCP/QUIC Massivo","HTTP/1.1",scenario_b_100MB_http1.1.pcapng,115813,1048244265,115813,0,0,0,4632520,0.44
-"B - TCP/QUIC Massivo","HTTP/2",scenario_b_100MB_http2.pcapng,118715,1049747261,118715,1,0,0,4748600,0.45
-"B - TCP/QUIC Massivo","HTTP/3",scenario_b_100MB_http3.pcapng,863438,1123502908,0,0,863438,863438,24176264,2.15
-"B - TCP/QUIC Massivo","HTTP/1.1",scenario_b_1GB_http1.1.pcapng,1219605,10822947062,1219605,1,0,0,48784200,0.45
-"B - TCP/QUIC Massivo","HTTP/2",scenario_b_1GB_http2.pcapng,1210109,10838701611,1210109,2,0,0,48404360,0.45
-"B - TCP/QUIC Massivo","HTTP/3",scenario_b_1GB_http3.pcapng,8840580,11520682593,0,0,8840580,8840580,247536240,2.15
+"A - UDP Puro","agregado",scenario_a_udp_sample.pcapng,3926554,5850423948,0,0,3926554,0,109943512,1.88
+"B - TCP/QUIC Massivo","HTTP/1.1",scenario_b_100MB_http1.1.pcapng,115074,1051003961,115074,1,0,0,4602960,0.44
+"B - TCP/QUIC Massivo","HTTP/2",scenario_b_100MB_http2.pcapng,124985,1052409769,124985,2,0,0,4999400,0.48
+"B - TCP/QUIC Massivo","HTTP/3",scenario_b_100MB_http3.pcapng,890399,1126850269,0,0,890399,890399,24931172,2.21
+"B - TCP/QUIC Massivo","HTTP/1.1",scenario_b_1GB_http1.1.pcapng,1241147,10827862951,1241147,0,0,0,49645880,0.46
+"B - TCP/QUIC Massivo","HTTP/2",scenario_b_1GB_http2.pcapng,1234871,10840072959,1234871,2,0,0,49394840,0.46
+"B - TCP/QUIC Massivo","HTTP/3",scenario_b_1GB_http3.pcapng,9229686,11556453902,0,0,9229686,9229686,258431208,2.24
 "B - TCP/QUIC Massivo","agregado",scenario_b_sample.pcapng,112104,324439038,23086,0,89018,89018,3415944,1.05
 "C - QUIC HoL Blocking","agregado",scenario_c_loss0.pcapng,95775,165663781,49865,0,45910,45910,3280080,1.98
-"C - QUIC HoL Blocking","HTTP/1.1",scenario_c_loss0_http1.1.pcapng,45420,57154516,45420,0,0,0,1816800,3.18
-"C - QUIC HoL Blocking","HTTP/2",scenario_c_loss0_http2.pcapng,3814,51811897,3814,1,0,0,152560,0.29
-"C - QUIC HoL Blocking","HTTP/3",scenario_c_loss0_http3.pcapng,45871,56557537,0,0,45871,45871,1284388,2.27
+"C - QUIC HoL Blocking","HTTP/1.1",scenario_c_loss0_http1.1.pcapng,51158,56160989,51158,0,0,0,2046320,3.64
+"C - QUIC HoL Blocking","HTTP/2",scenario_c_loss0_http2.pcapng,4850,51829569,4850,0,0,0,194000,0.37
+"C - QUIC HoL Blocking","HTTP/3",scenario_c_loss0_http3.pcapng,47414,56709988,0,0,47414,47414,1327592,2.34
 "C - QUIC HoL Blocking","agregado",scenario_c_loss2.pcapng,96740,166468127,50313,142,46427,46427,3312476,1.99
-"C - QUIC HoL Blocking","HTTP/1.1",scenario_c_loss2_http1.1.pcapng,46186,57792955,46186,131,0,0,1847440,3.20
-"C - QUIC HoL Blocking","HTTP/2",scenario_c_loss2_http2.pcapng,4080,51806461,4080,2,0,0,163200,0.32
-"C - QUIC HoL Blocking","HTTP/3",scenario_c_loss2_http3.pcapng,45127,56306703,0,0,45127,45127,1263556,2.24
+"C - QUIC HoL Blocking","HTTP/1.1",scenario_c_loss2_http1.1.pcapng,51178,57952818,51178,106,0,0,2047120,3.53
+"C - QUIC HoL Blocking","HTTP/2",scenario_c_loss2_http2.pcapng,4553,51837156,4553,4,0,0,182120,0.35
+"C - QUIC HoL Blocking","HTTP/3",scenario_c_loss2_http3.pcapng,45244,57797216,0,0,45244,45244,1266832,2.19
 "C - QUIC HoL Blocking","agregado",scenario_c_loss5.pcapng,95194,167363729,50259,330,44935,44935,3268540,1.95
-"C - QUIC HoL Blocking","HTTP/1.1",scenario_c_loss5_http1.1.pcapng,45877,57785354,45877,302,0,0,1835080,3.18
-"C - QUIC HoL Blocking","HTTP/2",scenario_c_loss5_http2.pcapng,3910,51849784,3910,9,0,0,156400,0.30
-"C - QUIC HoL Blocking","HTTP/3",scenario_c_loss5_http3.pcapng,45072,56355877,0,0,45072,45072,1262016,2.24
+"C - QUIC HoL Blocking","HTTP/1.1",scenario_c_loss5_http1.1.pcapng,51035,57943919,51035,276,0,0,2041400,3.52
+"C - QUIC HoL Blocking","HTTP/2",scenario_c_loss5_http2.pcapng,4594,51850035,4594,6,0,0,183760,0.35
+"C - QUIC HoL Blocking","HTTP/3",scenario_c_loss5_http3.pcapng,48227,57372471,0,0,48227,48227,1350356,2.35
