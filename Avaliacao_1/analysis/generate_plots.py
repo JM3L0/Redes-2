@@ -539,20 +539,25 @@ def _plot_pcap(proc_dir: Path, out_dir: Path,
     x       = range(len(labels))
     top_val = df[col].max()
 
-    fig, ax = plt.subplots(figsize=(10, 4.8))
-    ax.bar(x, df[col], color=color, alpha=0.85, width=0.5)
+    fig, ax = plt.subplots(figsize=(10, 3.8))
+    ax.bar(x, df[col], color=color, alpha=0.88, width=0.55, zorder=3)
 
-    margin = top_val * 0.02 if top_val > 0 else 0.01
+    # Divisores sutis entre grupos de cenarios (B 100MB, B 1GB, C 0%, C 2%, C 5%)
+    for div in [2.5, 5.5, 8.5, 11.5]:
+        ax.axvline(div, color="#b0b0b0", linestyle="--", linewidth=0.9, alpha=0.7, zorder=2)
+
+    margin = top_val * 0.025 if top_val > 0 else 0.01
     for i, val in enumerate(df[col]):
         txt = fmt_fn(val) if fmt_fn else f"{val:.2f}"
         ax.text(i, val + margin, txt,
-                ha="center", va="bottom", fontsize=FONT_ANNOT)
+                ha="center", va="bottom", fontsize=10.5, fontweight="bold")
 
     ax.set_xticks(x)
-    ax.set_xticklabels(labels, rotation=0, ha="center", fontsize=FONT_TICK - 1)
-    ax.set_ylabel(ylabel, fontsize=FONT_LABEL)
-    ax.tick_params(labelsize=FONT_TICK)
-    ax.set_ylim(0, top_val * 1.35 if top_val > 0 else 1)
+    ax.set_xticklabels(labels, rotation=0, ha="center", fontsize=10.5, fontweight="medium")
+    ax.set_ylabel(ylabel, fontsize=12, fontweight="bold")
+    ax.tick_params(axis="y", labelsize=10.5)
+    ax.tick_params(axis="x", length=0)
+    ax.set_ylim(0, top_val * 1.28 if top_val > 0 else 1)
 
     fig.tight_layout()
     _save(fig, out_dir, out_name)
@@ -580,6 +585,8 @@ def plot_7b_pcap_retrans(proc_dir: Path, out_dir: Path) -> None:
 # Entry point
 # ---------------------------------------------------------------------------
 def main() -> None:
+    import shutil
+
     parser = argparse.ArgumentParser(
         description="Gera os graficos cientificos da avaliacao.")
     parser.add_argument("--proc-dir", default="data/processed",
@@ -618,6 +625,12 @@ def main() -> None:
         fn(proc_dir, out_dir)
 
     print(f"\n[OK] {len(steps)} graficos gerados em '{out_dir}'")
+
+    artigo_img_dir = Path("artigo/imagens")
+    if artigo_img_dir.exists():
+        for p in out_dir.glob("*.png"):
+            shutil.copy2(p, artigo_img_dir / p.name)
+        print(f"[*] Graficos sincronizados com '{artigo_img_dir}'")
 
 
 if __name__ == "__main__":
