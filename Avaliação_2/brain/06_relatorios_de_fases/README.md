@@ -4,7 +4,7 @@ Este diretório registra detalhadamente o histórico, as decisões de engenharia
 
 ---
 
-## 🗺️ Fases e Relatórios Registrados
+## 🗺 Fases e Relatórios Registrados
 
 | Fases | Título do Relatório de Engenharia | Status | Arquivo de Documentação |
 | :---: | :--- | :---: | :--- |

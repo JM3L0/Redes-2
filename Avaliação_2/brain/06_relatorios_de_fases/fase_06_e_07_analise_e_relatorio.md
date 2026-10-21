@@ -15,7 +15,7 @@ As Fases 6 e 7 integraram o tratamento dos dados brutos gerados pela matriz de 1
 2. Cálculo de métricas descritivas: média, mediana, desvio padrão ($s$), percentis p50 e p99, e Intervalo de Confiança de 95% ($CI_{95\%}$) via distribuição t-Student;
 3. Geração programática de 5 gráficos de alta resolução (300 DPI) em `data/plots/` com **barras de erro obrigatórias** em todas as figuras;
 4. Redação formal do artigo científico em LaTeX no modelo da Sociedade Brasileira de Computação (SBC/SBRC);
-5. Deduções e articulações teóricas detalhadas com Tanenbaum §6.5.11 (TCP CUBIC) e §6.6.1/§6.6.2 (QUIC e BBR);
+5. Deduções e articulações teóricas detalhadas com Tanenbaum Seção 6.5.11 (TCP CUBIC) e Seção 6.6.1/Seção 6.6.2 (QUIC e BBR);
 6. Compilação do PDF oficial (`relatorio/sbc-template.pdf`, 8 páginas) com o link do vídeo posicionado na primeira página.
 
 ---
@@ -51,8 +51,8 @@ Conforme exigido pelo edital (mitigando a penalidade de -10 pontos), todas as fi
   6. Referências Bibliográficas (Tanenbaum, RFC 793, RFC 768, RFC 7540, RFC 8446, RFC 9000, RFC 9001, RFC 9114).
 
 ### 3.2. Articulação Teórica com Tanenbaum (Evitando penalidade de -20 pontos)
-- **Tanenbaum §6.5.11 (TCP CUBIC):** Explicação analítica da função cúbica $W_{\text{cubic}}(t) = C (t - K)^3 + W_{\text{max}}$ e da penalidade multiplicativa ($\beta = 0.7$). Sob 2% de descarte contínuo e 50ms de RTT, a janela *cwnd* colapsa antes de alcançar o ponto de inflexão $W_{\text{max}}$, estrangulando o goodput.
-- **Tanenbaum §6.6.1 (QUIC) e §6.6.2 (BBR):** Justificativa de resiliência baseada no desacoplamento entre streams UDP e no controle de ritmo (*pacing*) fundamentado em taxa real de entrega e RTT mínimo físico, imune à interpretação ingênua de perdas estocásticas.
+- **Tanenbaum Seção 6.5.11 (TCP CUBIC):** Explicação analítica da função cúbica $W_{\text{cubic}}(t) = C (t - K)^3 + W_{\text{max}}$ e da penalidade multiplicativa ($\beta = 0.7$). Sob 2% de descarte contínuo e 50ms de RTT, a janela *cwnd* colapsa antes de alcançar o ponto de inflexão $W_{\text{max}}$, estrangulando o goodput.
+- **Tanenbaum Seção 6.6.1 (QUIC) e Seção 6.6.2 (BBR):** Justificativa de resiliência baseada no desacoplamento entre streams UDP e no controle de ritmo (*pacing*) fundamentado em taxa real de entrega e RTT mínimo físico, imune à interpretação ingênua de perdas estocásticas.
 
 ### 3.3. Critério Eliminatório (Nota Zero)
 - O link do vídeo técnico foi inserido na **primeira página**, logo abaixo do e-mail do autor, conforme preconiza o edital:

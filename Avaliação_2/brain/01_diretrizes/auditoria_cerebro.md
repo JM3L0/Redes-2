@@ -5,7 +5,7 @@
 **Projeto Auditado:** Cérebro da 2ª Avaliação Prática — Redes de Computadores II (2026-2)  
 **Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
 **Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)  
-**Documento Base Auditado:** `Segunda Avaliação Redes 2.pdf` (Edital Oficial da N2)  
+**Documento Base Auditado:** `Segunda Avaliação Redes 2.pdf` (Edital Oficial da N2)  
 **Diretório Auditado:** `c:\Users\jsous\Desktop\Redes 2\Avaliação_2\`
 
 ---
@@ -33,7 +33,7 @@ Foram auditados 100% dos documentos criados para estruturar e orientar o projeto
 6. [`brain/02_arquitetura/arquitetura_e_docker.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/02_arquitetura/arquitetura_e_docker.md) — Topologia Mermaid, docker-compose.yml, NGINX HTTP/1.1, NGINX HTTPS TLS 1.3, Caddy HTTP/3 QUIC, SAN certs e regras `tc netem`.
 7. [`brain/03_experimentos/cenarios_de_teste.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/03_experimentos/cenarios_de_teste.md) — Cenário 1 (LAN), Cenário 2 (WAN), Cargas A (50MB) e B (100x10KB), matriz T01 a T12 com hipóteses científicas.
 8. [`brain/03_experimentos/metricas_e_analise_dados.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/03_experimentos/metricas_e_analise_dados.md) — Modelagem matemática de TTFB, Load Time, RPS, p50/p99, bias control (Cold TTFB vs Warm) e barras de erro obrigatórias.
-9. [`brain/04_entregaveis/relatorio_tecnico_academico.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/relatorio_tecnico_academico.md) — Modelo LaTeX SBC, link na 1ª página e fundamentação obrigatória Tanenbaum §6.5.11 (CUBIC) e §6.6.1/§6.6.2 (QUIC/BBR).
+9. [`brain/04_entregaveis/relatorio_tecnico_academico.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/relatorio_tecnico_academico.md) — Modelo LaTeX SBC, link na 1ª página e fundamentação obrigatória Tanenbaum Seção 6.5.11 (CUBIC) e Seções 6.6.1 e 6.6.2 (QUIC/BBR).
 10. [`brain/04_entregaveis/roteiro_video_15min.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/roteiro_video_15min.md) — Roteiro minuto a minuto (00:00 a 15:00) com falas roteirizadas, ações em tela e checklist pré-gravação.
 11. [`brain/05_prompts_ia/guia_de_prompts_ia.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/05_prompts_ia/guia_de_prompts_ia.md) — 6 prompts prontos para orquestrar e acelerar o desenvolvimento com agentes de IA.
 12. [`brain/06_relatorios_de_fases/README.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/06_relatorios_de_fases/README.md) — Índice do diário de bordo.
@@ -89,8 +89,8 @@ Foram auditados 100% dos documentos criados para estruturar e orientar o projeto
 | :--- | :---: | :--- |
 | **Padrão Formal Acadêmico** | ✅ CONFORME | Estruturado no modelo oficial SBC / SBRC (LaTeX), contendo Resumo, Abstract, Introdução, Teoria, Metodologia, Resultados e Conclusão. |
 | **LINK DO VÍDEO NA 1ª PÁGINA (CRÍTICO)** | ✅ CONFORME | Instruções detalhadas de inclusão do link do YouTube logo na primeira página, alertando que a omissão acarreta **NOTA ZERO (0,0)** imediata. |
-| **Fundamentação em Tanenbaum §6.5.11 (CUBIC)** | ✅ CONFORME | Equacionamento matemático da função cúbica $W_{\text{cubic}}(t) = C(t - K)^3 + W_{\text{max}}$ e justificativa analítica do colapso de throughput no T04/T05 sob 2% de perda estocástica e RTT de 50ms. |
-| **Fundamentação em Tanenbaum §6.6.1/§6.6.2 (QUIC/BBR)** | ✅ CONFORME | Justificativa analítica da resiliência de T06/T12 via isolamento de streams UDP e controle de pacing baseado em taxa real e RTT mínimo (BBR), sem retração ingênua de janela. |
+| **Fundamentação em Tanenbaum Seção 6.5.11 (CUBIC)** | ✅ CONFORME | Equacionamento matemático da função cúbica $W_{\text{cubic}}(t) = C(t - K)^3 + W_{\text{max}}$ e justificativa analítica do colapso de throughput no T04/T05 sob 2% de perda estocástica e RTT de 50ms. |
+| **Fundamentação em Tanenbaum Seções 6.6.1 e 6.6.2 (QUIC/BBR)** | ✅ CONFORME | Justificativa analítica da resiliência de T06/T12 via isolamento de streams UDP e controle de pacing baseado em taxa real e RTT mínimo (BBR), sem retração ingênua de janela. |
 | **Consolidação em Tabelas** | ✅ CONFORME | Planejamento de tabelas contendo médias, medianas, desvios-padrão, p50 e p99 para todos os 12 testes. |
 
 ---
@@ -99,11 +99,11 @@ Foram auditados 100% dos documentos criados para estruturar e orientar o projeto
 
 | Risco Previsto no Edital | Impacto Potencial | Mecanismo de Prevenção Implementado | Status de Mitigação |
 | :--- | :---: | :--- | :---: |
-| **Ausência de comando único `run_experiments.sh`** | **-15 Pontos** | Especificação dos orquestradores `run_experiments.sh` e `run_experiments.ps1` com automação total de ponta a ponta. | 🛡️ **BLINDADO** |
-| **Falta de controle de viés de sessão no TTFB** | **-10 Pontos** | Módulo `benchmark/session_control.py` com fechamento explícito de conexão (`client.close()`) por amostra de TTFB. | 🛡️ **BLINDADO** |
-| **Gráficos sem barras de erro** | **-10 Pontos** | Inclusão mandatória do parâmetro `yerr` (desvio padrão / IC 95%) em todos os plots do `analysis/plot_results.py`. | 🛡️ **BLINDADO** |
-| **Relatório puramente descritivo sem Tanenbaum** | **-20 Pontos** | Guia de redação no `relatorio_tecnico_academico.md` com dedução matemática de Tanenbaum §6.5.11 e §6.6.1/§6.6.2. | 🛡️ **BLINDADO** |
-| **Omissão de código, relatório ou link do vídeo** | **NOTA ZERO (0,0)** | Checklists pré-submissão e posicionamento mandatório do link na 1ª página do LaTeX. | 🛡️ **BLINDADO** |
+| **Ausência de comando único `run_experiments.sh`** | **-15 Pontos** | Especificação dos orquestradores `run_experiments.sh` e `run_experiments.ps1` com automação total de ponta a ponta. | 🛡 **BLINDADO** |
+| **Falta de controle de viés de sessão no TTFB** | **-10 Pontos** | Módulo `benchmark/session_control.py` com fechamento explícito de conexão (`client.close()`) por amostra de TTFB. | 🛡 **BLINDADO** |
+| **Gráficos sem barras de erro** | **-10 Pontos** | Inclusão mandatória do parâmetro `yerr` (desvio padrão / IC 95%) em todos os plots do `analysis/plot_results.py`. | 🛡 **BLINDADO** |
+| **Relatório puramente descritivo sem Tanenbaum** | **-20 Pontos** | Guia de redação no `relatorio_tecnico_academico.md` com dedução matemática de Tanenbaum Seção 6.5.11 e Seções 6.6.1 e 6.6.2. | 🛡 **BLINDADO** |
+| **Omissão de código, relatório ou link do vídeo** | **NOTA ZERO (0,0)** | Checklists pré-submissão e posicionamento mandatório do link na 1ª página do LaTeX. | 🛡 **BLINDADO** |
 
 ---
 
@@ -118,6 +118,6 @@ Foram auditados 100% dos documentos criados para estruturar e orientar o projeto
 
 ## 6. Conclusão Formal do Auditor
 
-O **Cérebro do Projeto da 2ª Avaliação** encontra-se em **perfeita conformidade técnica, metodológica e pedagógica** com a especificação fornecida em `Segunda Avaliação Redes 2.pdf`. Todas as exigências foram antecipadas e estruturadas em profundidade.
+O **Cérebro do Projeto da 2ª Avaliação** encontra-se em **perfeita conformidade técnica, metodológica e pedagógica** com a especificação fornecida em `Segunda Avaliação Redes 2.pdf`. Todas as exigências foram antecipadas e estruturadas em profundidade.
 
 **Recomendação:** Autorizar o avanço imediato para a **Fase 2 (Construção da Infraestrutura Docker e Configurações de Servidores)**.

@@ -30,7 +30,7 @@ A Fase 8 constitui a etapa de consolidação final e entrega dos artefatos:
   - Bloco 2 (02:00 - 04:30): Demonstração guiada do código Docker e arquitetura dos 3 servidores.
   - Bloco 3 (04:30 - 07:30): Código do cliente Python e controle estrito de viés de sessão.
   - Bloco 4 (07:30 - 10:30): Demonstração ao vivo do runner `run_experiments.sh` e testes T01-T12.
-  - Bloco 5 (10:30 - 13:30): Apresentação dos gráficos com barras de erro e fundamentação em Tanenbaum (§6.5.11 e §6.6.1/§6.6.2).
+  - Bloco 5 (10:30 - 13:30): Apresentação dos gráficos com barras de erro e fundamentação em Tanenbaum (Seção 6.5.11 e Seção 6.6.1/Seção 6.6.2).
   - Bloco 6 (13:30 - 15:00): Conclusão e encerramento.
 
 ---

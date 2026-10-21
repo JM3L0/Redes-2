@@ -10,7 +10,7 @@
 
 ## 1. Contexto e Objetivos da Fase
 
-A Fase 1 teve como meta o exame exaustivo e rigoroso do documento oficial de especificação do Trabalho Prático da 2ª Avaliação (`Segunda Avaliação Redes 2.pdf`), com peso de **50% da pontuação total da N2 (100 pontos totais)**. 
+A Fase 1 teve como meta o exame exaustivo e rigoroso do documento oficial de especificação do Trabalho Prático da 2ª Avaliação (`Segunda Avaliação Redes 2.pdf`), com peso de **50% da pontuação total da N2 (100 pontos totais)**. 
 
 A finalidade primordial foi conceber e estruturar a arquitetura de informação do projeto — o chamado **Cérebro do Projeto (`brain/`)** —, estabelecendo diretrizes técnicas, modelagem arquitetural de contêineres, definição da matriz experimental de 12 testes, equacionamento estatístico das métricas, checklist kanban e planejamento detalhado para evitar penalidades e a atribuição de nota zero.
 
@@ -44,7 +44,7 @@ Foi realizado o mapeamento das penalidades diretas para garantir conformidade es
 | Ausência de execução automatizada 1-click (`run_experiments.sh`) | **-15 Pontos** | Especificação e planejamento de `run_experiments.sh` e `run_experiments.ps1`. |
 | Falta de controle de viés de sessão no cliente Python | **-10 Pontos** | Modelagem de modos estritos: fechamento explícito de sessão (`client.close()`) para Cold TTFB vs canal persistente para Carga B. |
 | Ausência de barras de erro nos gráficos | **-10 Pontos** | Regra mandatória no pipeline Python de plotar barras de erro com desvio padrão ou IC 95% ($t=2.262, N=10$). |
-| Relatório descritivo sem fundamentação em Tanenbaum | **-20 Pontos** | Diretriz com modelos matemáticos de Tanenbaum §6.5.11 (TCP CUBIC) e §6.6.1/§6.6.2 (QUIC/BBR). |
+| Relatório descritivo sem fundamentação em Tanenbaum | **-20 Pontos** | Diretriz com modelos matemáticos de Tanenbaum Seção 6.5.11 (TCP CUBIC) e Seção 6.6.1/Seção 6.6.2 (QUIC/BBR). |
 | Falta de código, relatório ou vídeo de 15 minutos com link na 1ª página | **NOTA ZERO (0,0)** | Inclusão de checklist de validação pré-submissão e posicionamento mandatório do link no template LaTeX. |
 
 ---
@@ -81,7 +81,7 @@ Todos os documentos foram criados com profundidade e rigor em `c:\Users\jsous\De
 6. [`brain/02_arquitetura/arquitetura_e_docker.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/02_arquitetura/arquitetura_e_docker.md): Topologia de rede, docker-compose, configs de servidores e sintaxe do `tc netem`.
 7. [`brain/03_experimentos/cenarios_de_teste.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/03_experimentos/cenarios_de_teste.md): Configurações dos cenários LAN/WAN, Cargas A e B, e detalhamento exaustivo dos testes T01 a T12.
 8. [`brain/03_experimentos/metricas_e_analise_dados.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/03_experimentos/metricas_e_analise_dados.md): Fórmulas de TTFB, Goodput, RPS, percentis p50/p99, controle de viés e barras de erro obrigatórias.
-9. [`brain/04_entregaveis/relatorio_tecnico_academico.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/relatorio_tecnico_academico.md): Modelo acadêmico SBC, link de vídeo na 1ª página e fundamentação teórica obrigatória Tanenbaum §6.5.11 e §6.6.1/§6.6.2.
+9. [`brain/04_entregaveis/relatorio_tecnico_academico.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/relatorio_tecnico_academico.md): Modelo acadêmico SBC, link de vídeo na 1ª página e fundamentação teórica obrigatória Tanenbaum Seção 6.5.11 e Seção 6.6.1/Seção 6.6.2.
 10. [`brain/04_entregaveis/roteiro_video_15min.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/roteiro_video_15min.md): Roteiro minuto a minuto (00:00 a 15:00) com falas prontas e transições.
 11. [`brain/05_prompts_ia/guia_de_prompts_ia.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/05_prompts_ia/guia_de_prompts_ia.md): 6 prompts estruturados para orientar o desenvolvimento com IAs nas fases seguintes.
 12. [`brain/06_relatorios_de_fases/README.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/06_relatorios_de_fases/README.md): Índice do diário de bordo.

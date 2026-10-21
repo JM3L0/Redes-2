@@ -11,7 +11,7 @@ Este diretório centraliza todo o conhecimento técnico, arquitetural, científi
 
 ---
 
-## 🗺️ Estrutura Temática do Cérebro
+## 🗺 Estrutura Temática do Cérebro
 
 ```text
 brain/
@@ -30,7 +30,7 @@ brain/
 │   └── metricas_e_analise_dados.md            # Fórmulas de TTFB, Load Time, RPS, p50/p99, bias control, rigor estatístico (IC 95%) e gráficos com barras de erro
 │
 ├── 04_entregaveis/                            # Materiais de avaliação final
-│   ├── relatorio_tecnico_academico.md         # Estrutura do artigo LaTeX SBC, citação de Tanenbaum §6.5.11 (CUBIC) e §6.6.1/§6.6.2 (QUIC/BBR), link do vídeo
+│   ├── relatorio_tecnico_academico.md         # Estrutura do artigo LaTeX SBC, citação de Tanenbaum Seção 6.5.11 (CUBIC) e Seções 6.6.1 e 6.6.2 (QUIC/BBR), link do vídeo
 │   └── roteiro_video_15min.md                 # Roteiro cronometrado minuto a minuto (00:00 a 15:00) para apresentação e demo ao vivo
 │
 ├── 05_prompts_ia/                             # Aceleração e automação com IAs
@@ -54,7 +54,7 @@ brain/
 - [**`01_diretrizes/checklist_progresso.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/01_diretrizes/checklist_progresso.md): Acompanhe o status e tarefas das 8 fases do projeto.
 - [**`01_diretrizes/auditoria_cerebro.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/01_diretrizes/auditoria_cerebro.md): Parecer formal da auditoria técnica com verificação de 100% de conformidade.
 
-### 🏗️ 2. Arquitetura & Docker
+### 🏗 2. Arquitetura & Docker
 - [**`02_arquitetura/arquitetura_e_docker.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/02_arquitetura/arquitetura_e_docker.md): Topologia de contêineres na rede `net_bench` (172.20.0.0/16), configuração dos 3 servidores (Nginx e Caddy), certificados TLS 1.3 locais e permissão `cap_add: NET_ADMIN`.
 
 ### 🧪 3. Experimentos & Métricas
@@ -62,7 +62,7 @@ brain/
 - [**`03_experimentos/metricas_e_analise_dados.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/03_experimentos/metricas_e_analise_dados.md): Definições de TTFB, RPS, Load Time, p50/p99, controle de vício de sessão (Cold TTFB vs Warm) e obrigatoriedade de barras de erro.
 
 ### 📄 4. Entregáveis Oficiais
-- [**`04_entregaveis/relatorio_tecnico_academico.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/relatorio_tecnico_academico.md): Guia de redação no padrão SBC, modelo de citação obrigatória de Tanenbaum §6.5.11 (CUBIC) e §6.6.1/§6.6.2 (QUIC/BBR), e posicionamento do link do vídeo na 1ª página.
+- [**`04_entregaveis/relatorio_tecnico_academico.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/relatorio_tecnico_academico.md): Guia de redação no padrão SBC, modelo de citação obrigatória de Tanenbaum Seção 6.5.11 (CUBIC) e Seções 6.6.1 e 6.6.2 (QUIC/BBR), e posicionamento do link do vídeo na 1ª página.
 - [**`04_entregaveis/roteiro_video_15min.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/roteiro_video_15min.md): Divisão cronometrada de 15 minutos para apresentação, código, demonstração ao vivo e discussão dos gráficos.
 
 ### 🤖 5. Prompts para IAs

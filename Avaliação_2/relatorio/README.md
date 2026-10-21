@@ -11,12 +11,12 @@
 
 - `sbc-template.tex`: Código-fonte LaTeX formatado rigorosamente no padrão SBC/SBRC.
 - `sbc.sty`: Pacote de estilo oficial da Sociedade Brasileira de Computação (SBC).
-- `relatorio.bib`: Base de referências bibliográficas com Tanenbaum (§6.5.11, §6.6.1, §6.6.2) e todas as RFCs do IETF (RFC 793, 7540, 8446, 9000, 9001, 9114).
+- `relatorio.bib`: Base de referências bibliográficas com Tanenbaum (Seção 6.5.11, Seção 6.6.1, Seção 6.6.2) e todas as RFCs do IETF (RFC 793, 7540, 8446, 9000, 9001, 9114).
 - `sbc-template.pdf`: Documento final compilado em alta resolução.
 
 ---
 
-## 🛠️ Instruções de Compilação
+## 🛠 Instruções de Compilação
 
 Para compilar o artigo e resolver todas as citações bibliográficas e referências cruzadas:
 
@@ -35,7 +35,7 @@ pdflatex -interaction=nonstopmode sbc-template.tex
 
 1. **Link do Vídeo no YouTube:** Posicionado logo abaixo dos dados do autor na **Página 1** (critério eliminatório contra nota zero).
 2. **Fundamentação Teórica Mandatória:**
-   - Citação analítica de **Tanenbaum §6.5.11** para explicar a retração multiplicativa e colapso do TCP CUBIC sob 2% de perda na WAN;
-   - Citação de **Tanenbaum §6.6.1 e §6.6.2** para demonstrar a imunidade ao HoL blocking e o controle de pacing do QUIC/BBR.
+   - Citação analítica de **Tanenbaum Seção 6.5.11** para explicar a retração multiplicativa e colapso do TCP CUBIC sob 2% de perda na WAN;
+   - Citação de **Tanenbaum Seções 6.6.1 e 6.6.2** para demonstrar a imunidade ao HoL blocking e o controle de pacing do QUIC/BBR.
 3. **Visualização Científica:** Todas as figuras citadas contêm **barras de erro obrigatórias** (evitando a penalidade de -10 pontos).
 4. **Tabela de Consolidação Numérica:** Média, desvio padrão, percentis p50 e p99, Throughput e RPS para todos os 12 testes (T01 a T12).

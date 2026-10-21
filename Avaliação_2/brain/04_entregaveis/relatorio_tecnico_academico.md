@@ -95,14 +95,14 @@ Apresentação de tabelas com dados consolidados para os 12 testes:
 > ### EXIGÊNCIA EXPRESSA DO EDITAL (-20 PONTOS SE FALTAR):
 > O edital prescreve que o relatório **não pode ser meramente descritivo**. A discussão dos dados deve confrontar os números observados com a literatura clássica:
 >
-> 1. **Tanenbaum §6.5.11 (TCP CUBIC):**  
+> 1. **Tanenbaum Seção 6.5.11 (TCP CUBIC):**  
 >    Utilizar para fundamentar analiticamente o colapso de throughput e elevação de latência observado nos testes **T04** (HTTP/1.1 WAN) e **T05** (HTTP/2 WAN).  
 >    - Demonstrar matematicamente a função de janela cúbica do CUBIC:  
 >      $$W_{\text{cubic}}(t) = C (t - K)^3 + W_{\text{max}}$$  
 >      onde $C$ é a constante de escala, $t$ é o tempo transcorrido desde a última redução de janela, $W_{\text{max}}$ é o tamanho da janela no instante da perda e $K = \sqrt[3]{(W_{\text{max}} \beta) / C}$.
 >    - Explicar por que a injeção contínua de 2% de perda estocástica impede o CUBIC de alcançar a fase côncava/convexa de saturação de banda, forçando sucessivas retrações multiplicativas ($\beta = 0.7$) e mantendo a janela *cwnd* permanentemente estrangulada em canais com RTT de 50ms.
 >
-> 2. **Tanenbaum §6.6.1 (QUIC) e §6.6.2 (BBR):**  
+> 2. **Tanenbaum Seção 6.6.1 (QUIC) e Seção 6.6.2 (BBR):**  
 >    Utilizar para justificar por que os testes **T06** (Carga A QUIC WAN) e **T12** (Carga B QUIC WAN) sustentam alto desempenho e RPS superior sob as mesmíssimas condições adversas.  
 >    - Explicar como o QUIC elimina o HoL blocking na camada de transporte ao encapsular fluxos independentes em datagramas UDP separados, garantindo que o descarte de um pacote atrase apenas a entrega do stream correspondente, sem congelar os buffers dos 99 streams restantes.  
 >    - Descrever como os algoritmos modernos de controle de congestionamento associados ao QUIC (como o BBR — *Bottleneck Bandwidth and RTT*) dissociam a perda de pacotes da estimativa de capacidade do enlace, regulando a injeção de pacotes pelo modelo de ritmo (*pacing*) fundamentado na largura de banda de gargalo real e no RTT mínimo de propagação física.

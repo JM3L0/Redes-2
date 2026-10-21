@@ -83,9 +83,9 @@ Com base no referencial teórico clássico de redes (Tanenbaum, Kurose & Ross, R
 | **T01** | Carga A (50 MB) | HTTP/1.1 | `server_http11` | Cenário 1 (LAN: 1ms, 0%) | Vazão máxima TCP em canal ideal sem criptografia |
 | **T02** | Carga A (50 MB) | HTTPS / TLS 1.3 | `server_http2_tls` | Cenário 1 (LAN: 1ms, 0%) | Custo computacional de cifragem simétrica do TLS 1.3 |
 | **T03** | Carga A (50 MB) | HTTP/3 (QUIC) | `server_http3_quic` | Cenário 1 (LAN: 1ms, 0%) | Eficiência do protocolo QUIC em user-space sem perdas |
-| **T04** | Carga A (50 MB) | HTTP/1.1 | `server_http11` | Cenário 2 (WAN: 50ms, 2%) | Sensibilidade do TCP CUBIC a perdas e latência (Tanenbaum §6.5.11) |
+| **T04** | Carga A (50 MB) | HTTP/1.1 | `server_http11` | Cenário 2 (WAN: 50ms, 2%) | Sensibilidade do TCP CUBIC a perdas e latência (Tanenbaum Seção 6.5.11) |
 | **T05** | Carga A (50 MB) | HTTPS / TLS 1.3 | `server_http2_tls` | Cenário 2 (WAN: 50ms, 2%) | Degradação do TCP CUBIC + TLS sob perdas estocásticas |
-| **T06** | Carga A (50 MB) | HTTP/3 (QUIC) | `server_http3_quic` | Cenário 2 (WAN: 50ms, 2%) | Controle de congestionamento do QUIC sob perdas (Tanenbaum §6.6.1/§6.6.2) |
+| **T06** | Carga A (50 MB) | HTTP/3 (QUIC) | `server_http3_quic` | Cenário 2 (WAN: 50ms, 2%) | Controle de congestionamento do QUIC sob perdas (Tanenbaum Seções 6.6.1 e 6.6.2) |
 | **T07** | Carga B (100x10KB) | HTTP/1.1 | `server_http11` | Cenário 1 (LAN: 1ms, 0%) | Overhead de múltiplos handshakes TCP paralelos |
 | **T08** | Carga B (100x10KB) | HTTPS / TLS 1.3 | `server_http2_tls` | Cenário 1 (LAN: 1ms, 0%) | Eficiência da multiplexação HTTP/2 em canal de baixa latência |
 | **T09** | Carga B (100x10KB) | HTTP/3 (QUIC) | `server_http3_quic` | Cenário 1 (LAN: 1ms, 0%) | Desempenho de fluxos QUIC independentes em rede ideal |
@@ -102,7 +102,7 @@ Com base no referencial teórico clássico de redes (Tanenbaum, Kurose & Ross, R
 | **1. Infraestrutura Docker e Emulação `tc netem`** | **25 Pontos** | Funcionamento correto dos 3 servidores (HTTP/1.1, HTTPS/TLS 1.3, HTTP/3). Uso correto de `cap_add: NET_ADMIN`. Precisão sintática nos comandos `tc netem` garantindo RTT de 1ms (LAN) e 50ms com 2% de perda (WAN). Automação de limpeza da interface. |
 | **2. Cliente de Benchmark em Python** | **25 Pontos** | Código assíncrono com `httpx` e `aioquic`. Implementação estrita do controle de viés de sessão (fechamento para cold TTFB vs canal persistente para multiplexação). Execução perfeita das Cargas A e B. Exportação obrigatória para `results.json`/`results.csv`. |
 | **3. Qualidade da Coleta e Visualização Gráfica** | **20 Pontos** | Rigor estatístico nas medições ($N \ge 10$). Cálculo preciso de TTFB, RPS, p50 e p99. Gráficos construídos em Python (`matplotlib`/`seaborn`) exibindo **obrigatoriamente barras de erro** (desvio padrão / intervalos de confiança de 95%), eixos rotulados e legendas claras. |
-| **4. Relatório Técnico e Discussão Teórica** | **30 Pontos** | Profundidade analítica formal. Capacidade de explicar os gargalos empíricos com base na teoria. **Citação obrigatória e articulação detalhada com Tanenbaum §6.5.11 (TCP CUBIC) e §6.6.1/§6.6.2 (QUIC e BBR)** para justificativa dos cenários WAN. |
+| **4. Relatório Técnico e Discussão Teórica** | **30 Pontos** | Profundidade analítica formal. Capacidade de explicar os gargalos empíricos com base na teoria. **Citação obrigatória e articulação detalhada com Tanenbaum Seção 6.5.11 (TCP CUBIC) e Seções 6.6.1 e 6.6.2 (QUIC e BBR)** para justificativa dos cenários WAN. |
 
 ---
 

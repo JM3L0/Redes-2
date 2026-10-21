@@ -3,11 +3,11 @@
 \usepackage{sbc}
 \usepackage{graphicx}
 \usepackage{url}
+\usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[brazil]{babel}
+\usepackage[brazilian]{babel}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
-\usepackage{cite}
 \usepackage{microtype}
 \usepackage{subcaption}
 \usepackage{hyperref}
@@ -29,9 +29,8 @@ sob Degradação Controlada de Canal com Docker e Python}
 
 \address{Departamento de Computação -- Universidade Federal do Piauí (UFPI)\\
   Campus Senador Helvídio Nunes de Barros (CSHNB) -- Picos -- PI -- Brasil\\
-  \email{jsousarufinoleal@ufpi.edu.br}
-  \vspace{0.35cm}
-  \newline
+  \texttt{jsousarufinoleal@ufpi.edu.br}
+  \par\vspace{0.35cm}
   \textbf{Vídeo de Apresentação e Demonstração Técnica (15 Minutos):} \\
   \url{https://youtu.be/DEMO_UFPI_REDES2_H3_BENCHMARK}
 }
@@ -41,11 +40,11 @@ sob Degradação Controlada de Canal com Docker e Python}
 \maketitle
 
 \begin{abstract}
-Este trabalho apresenta uma investigação empírica rigorosa sobre a evolução arquitetural dos protocolos da Camada de Aplicação e de Transporte da Web moderna, comparando o HTTP/1.1 em texto claro sobre TCP, o HTTPS/HTTP/2 protegido por TLS 1.3 e o HTTP/3 nativo sobre QUIC/UDP. A bancada experimental foi construída em ambiente virtualizado com contêineres Docker isolados, onde a manipulação física das condições de canal foi injetada via Linux Traffic Control (\texttt{tc netem}) em dois cenários: Rede Local (LAN, RTT de 1.0~ms, 0\% de perda) e Rede Geográfica/Móvel (WAN, RTT de 50.0~ms, 2\% de perda estocástica). Um cliente assíncrono dedicado em Python (\texttt{httpx} e \texttt{aioquic}) foi implementado com mecanismos estritos de controle de viés de sessão, distinguindo a latência pura de conexão (\textit{Cold TTFB}) da concorrência multiplexada (\textit{Warm Connection}) sobre duas cargas de trabalho sintéticas (Carga A de 50~MB e Carga B de 100 objetos de 10~KB). Os resultados evidenciam que o HTTP/1.1 e o HTTP/2 sofrem um colapso drástico de vazão útil no cenário WAN (superior a 98\%), fenômeno fundamentado pela função cúbica de janela e retrações multiplicativas do algoritmo TCP CUBIC (\cite{tanenbaum2021}, §6.5.11). Por outro lado, o HTTP/3 demonstra superior resiliência ao isolar descartes em fluxos UDP independentes e empregar princípios modernos de controle de congestionamento (\cite{tanenbaum2021}, §6.6.1 e §6.6.2), mitigando completamente o Bloqueio de Início de Linha (\textit{Head-of-Line Blocking}) na aplicação e no transporte.
+Este trabalho apresenta uma investigação empírica rigorosa sobre a evolução arquitetural dos protocolos da Camada de Aplicação e de Transporte da Web moderna, comparando o HTTP/1.1 em texto claro sobre TCP, o HTTPS/HTTP/2 protegido por TLS 1.3 e o HTTP/3 nativo sobre QUIC/UDP. A bancada experimental foi construída em ambiente virtualizado com contêineres Docker isolados, onde a manipulação física das condições de canal foi injetada via Linux Traffic Control (\texttt{tc netem}) em dois cenários: Rede Local (LAN, RTT de 1.0~ms, 0\% de perda) e Rede Geográfica/Móvel (WAN, RTT de 50.0~ms, 2\% de perda estocástica). Um cliente assíncrono dedicado em Python (\texttt{httpx} e \texttt{aioquic}) foi implementado com mecanismos estritos de controle de viés de sessão, distinguindo a latência pura de conexão (\textit{Cold TTFB}) da concorrência multiplexada (\textit{Warm Connection}) sobre duas cargas de trabalho sintéticas (Carga A de 50~MB e Carga B de 100 objetos de 10~KB). Os resultados evidenciam que o HTTP/1.1 e o HTTP/2 sofrem um colapso drástico de vazão útil no cenário WAN (superior a 98\%), fenômeno fundamentado pela função cúbica de janela e retrações multiplicativas do algoritmo TCP CUBIC \cite{tanenbaum2021}. Por outro lado, o HTTP/3 demonstra superior resiliência ao isolar descartes em fluxos UDP independentes e empregar princípios modernos de controle de congestionamento \cite{tanenbaum2021}, mitigando completamente o Bloqueio de Início de Linha (\textit{Head-of-Line Blocking}) na aplicação e no transporte.
 \end{abstract}
 
 \begin{englishabstract}
-This paper presents a rigorous empirical investigation into the architectural evolution of modern Web protocols across the Application and Transport layers, comparing cleartext HTTP/1.1 over TCP, HTTPS/HTTP/2 secured by TLS 1.3, and native HTTP/3 over QUIC/UDP. The experimental testbed was deployed using isolated Docker containers, where physical network impairments were emulated via Linux Traffic Control (\texttt{tc netem}) across two realistic scenarios: Local Area Network (LAN, 1.0~ms RTT, 0\% loss) and Wide Area Network (WAN, 50.0~ms RTT, 2\% stochastic loss). A dedicated asynchronous Python benchmark client (\texttt{httpx} and \texttt{aioquic}) was developed incorporating strict client-side session bias control, isolating raw initial connection latency (\textit{Cold TTFB}) from multiplexed throughput (\textit{Warm Connection}) across two synthetic workloads (Workload A: 50~MB; Workload B: 100 files of 10~KB). Experimental findings demonstrate that HTTP/1.1 and HTTP/2 suffer a throughput collapse exceeding 98\% under WAN loss, analytically explained by the cubic window growth function and multiplicative decrease of TCP CUBIC (\cite{tanenbaum2021}, §6.5.11). Conversely, HTTP/3 exhibits superior resilience by encapsulating streams into independent UDP datagrams and adopting advanced congestion control models (\cite{tanenbaum2021}, §6.6.1 and §6.6.2), fully eliminating Head-of-Line Blocking across application and transport buffers.
+This paper presents a rigorous empirical investigation into the architectural evolution of modern Web protocols across the Application and Transport layers, comparing cleartext HTTP/1.1 over TCP, HTTPS/HTTP/2 secured by TLS 1.3, and native HTTP/3 over QUIC/UDP. The experimental testbed was deployed using isolated Docker containers, where physical network impairments were emulated via Linux Traffic Control (\texttt{tc netem}) across two realistic scenarios: Local Area Network (LAN, 1.0~ms RTT, 0\% loss) and Wide Area Network (WAN, 50.0~ms RTT, 2\% stochastic loss). A dedicated asynchronous Python benchmark client (\texttt{httpx} and \texttt{aioquic}) was developed incorporating strict client-side session bias control, isolating raw initial connection latency (\textit{Cold TTFB}) from multiplexed throughput (\textit{Warm Connection}) across two synthetic workloads (Workload A: 50~MB; Workload B: 100 files of 10~KB). Experimental findings demonstrate that HTTP/1.1 and HTTP/2 suffer a throughput collapse exceeding 98\% under WAN loss, analytically explained by the cubic window growth function and multiplicative decrease of TCP CUBIC \cite{tanenbaum2021}. Conversely, HTTP/3 exhibits superior resilience by encapsulating streams into independent UDP datagrams and adopting advanced congestion control models \cite{tanenbaum2021}, fully eliminating Head-of-Line Blocking across application and transport buffers.
 \end{englishabstract}
 
 % ==============================================================================
@@ -84,7 +83,7 @@ O fenômeno do HoL blocking expressa o retardo forçado de pacotes corretos agua
 \begin{equation}
     T_{\text{espera\_stream\_k}} = T_{\text{RTT}} + T_{\text{retransmissão\_segmento\_perdido}}
 \end{equation}
-No HTTP/2 sobre TCP, embora as mensagens sejam fragmentadas em quadros identificados por identificadores de fluxo (\textit{stream IDs}), a pilha do sistema operacional enxerga um único fluxo de bytes contínuo. Conforme demonstrado em \cite{tanenbaum2021}, o descarte de um segmento causa o estol (\textit{stall}) de processamento na camada de transporte. No HTTP/3, como cada stream possui controle de fluxo e sequenciamento independentes no espaço de usuário, a perda de um datagrama UDP impacta estritamente a mensagem correspondente, permitindo que todos os demais fluxos continuem sendo entregues imediatamente à aplicação.
+No HTTP/2 sobre TCP, embora as mensagens sejam fragmentadas em quadros identificados por identificadores de fluxo (\textit{stream IDs}), a pilha do sistema operacional enxerga um único fluxo de bytes contínuo. Conforme demonstrado na literatura clássica por \cite{tanenbaum2021}, o descarte de um segmento causa o estol (\textit{stall}) de processamento na camada de transporte. No HTTP/3, como cada stream possui controle de fluxo e sequenciamento independentes no espaço de usuário, a perda de um datagrama UDP impacta estritamente a mensagem correspondente, permitindo que todos os demais fluxos continuem sendo entregues imediatamente à aplicação.
 
 % ==============================================================================
 \section{Metodologia Experimental e Ambiente de Testes}
@@ -161,7 +160,7 @@ A Figura~\ref{fig:ttfb} ilustra o comportamento do TTFB inicial sob os modos LAN
 
 No Cenário 2 (WAN, RTT de 50.0~ms), essa disparidade se amplifica severamente: o HTTPS/HTTP/2 atingiu 118.42~ms de TTFB (aproximadamente $2 \times \text{RTT}$ teóricos somados ao processamento local), ao passo que o HTTP/3 completou o procedimento conjunto em 54.10~ms ($1 \times \text{RTT}$ integrado sobre UDP), comprovando a eliminação da penalidade de ida e volta adicional da camada TLS.
 
-\subsection{Colapso de Throughput no TCP CUBIC sob Perdas: Fundamentação Tanenbaum §6.5.11}
+\subsection{Colapso de Throughput no TCP CUBIC sob Perdas: Fundamentação Tanenbaum (Seção 6.5.11)}
 O teste de transferência massiva da Carga A (50~MB) revelou o contraste de comportamento mais expressivo da bancada. Conforme exposto na Figura~\ref{fig:throughput}, o HTTP/1.1 em canal LAN alcançou 330.09~Mbps de vazão útil. Contudo, ao ser submetido ao Cenário WAN com 2\% de perda estocástica (T04), sua vazão sofreu um colapso para 4.95~Mbps — uma redução drástica de 98.5\%. De modo idêntico, o HTTPS/HTTP/2 despencou de 151.53~Mbps para 4.70~Mbps (T05).
 
 \begin{figure}[htbp]
@@ -171,7 +170,7 @@ O teste de transferência massiva da Carga A (50~MB) revelou o contraste de comp
 \label{fig:throughput}
 \end{figure}
 
-Esse colapso é explicado com rigor analítico pelos fundamentos teóricos de \cite{tanenbaum2021} (§6.5.11 - Controle de Congestionamento no TCP CUBIC). Diferente dos algoritmos baseados em AIMD linear (como o TCP Reno), o TCP CUBIC substitui a rampa linear por uma função cúbica que relaciona o tamanho da janela de congestionamento ($W_{\text{cubic}}$) com o tempo real transcorrido ($t$) desde a última redução de janela:
+Esse colapso é explicado com rigor analítico pelos fundamentos teóricos de Tanenbaum et~al. \cite{tanenbaum2021} sobre o Controle de Congestionamento no TCP CUBIC (Seção 6.5.11). Diferente dos algoritmos baseados em AIMD linear (como o TCP Reno), o TCP CUBIC substitui a rampa linear por uma função cúbica que relaciona o tamanho da janela de congestionamento ($W_{\text{cubic}}$) com o tempo real transcorrido ($t$) desde a última redução de janela:
 \begin{equation}
     W_{\text{cubic}}(t) = C \cdot (t - K)^3 + W_{\text{max}}
 \end{equation}
@@ -183,7 +182,7 @@ sendo $\beta = 0.7$ o coeficiente de recuo multiplicativo pós-perda do CUBIC.
 
 Em um canal ideal (LAN), a ausência de perdas permite ao CUBIC ultrapassar $W_{\text{max}}$ e entrar na região convexa de expansão agressiva de banda. Entretanto, em um canal WAN com 2.0\% de perda de pacotes e RTT de 50~ms, uma transferência de 50~MB ($\approx 35.000$ pacotes IP) sofre cerca de 700 descartes aleatórios. O intervalo médio entre perdas ($\Delta t_{\text{loss}} \approx 70\text{ ms}$) é consideravelmente inferior ao período $K$ necessário para que a função cúbica alcance o platô $W_{\text{max}}$. Em consequência, o transmissor TCP é submetido a sucessivas retrações multiplicativas de 30\% na janela, mantendo o \textit{cwnd} permanentemente estrangulado em valores residuais próximos a poucos pacotes e forçando constantes estols de retransmissão no buffer de saída.
 
-\subsection{Resiliência do QUIC e Mitigação do HoL Blocking: Fundamentação Tanenbaum §6.6.1 e §6.6.2}
+\subsection{Resiliência do QUIC e Mitigação do HoL Blocking: Fundamentação Tanenbaum (Seções 6.6.1 e 6.6.2)}
 Em contrapartida à vulnerabilidade do TCP, o HTTP/3 demonstrou manutenção de desempenho e ampla superioridade na Carga B (100 objetos), conforme sintetizado na Figura~\ref{fig:load_time} e na taxa de RPS sob perdas da Figura~\ref{fig:rps}.
 
 \begin{figure}[htbp]
@@ -202,7 +201,7 @@ Em contrapartida à vulnerabilidade do TCP, o HTTP/3 demonstrou manutenção de 
 \end{minipage}
 \end{figure}
 
-No teste T12 (Carga B na WAN), o HTTP/3 concluiu o carregamento em 1.15~s, atingindo uma taxa de 86.9~requisições por segundo. Em contrapartida, o HTTP/2 demorou 3.20~s (31.2 RPS) e o HTTP/1.1 levou 4.85~s (20.6 RPS). A explicação teórica para esse comportamento encontra-se detalhada em \cite{tanenbaum2021} (§6.6.1 - QUIC e §6.6.2 - BBR):
+No teste T12 (Carga B na WAN), o HTTP/3 concluiu o carregamento em 1.15~s, atingindo uma taxa de 86.9~requisições por segundo. Em contrapartida, o HTTP/2 demorou 3.20~s (31.2 RPS) e o HTTP/1.1 levou 4.85~s (20.6 RPS). A explicação teórica para esse comportamento encontra-se detalhada na formulação de Tanenbaum et~al. \cite{tanenbaum2021} sobre os mecanismos do QUIC e do BBR (Seções 6.6.1 e 6.6.2):
 \begin{enumerate}
     \item \textbf{Independência de Streams UDP (Isolamento de HoL Blocking):} No HTTP/2, os 100 objetos compartilham uma única fila TCP com garantia de entrega estritamente ordenada. A perda de 2\% dos pacotes interrompe a liberação dos objetos nos buffers de socket até o recebimento dos segmentos retransmitidos. Já no QUIC, os 100 objetos são mapeados em 100 streams UDP independentes; a perda de um datagrama afeta exclusivamente os bytes do fluxo correspondente, enquanto as 99 streams restantes progridem sem interrupção.
     \item \textbf{Desacoplamento de Perda e Capacidade de Enlace (BBR):} Os algoritmos modernos de controle associados ao ecossistema QUIC regulam a taxa de envio através de estimativas contínuas da largura de banda de gargalo ($BtlBw$) e do RTT de propagação em duas vias em regime limpo ($RTprop$). Diferente do CUBIC, que interpreta qualquer perda pontual como indicativo unívoco de saturação física de fila, o modelo QUIC/BBR emprega \textit{pacing} de pacotes baseado na taxa real de trânsito, mantendo alta vazão mesmo sob ruído estocástico de canal.

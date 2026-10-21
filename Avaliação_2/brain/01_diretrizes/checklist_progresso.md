@@ -17,7 +17,7 @@
 | **Fase 4** | Desenvolvimento do Cliente de Benchmark Python Assíncrono (`httpx` + `aioquic`) | ✅ CONCLUÍDA |
 | **Fase 5** | Automação Runner 1-Click (`run_experiments.sh` / `.ps1`) e Execução dos 12 Testes | ✅ CONCLUÍDA |
 | **Fase 6** | Pipeline de Análise Estatística e Visualização com Barras de Erro Obrigatórias | ✅ CONCLUÍDA |
-| **Fase 7** | Redação do Relatório Técnico com Fundamentação Tanenbaum (§6.5.11 e §6.6.1/§6.6.2) | ✅ CONCLUÍDA |
+| **Fase 7** | Redação do Relatório Técnico com Fundamentação Tanenbaum (Seção 6.5.11 e Seções 6.6.1 e 6.6.2) | ✅ CONCLUÍDA |
 | **Fase 8** | Gravação do Vídeo de 15 Minutos, Auditoria Pré-Submissão e Empacotamento | ⏳ EM ANDAMENTO |
 
 ---
@@ -25,7 +25,7 @@
 ## 📋 Itens Detalhados por Fase
 
 ### Fase 1: Análise e Estruturação do Cérebro
-- [x] Leitura completa e extração textual de `Segunda Avaliação Redes 2.pdf`.
+- [x] Leitura completa e extração textual de `Segunda Avaliação Redes 2.pdf`.
 - [x] Mapeamento dos 3 fenômenos: Overhead de Handshake (1 RTT vs 2 RTTs vs 1 RTT), HoL Blocking (aplicação vs transporte vs eliminação em fluxos UDP), e Controle de Congestionamento (CUBIC vs BBR sob 2% de perda).
 - [x] Identificação de todas as penalidades (-15pts sem runner 1-click, -10pts sem controle de viés de sessão, -10pts sem barras de erro, -20pts relatório puramente descritivo).
 - [x] Identificação do critério eliminatório crítico (falta de código, relatório em PDF ou link do vídeo de 15min = NOTA ZERO 0,0).
@@ -99,8 +99,8 @@
 - [x] Seção 4: Resultados Experimentais e Discussão:
   - Tabelas de consolidação com médias, medianas, desvio padrão, p50 e p99.
   - Figuras com barras de erro de alta resolução (300 DPI).
-  - **Articulação obrigatória com Tanenbaum §6.5.11 (TCP CUBIC)**: justificativa matemática e conceitual do colapso no T04 e T05 sob 2% de perda estocástica na WAN.
-  - **Articulação obrigatória com Tanenbaum §6.6.1 (QUIC) e §6.6.2 (BBR)**: justificativa da resiliência e superioridade de throughput/RPS no T06 e T12.
+  - **Articulação obrigatória com Tanenbaum Seção 6.5.11 (TCP CUBIC)**: justificativa matemática e conceitual do colapso no T04 e T05 sob 2% de perda estocástica na WAN.
+  - **Articulação obrigatória com Tanenbaum Seção 6.6.1 (QUIC) e Seção 6.6.2 (BBR)**: justificativa da resiliência e superioridade de throughput/RPS no T06 e T12.
 - [x] Seção 5: Conclusões e considerações finais.
 - [x] Posição do link do vídeo na 1ª página reservada e formatada no PDF (`relatorio/sbc-template.pdf`, 8 páginas compiladas).
 

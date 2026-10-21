@@ -129,8 +129,8 @@ Sua tarefa é redigir o documento completo em LaTeX no modelo oficial da SBC (`r
 4. Tabelas consolidadas e figuras científicas com barras de erro inseridas nos floats.
 5. **FUNDAMENTAÇÃO TEÓRICA MANDATÓRIA (EXIGÊNCIA EXPRESSA DO EDITAL - ATÉ -20 PONTOS SE FALTAR):**
    - Confronte e articule formalmente os resultados dos testes WAN com:
-     - **Tanenbaum §6.5.11 (TCP CUBIC)**: demonstrar a fórmula da janela cúbica $W_{\text{cubic}}(t) = C(t - K)^3 + W_{\text{max}}$, explicar o recuo multiplicativo por perda ($\beta = 0.7$) e o colapso de throughput sob 2% de perda estocástica e RTT de 50ms nos testes T04 e T05.
-     - **Tanenbaum §6.6.1 (QUIC) e §6.6.2 (BBR)**: explicar por que T06 e T12 mantêm alto desempenho, detalhando o desacoplamento de perdas por stream UDP e o modelo de pacing baseado em taxa de gargalo e RTT mínimo sem retração ingênua de janela.
+     - **Tanenbaum Seção 6.5.11 (TCP CUBIC)**: demonstrar a fórmula da janela cúbica $W_{\text{cubic}}(t) = C(t - K)^3 + W_{\text{max}}$, explicar o recuo multiplicativo por perda ($\beta = 0.7$) e o colapso de throughput sob 2% de perda estocástica e RTT de 50ms nos testes T04 e T05.
+     - **Tanenbaum Seção 6.6.1 (QUIC) e Seção 6.6.2 (BBR)**: explicar por que T06 e T12 mantêm alto desempenho, detalhando o desacoplamento de perdas por stream UDP e o modelo de pacing baseado em taxa de gargalo e RTT mínimo sem retração ingênua de janela.
 6. Conclusões e bibliografia completa com referências formais (Tanenbaum, RFC 793, RFC 768, RFC 7540, RFC 8446, RFC 9000, RFC 9001, RFC 9114).
 ```
 
@@ -146,6 +146,6 @@ Sua missão é realizar uma checagem rigorosa de todos os critérios eliminatór
 2. Checar se o orquestrador `run_experiments.sh` executa de ponta a ponta sem comandos manuais intermediários.
 3. Checar se o cliente Python implementou o fechamento de conexão para o teste de Cold TTFB.
 4. Checar se todos os gráficos em `data/plots/` contêm barras de erro visíveis.
-5. Checar se o PDF do relatório contém o link do YouTube na 1ª página e as seções citando Tanenbaum §6.5.11 e §6.6.1.
+5. Checar se o PDF do relatório contém o link do YouTube na 1ª página e as seções citando Tanenbaum Seção 6.5.11 e Seção 6.6.1.
 6. Gerar o arquivo ZIP final no padrão exigido: `TP2_Redes2_NomeAluno1_NomeAluno2.zip`.
 ```

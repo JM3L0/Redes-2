@@ -32,7 +32,7 @@ E-mail: `jsousarufinoleal@ufpi.edu.br`
   - `processed/`: Consolidação estatística (médias, medianas, desvio padrão, IC 95%, percentis).
   - `plots/`: Gráficos científicos de alta resolução com **barras de erro obrigatórias**.
 - `analysis/`: Scripts Python de processamento estatístico e geração de figuras (`process_data.py`, `plot_results.py`).
-- `relatorio/`: Artigo técnico científico em padrão formal SBC/LaTeX com citações teóricas ao Tanenbaum (§6.5.11 e §6.6.1/§6.6.2).
+- `relatorio/`: Artigo técnico científico em padrão formal SBC/LaTeX com citações teóricas ao Tanenbaum (Seção 6.5.11 e Seções 6.6.1 e 6.6.2).
 - `video/`: Roteiro cronometrado e slides para o vídeo de apresentação de 15 minutos.
 - `brain/`: Diretrizes de fases, modelagem arquitetural, matriz de testes e checklists do projeto.
 
@@ -74,6 +74,6 @@ O script mestre realiza automaticamente:
 3. **Matriz Experimental Obrigatória**: Todos os 12 testes previstos (T01 a T12) devem ser executados com no mínimo 10 repetições independentes ($N \ge 10$).
 4. **Visualização Gráfica Científica**: É terminantemente proibido plotar gráficos planos. Todos os gráficos de barras ou de linhas devem exibir **barras de erro** representando o desvio padrão ou o intervalo de confiança de 95% (penalidade de 10 pontos na nota se ausentes).
 5. **Fundamentação Teórica Mandatória no Relatório**: A análise dos resultados nos testes sob perdas (Cenário WAN) deve citar e articular expressamente:
-   - **Tanenbaum §6.5.11 (TCP CUBIC)**: para o colapso de vazão do TCP sob 2% de perda estocástica;
-   - **Tanenbaum §6.6.1 (QUIC) e §6.6.2 (BBR)**: para a resiliência e manutenção de alto desempenho no QUIC.
+   - **Tanenbaum Seção 6.5.11 (TCP CUBIC)**: para o colapso de vazão do TCP sob 2% de perda estocástica;
+   - **Tanenbaum Seção 6.6.1 (QUIC) e Seção 6.6.2 (BBR)**: para a resiliência e manutenção de alto desempenho no QUIC.
 6. **Critério Eliminatório (Nota Zero)**: A submissão exige impreterivelmente o código, o relatório técnico em PDF e o link público funcional para o vídeo de 15 minutos contido na 1ª página do relatório. A falta de qualquer um destes três itens resulta em **NOTA ZERO (0,0)** automática.

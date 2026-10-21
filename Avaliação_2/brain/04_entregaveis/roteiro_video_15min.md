@@ -8,7 +8,7 @@
 
 ---
 
-## ⏱️ Visão Geral e Distribuição do Tempo (00:00 a 15:00)
+## ⏱ Visão Geral e Distribuição do Tempo (00:00 a 15:00)
 
 O vídeo deve possuir duração de **exatamente 15 minutos** (margem de segurança recomendada: 14:50 a 15:05) e cobrir integralmente a infraestrutura, a implementação do cliente Python, a execução dos ensaios ao vivo, a análise gráfica com barras de erro e o embasamento teórico em Tanenbaum.
 
@@ -18,7 +18,7 @@ O vídeo deve possuir duração de **exatamente 15 minutos** (margem de seguran�
 | **Bloco 2** | 02:00 - 04:30 | 2m 30s | **Arquitetura e Infraestrutura Docker:** Apresentação do `docker-compose.yml`, rede `net_bench`, NGINX HTTP/1.1, NGINX HTTPS TLS 1.3, Caddy HTTP/3 QUIC e regras de emulação `tc netem`. |
 | **Bloco 3** | 04:30 - 07:30 | 3m 00s | **Implementação do Cliente Python:** Código assíncrono com `httpx` e `aioquic`, módulo de controle de viés de sessão (Cold TTFB vs Warm Connection) e orquestrador 1-click. |
 | **Bloco 4** | 07:30 - 10:30 | 3m 00s | **Demonstração Experimental ao Vivo:** Disparo do `./run_experiments.sh`, acompanhamento dos testes T01 a T12 em tempo real, aplicação do `tc netem` e exportação do `results.json`. |
-| **Bloco 5** | 10:30 - 13:30 | 3m 00s | **Análise de Resultados e Fundamentação Teórica:** Apresentação dos gráficos com barras de erro e discussão teórica profunda com Tanenbaum §6.5.11 (CUBIC) e §6.6.1/§6.6.2 (QUIC/BBR). |
+| **Bloco 5** | 10:30 - 13:30 | 3m 00s | **Análise de Resultados e Fundamentação Teórica:** Apresentação dos gráficos com barras de erro e discussão teórica profunda com Tanenbaum Seção 6.5.11 (CUBIC) e Seções 6.6.1 e 6.6.2 (QUIC/BBR). |
 | **Bloco 6** | 13:30 - 15:00 | 1m 30s | **Conclusões e Encerramento:** Síntese dos achados empíricos, validação das hipóteses e considerações finais. |
 
 ---
@@ -34,7 +34,7 @@ O vídeo deve possuir duração de **exatamente 15 minutos** (margem de seguran�
 
 ---
 
-### 🏗️ Bloco 2: Arquitetura e Infraestrutura Docker [02:00 - 04:30]
+### 🏗 Bloco 2: Arquitetura e Infraestrutura Docker [02:00 - 04:30]
 - **Tela:** VS Code exibindo o arquivo `docker/docker-compose.yml` e o diagrama de arquitetura Mermaid.
 - **Fala (02:00 - 03:15):**
   > *"Para garantir isolamento absoluto e reprodutibilidade científica, nossa infraestrutura foi modelada em contêineres Docker interconectados pela rede bridge dedicada `net_bench` na sub-rede 172.20.0.0/16. Temos três servidores Web operando simultaneamente: no IP 172.20.0.10, temos o `server_http11`, utilizando NGINX Alpine na porta 8080 para servir HTTP/1.1 em texto claro, sem overhead criptográfico, servindo como nosso baseline de transporte TCP; no IP 172.20.0.20, temos o `server_http2_tls`, também NGINX, servindo HTTPS com HTTP/2 e TLS 1.3 forçado na porta 8443; e no IP 172.20.0.30, temos o `server_http3_quic`, utilizando o servidor Caddy 2.7 Alpine na porta 9443, tanto em TCP quanto em UDP, para oferecer HTTP/3 nativo com suporte a QUIC."*

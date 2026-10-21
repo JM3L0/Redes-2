@@ -20,7 +20,7 @@ Este repositório contém a implementação completa, reprodutível e automatiza
 O projeto investiga empiricamente três fenômenos fundamentais da engenharia de redes:
 1. **Overhead de Handshake e Latência Inicial:** 1 RTT (TCP) vs 2 RTTs (TCP + TLS 1.3) vs 1 RTT integrado (QUIC) no *Time to First Byte* (TTFB);
 2. **Bloqueio de Início de Linha (*Head-of-Line Blocking*):** HoL na camada de aplicação (HTTP/1.1), HoL na camada de transporte (HTTP/2 sobre TCP) e eliminação completa nas duas camadas via fluxos (*streams*) UDP independentes (HTTP/3);
-3. **Controle de Congestionamento sob Perdas:** Colapso de vazão do TCP CUBIC sob 2% de perda estocástica e 50ms de RTT (**Tanenbaum §6.5.11**) versus a resiliência e ritmo (*pacing*) do QUIC/BBR (**Tanenbaum §6.6.1 e §6.6.2**).
+3. **Controle de Congestionamento sob Perdas:** Colapso de vazão do TCP CUBIC sob 2% de perda estocástica e 50ms de RTT (**Tanenbaum Seção 6.5.11**) versus a resiliência e ritmo (*pacing*) do QUIC/BBR (**Tanenbaum Seções 6.6.1 e 6.6.2**).
 
 ---
 
@@ -98,7 +98,7 @@ Avaliação_2/
 │   └── plots/                # Figuras 1 a 5 salvas em alta resolução (300 DPI)
 │
 ├── relatorio/                # Artigo acadêmico formal em padrão SBC/LaTeX
-│   ├── sbc-template.tex      # Código-fonte LaTeX com fundamentação Tanenbaum (§6.5.11 e §6.6.1/2)
+│   ├── sbc-template.tex      # Código-fonte LaTeX com fundamentação Tanenbaum (Seção 6.5.11 e Seção 6.6.1/2)
 │   ├── sbc-template.pdf      # Relatório final compilado em PDF com link do vídeo na 1ª página
 │   ├── sbc.sty               # Estilo oficial da Sociedade Brasileira de Computação
 │   └── relatorio.bib         # Referências formais (Tanenbaum, RFCs IETF)
@@ -125,7 +125,7 @@ Avaliação_2/
 | **Runner de Comando Único** | **-15 Pontos** | Scripts `run_experiments.ps1` e `run_experiments.sh` automatizam 100% do ciclo de vida. |
 | **Controle de Viés de Sessão** | **-10 Pontos** | `benchmark/session_control.py` força destruição de sessão (`client.aclose()`) no TTFB e mantém conexão persistente na Carga B. |
 | **Barras de Erro nos Gráficos** | **-10 Pontos** | Todos os 5 gráficos em `data/plots/` exibem barras de erro ($IC_{95\%}$ ou $\sigma$) com `capsize=5`. |
-| **Fundamentação em Tanenbaum** | **-20 Pontos** | Discussão detalhada articulando Tanenbaum §6.5.11 ($W_{\text{cubic}}$ e retração multiplicativa) e §6.6.1/§6.6.2 (QUIC/BBR). |
+| **Fundamentação em Tanenbaum** | **-20 Pontos** | Discussão detalhada articulando Tanenbaum Seção 6.5.11 ($W_{\text{cubic}}$ e retração multiplicativa) e Seções 6.6.1 e 6.6.2 (QUIC/BBR). |
 | **Código + PDF + Link do Vídeo** | **NOTA ZERO (0,0)** | Código completo e funcional, PDF compilado com link público do YouTube posicionado na página 1. |
 
 ---
@@ -149,7 +149,7 @@ Avaliação_2/
 
 ---
 
-## 🖥️ Como Visualizar os Slides de Apresentação
+## 🖥 Como Visualizar os Slides de Apresentação
 
 Abra o arquivo `video/slides.html` diretamente em qualquer navegador Web (Chrome, Edge ou Firefox).  
 Utilize as setas do teclado (`◀` e `▶`) ou a barra de espaço para navegar pelos 10 slides durante a gravação do vídeo de 15 minutos.
