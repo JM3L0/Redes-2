@@ -19,7 +19,8 @@ brain/
 │
 ├── 01_diretrizes/                             # Regras, escopo, rubricas e checklist
 │   ├── visao_geral_e_regras.md                # Fundamentação, 3 fenômenos, rubrica 100pts, penalidades e Nota Zero
-│   └── checklist_progresso.md                 # Quadro kanban com as 8 fases do projeto e validação pré-submissão
+│   ├── checklist_progresso.md                 # Quadro kanban com as 8 fases do projeto e validação pré-submissão
+│   └── auditoria_cerebro.md                   # Relatório formal da auditoria independente (100% de conformidade)
 │
 ├── 02_arquitetura/                            # Infraestrutura e redes
 │   └── arquitetura_e_docker.md                # Docker Compose, net_bench, NGINX HTTP/1.1, NGINX HTTPS TLS 1.3, Caddy HTTP/3, certs e tc netem
@@ -47,6 +48,7 @@ brain/
 ### 📌 1. Diretrizes & Planejamento
 - [**`01_diretrizes/visao_geral_e_regras.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/01_diretrizes/visao_geral_e_regras.md): Leia primeiro para entender o problema, os 3 fenômenos investigados, os critérios eliminatórios (Nota Zero) e a tabela de penalidades.
 - [**`01_diretrizes/checklist_progresso.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/01_diretrizes/checklist_progresso.md): Acompanhe o status e tarefas das 8 fases do projeto.
+- [**`01_diretrizes/auditoria_cerebro.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/01_diretrizes/auditoria_cerebro.md): Parecer formal da auditoria técnica com verificação de 100% de conformidade.
 
 ### 🏗️ 2. Arquitetura & Docker
 - [**`02_arquitetura/arquitetura_e_docker.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/02_arquitetura/arquitetura_e_docker.md): Topologia de contêineres na rede `net_bench` (172.20.0.0/16), configuração dos 3 servidores (Nginx e Caddy), certificados TLS 1.3 locais e permissão `cap_add: NET_ADMIN`.

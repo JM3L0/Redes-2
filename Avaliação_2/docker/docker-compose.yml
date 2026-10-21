@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  server-http1:
+    image: nginx:alpine
+    container_name: server_http11
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "${HTTP1_PORT:-8080}:80"
+    volumes:
+      - ./server-http1/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../data/static:/usr/share/nginx/html:ro
+    networks:
+      net_bench:
+        ipv4_address: 172.20.0.10
+
+  server-http2:
+    image: nginx:alpine
+    container_name: server_http2_tls
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "8443:443"
+    volumes:
+      - ./server-http2/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+      - ../data/static:/usr/share/nginx/html:ro
+    networks:
+      net_bench:
+        ipv4_address: 172.20.0.20
+
+  server-http3:
+    image: caddy:2.7-alpine
+    container_name: server_http3_quic
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "9443:443/tcp"
+      - "9443:443/udp"
+    volumes:
+      - ./server-http3/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/etc/caddy/certs:ro
+      - ../data/static:/var/www/html:ro
+    networks:
+      net_bench:
+        ipv4_address: 172.20.0.30
+
+networks:
+  net_bench:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

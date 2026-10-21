@@ -1,0 +1,12 @@
+{
+    admin off
+    auto_https off
+}
+
+https://:443 {
+    tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
+    root * /var/www/html
+    file_server
+    header Cache-Control "no-store, no-cache, must-revalidate"
+    header Alt-Svc "h3=\":9443\"; ma=86400"
+}

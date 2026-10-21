@@ -1,0 +1,22 @@
+\begin{table}
+\caption{Consolidação dos Resultados Experimentais dos Protocolos Web (Média, p50, p99, Vazão e RPS)}
+\label{tab:metricas_consolidadas}
+\begin{tabular}{llllrrrrrr}
+\toprule
+ID & Protocolo & Cenário & Carga & TTFB Méd (ms) & p50 (ms) & p99 (ms) & Tempo Méd (ms) & Vazão (Mbps) & RPS \\
+\midrule
+T01 & HTTP/1.1 & LAN (1ms, 0% loss) & Carga A (50MB) & 151.510000 & 151.510000 & 271.860000 & 1529.720000 & 282.280000 & 0.650000 \\
+T02 & HTTPS/TLS1.3 & LAN (1ms, 0% loss) & Carga A (50MB) & 305.680000 & 305.680000 & 556.110000 & 3566.910000 & 123.800000 & 0.280000 \\
+T03 & HTTP/3-QUIC & LAN (1ms, 0% loss) & Carga A (50MB) & 25.940000 & 25.940000 & 43.840000 & 19493.490000 & 21.570000 & 0.050000 \\
+T04 & HTTP/1.1 & WAN (50ms, 2% loss) & Carga A (50MB) & 146.670000 & 146.670000 & 223.050000 & 85887.170000 & 4.880000 & 0.010000 \\
+T05 & HTTPS/TLS1.3 & WAN (50ms, 2% loss) & Carga A (50MB) & 131.090000 & 131.090000 & 151.330000 & 86083.930000 & 4.870000 & 0.010000 \\
+T06 & HTTP/3-QUIC & WAN (50ms, 2% loss) & Carga A (50MB) & 36.470000 & 36.470000 & 38.320000 & 63233.880000 & 6.640000 & 0.020000 \\
+T07 & HTTP/1.1 & LAN (1ms, 0% loss) & Carga B (100x10KB) & 625.120000 & 591.430000 & 1247.410000 & 644.580000 & 0.170000 & 80.500000 \\
+T08 & HTTPS/TLS1.3 & LAN (1ms, 0% loss) & Carga B (100x10KB) & 490.380000 & 499.830000 & 841.530000 & 492.510000 & 0.210000 & 118.660000 \\
+T09 & HTTP/3-QUIC & LAN (1ms, 0% loss) & Carga B (100x10KB) & 95.640000 & 99.460000 & 144.660000 & 272.270000 & 0.360000 & 321.940000 \\
+T10 & HTTP/1.1 & WAN (50ms, 2% loss) & Carga B (100x10KB) & 754.420000 & 693.430000 & 1496.990000 & 781.590000 & 0.140000 & 67.590000 \\
+T11 & HTTPS/TLS1.3 & WAN (50ms, 2% loss) & Carga B (100x10KB) & 524.390000 & 488.210000 & 832.210000 & 568.220000 & 0.180000 & 101.010000 \\
+T12 & HTTP/3-QUIC & WAN (50ms, 2% loss) & Carga B (100x10KB) & 304.760000 & 170.820000 & 513.670000 & 1258.010000 & 0.090000 & 83.180000 \\
+\bottomrule
+\end{tabular}
+\end{table}
