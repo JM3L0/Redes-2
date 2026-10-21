@@ -1,0 +1,2223 @@
+# PAPEL: Agente Auditor Independente de Qualidade e Conformidade Técnica e Acadêmica
+
+Você foi convocado como um SEGUNDO AGENTE INDEPENDENTE para auditar e verificar minuciosamente o "Cérebro do Projeto" montado para a:
+**2ª Avaliação Prática de Redes de Computadores II (UFPI - 2026-2)**
+**Estudo Experimental de Desempenho de Protocolos Web (HTTP/1.1 vs HTTPS/TLS vs HTTP/3-QUIC) em Ambiente Emulado com Docker e Python**
+
+Aluno: João Marcos Sousa Rufino Leal
+Repositório: c:\Users\jsous\Desktop\Redes 2\Avaliação_2
+
+---
+## EDITAL OFICIAL DA AVALIAÇÃO (TEXTO EXTRAÍDO DO PDF):
+Total pages: 12
+
+=== PAGE 1 ===
+UFPI/CSHNB - Redes II 
+Segunda Avaliação 
+Especificação do Trabalho Prático: Estudo 
+Experimental de Desempenho de Protocolos Web 
+(HTTP/1.1 vs HTTPS/TLS vs HTTP/3-QUIC) em Ambiente 
+Emulado com Docker e Python 
+ 
+1. Visão Geral e Objetivos Pedagógicos 
+Este Trabalho Prático — que corresponde a 50% da pontuação total da 2ª Avaliação (N2) — foi 
+elaborado para conduzir os estudantes da abstração conceitual à análise experimental rigorosa 
+dos protocolos das camadas de aplicação e de transporte que estruturam a Web moderna. A 
+avaliação do desempenho sob condições de rede rigorosamente controladas permite 
+compreender como as decisões de arquitetura de software e de projeto de protocolos afetam a 
+entrega de dados em escala global, conectando a teoria às métricas empíricas de infraestrutura. 
+O objetivo central do projeto é desenvolver competências avançadas em engenharia de 
+desempenho e de diagnóstico de redes. Com base no referencial teórico do livro Redes de 
+Computadores (Livro Texto), os alunos deverão investigar e mensurar quantitativamente três 
+fenômenos fundamentais: 
+●​ Overhead de Handshakes e Latência Inicial: O estabelecimento de uma conexão TCP 
+convencional exige a troca de mensagens de controle em três vias (3-way handshake), 
+consumindo exatamente 1 RTT (Round-Trip Time) antes do envio do primeiro byte de 
+dados da aplicação. Quando a camada de segurança TLS 1.3 é acoplada sobre o TCP 
+(como no HTTPS/HTTP/2), adiciona-se obrigatoriamente 1 RTT adicional para a 
+negociação de chaves criptográficas e de certificados, totalizando 2 RTTs cumulativos de 
+latência inicial para a conclusão do handshake combinado. Em contrapartida, o HTTP/3 
+funde as camadas de transporte e de segurança no protocolo QUIC (que opera sobre 
+datagramas UDP), realizando a negociação conjunta em um único procedimento integrado 
+de 1 RTT (ou 0-RTT em cenários de reconexão via session resumption). Os alunos 
+avaliarão o impacto direto dessa redução de RTTs no Time to First Byte (TTFB) e na 
+Qualidade de Experiência (Quality of Experience - QoE) percebida pelo usuário final. 
+●​ Bloqueio de Início de Linha (Head-of-Line - HoL Blocking): No HTTP/1.1, o HoL 
+blocking manifesta-se prioritariamente na Camada de Aplicação, onde as requisições 
+enviadas sobre o mesmo canal TCP precisam ser processadas e respondidas em ordem 
+estritamente sequencial (ou mitigadas de forma ineficiente por meio da abertura de 
+múltiplas conexões TCP paralelas). O HTTP/2 resolveu o bloqueio na camada de 
+aplicação ao introduzir a multiplexação por quadros sobre uma única conexão TCP; 
+contudo, deslocou a vulnerabilidade para a Camada de Transporte: como o TCP garante 
+
+
+=== PAGE 2 ===
+a entrega ordenada do buffer, a perda de um único segmento TCP força o sistema 
+operacional a reter todos os pacotes subsequentes de todos os fluxos multiplexados até 
+que a retransmissão do pacote perdido seja concluída. O HTTP/3-QUIC elimina o HoL 
+blocking em ambas as camadas ao implementar fluxos (streams) UDP totalmente 
+independentes e isolados, em que a perda de um datagrama afeta exclusivamente o fluxo 
+ao qual pertence. 
+●​ Efeito das Condições do Canal: A variação do RTT e a injeção controlada de perda de 
+pacotes expõem os limites operacionais das abordagens orientadas à conexão baseadas 
+em TCP, em comparação com a resiliência do QUIC sobre UDP, especialmente no que diz 
+respeito aos algoritmos de controle de congestionamento e aos mecanismos de 
+recuperação de perdas. 
+A tabela comparativa a seguir sintetiza as diferenças arquiteturais que deverão ser validadas e 
+quantificadas ao longo dos experimentos: 
+Protocolo 
+Web 
+Protocolo de 
+Transporte 
+Base 
+Mecanismo de 
+Segurança 
+Mecanismo de 
+Multiplexação 
+Suscetibilidade ao HoL 
+Blocking 
+HTTP/1.1 
+TCP 
+Opcional (TLS 
+sobre TCP) 
+Inexistente (requer 
+conexões TCP 
+paralelas) 
+Alta (Restrita à Camada 
+de Aplicação) 
+HTTPS 
+(HTTP/2) 
+TCP 
+Obrigatório 
+(TLS 1.3) 
+Multiplexação por 
+quadros em 
+conexão única 
+Média/Alta (Transferida 
+para a Camada de 
+Transporte TCP) 
+HTTP/3 
+UDP (QUIC) 
+Integrado (TLS 
+1.3 sobre 
+QUIC) 
+Fluxos (streams) 
+nativos e 
+independentes 
+Nula (Eliminado nas 
+camadas de Aplicação e 
+Transporte) 
+Munidos dessa fundamentação conceitual, a próxima seção detalha a arquitetura do ambiente 
+virtualizado necessário para isolar os experimentos de interferências externas e garantir a 
+reprodutibilidade científica dos testes. 
+2. Arquitetura do Ambiente e Infraestrutura Docker 
+A obtenção de medições com validade científica exige um ambiente experimental rigorosamente 
+isolado e reprodutível. Para evitar que ruídos de rede local, oscilações do provedor de Internet ou 
+comportamentos de cache do sistema operacional distorçam os dados, toda a infraestrutura será 
+emulada por meio de contêineres Docker isolados, orquestrados via docker-compose. 
+
+
+=== PAGE 3 ===
+                 [ Redes Virtuais Isoladas no Docker ] 
+                                    | 
+     +------------------------------+------------------------------+ 
+     |                              |                              | 
+[ Servidor 1 ]                 [ Servidor 2 ]                 [ Servidor 3 ] 
+ HTTP/1.1 (TCP 80)             HTTPS/TLS 1.3 (TCP 443)       HTTP/3-QUIC (UDP 443) 
+     |                              |                              | 
+     +------------------------------+------------------------------+ 
+                                    | 
+            [ Linux Traffic Control: tc netem (cap_add: NET_ADMIN) ] 
+             (LAN: 0.5ms delay = 1ms RTT | WAN: 25ms delay, 2% loss = 50ms RTT) 
+                                    | 
+                       [ Cliente Python Benchmark ] 
+ 
+Especificações de Orquestração (docker-compose.yml) e Permissões de Kernel 
+O arquivo docker-compose.yml deve estruturar três contêineres de servidor Web distintos, 
+alocados em redes virtuais Docker dedicadas. Atenção de Engenharia: Para que as ferramentas 
+de manipulação de tráfego do kernel Linux funcionem no interior dos contêineres sem falhas de 
+permissão (RTNETLINK answers: Operation not permitted), é obrigatório declarar a 
+funcionalidade cap_add: - NET_ADMIN na especificação de cada serviço. 
+Abaixo apresenta-se o trecho de referência para a definição da infraestrutura: 
+version: '3.8' 
+ 
+services: 
+  server-http1: 
+    image: nginx:alpine 
+    container_name: server_http11 
+    cap_add: 
+      - NET_ADMIN 
+    ports: 
+      - "8080:80" 
+    networks: 
+      net_bench: 
+        ipv4_address: 172.20.0.10 
+ 
+  server-http2: 
+    image: nginx:alpine 
+    container_name: server_http2_tls 
+    cap_add: 
+      - NET_ADMIN 
+    ports: 
+      - "8443:443" 
+    volumes: 
+      - ./certs:/etc/nginx/certs 
+
+
+=== PAGE 4 ===
+    networks: 
+      net_bench: 
+        ipv4_address: 172.20.0.20 
+ 
+  server-http3: 
+    image: caddy:2.7-alpine 
+    container_name: server_http3_quic 
+    cap_add: 
+      - NET_ADMIN 
+    ports: 
+      - "9443:443/tcp" 
+      - "9443:443/udp" 
+    volumes: 
+      - ./certs:/etc/caddy/certs 
+    networks: 
+      net_bench: 
+        ipv4_address: 172.20.0.30 
+ 
+networks: 
+  net_bench: 
+    driver: bridge 
+    ipam: 
+      config: 
+        - subnet: 172.20.0.0/16 
+ 
+Emulação de Rede com Linux Traffic Control (tc netem) 
+A alteração do comportamento do canal de comunicação será realizada injetando regras de 
+enfileiramento diretamente na interface de rede virtual (eth0) dos contêineres utilizando o utilitário 
+tc com o módulo netem (Network Emulator). 
+Nota Explicativa sobre Cálculo de RTT: O comando tc netem delay Xms aplica o atraso 
+bidirecionalmente em sentido unidirecional por padrão na saída da interface. Portanto, para 
+emular um RTT de N ms, o atraso injetado na interface deve ser exatamente N/2 ms. 
+●​ Cenário 1 (Rede Local - LAN): Emulação de um canal ideal de alta velocidade. Atraso 
+unidirecional de 0.5ms (resultando em RTT total de 1ms) e 0% de perda de pacotes. 
+●​ Cenário 2 (Rede Longa/Móvel - WAN): Emulação de canal sujeito a latência e 
+degradação. Atraso unidirecional de 25ms (resultando em RTT total de 50ms) e 2% de 
+taxa de perda sintética de pacotes. 
+Comandos Sintáticos Linux para Aplicação e Limpeza de Regras 
+Os comandos executados nos scripts de automação do ambiente devem seguir a sintaxe exata 
+descrita abaixo: 
+
+
+=== PAGE 5 ===
+●​ Aplicação do Cenário 1 (LAN - Latência RTT de 1ms, 0% Perda): 
+# Aplica atraso unidirecional de 0.5ms (RTT final = 1.0ms) 
+docker exec --privileged server_http11 tc qdisc add dev eth0 root netem delay 0.5ms 
+docker exec --privileged server_http2_tls tc qdisc add dev eth0 root netem delay 0.5ms 
+docker exec --privileged server_http3_quic tc qdisc add dev eth0 root netem delay 0.5ms 
+ 
+●​ Aplicação do Cenário 2 (WAN - Latência RTT de 50ms, 2% de Perda): 
+# Aplica atraso unidirecional de 25ms (RTT final = 50ms) e 2% de perda estocástica 
+docker exec --privileged server_http11 tc qdisc add dev eth0 root netem delay 25ms loss 2% 
+docker exec --privileged server_http2_tls tc qdisc add dev eth0 root netem delay 25ms loss 2% 
+docker exec --privileged server_http3_quic tc qdisc add dev eth0 root netem delay 25ms loss 2% 
+ 
+●​ Limpeza e Restauração da Interface (Estado Limpo): 
+# Delita a disciplina de enfileiramento (qdisc) e restaura o tráfego normal 
+docker exec --privileged server_http11 tc qdisc del dev eth0 root 
+docker exec --privileged server_http2_tls tc qdisc del dev eth0 root 
+docker exec --privileged server_http3_quic tc qdisc del dev eth0 root 
+ 
+Impacto Esperado no Transporte e Congestionamento 
+No Cenário 2 (WAN), a injeção de uma taxa de perda de 2% causará o colapso da vazão útil do 
+TCP. Como o algoritmo TCP CUBIC interpreta qualquer perda de pacote como um sinal 
+inequívoco 
+de 
+congestionamento 
+na 
+rede, 
+ele 
+reduz 
+drasticamente sua janela de 
+congestionamento (cwnd). O estol de retransmissão exigido pela entrega em ordem do TCP 
+congelará os buffers da aplicação. Espera-se que o HTTP/3 sobre QUIC demonstre throughput e 
+RPS substancialmente superiores sob perda de 2%, pois o QUIC desacopla o controle de 
+congestionamento do fluxo individual e utiliza estimativas contínuas baseadas na taxa/largura de 
+banda e no RTT mínimo, permitindo a progressão contínua dos fluxos não afetados. 
+Estabelecidas a infraestrutura de servidores e as condições de controle do canal, a seção a seguir 
+especifica os requisitos do cliente automatizado em Python. 
+ 
+3. Cliente de Benchmark e Automação de Testes em Python 
+Navegadores comerciais são inadequados para bancadas de teste de redes devido a 
+interferências de renderização de código, caches locais agressivos e otimizações heurísticas 
+imprevisíveis. Assim, os alunos devem desenvolver uma ferramenta de benchmark dedicada em 
+Python que garanta controle total sobre o ciclo de vida das conexões e sobre a amostragem de 
+dados. 
+ 
+
+
+=== PAGE 6 ===
+Especificações Técnicas e Módulos Python 
+A aplicação cliente deve ser construída utilizando chamadas assíncronas e bibliotecas 
+especializadas no suporte aos protocolos investigados: 
+●​ httpx para interações HTTP/1.1 e HTTP/2 (HTTPS). 
+●​ aioquic e asyncio para gerenciamento de eventos assíncronos e controle nativo de 
+fluxos QUIC / HTTP/3. 
+ 
+Diretrizes de Controle de Vício de Sessão (Client-Side Bias Control) 
+Para garantir a acurácia das medições de handshake e multiplexação, o cliente Python deve: 
+1.​ Desativar rigorosamente qualquer mecanismo de cache local de HTTP. 
+2.​ Isolar o Teste de Handshake (Cold TTFB): Para medir a latência inicial real de conexão 
+(handshake de 1 RTT do TCP, 2 RTTs do TCP+TLS 1.3 e 1 RTT do QUIC), a aplicação 
+deve encerrar e fechar explicitamente a sessão do cliente (client.close()) antes de 
+cada requisição individual, impedindo o reuso da conexão TCP/QUIC (connection pooling). 
+3.​ Isolar o Teste de Throughput e Multiplexação (Warm Connection): Para os testes do 
+perfil de carga concorrente, a aplicação deve estabelecer e manter explicitamente uma 
+única conexão persistente (warm connection), permitindo avaliar a capacidade de 
+multiplexação de fluxos no HTTP/2 e no HTTP/3, sem o custo de sucessivos handshakes. 
+ 
+Exportação Obrigatória de Dados Brutos 
+O cliente Python deve, obrigatoriamente, estruturar e exportar as métricas brutas coletadas ao 
+final de cada bateria de testes para arquivos padronizados nos formatos results.json ou 
+results.csv. O arquivo gerado conterá os registros com timestamp de cada requisição 
+individual para posterior processamento estatístico. 
+ 
+Mapeamento de Métricas Operacionais 
+O cliente deve registrar as seguintes métricas com precisão de microssegundos: 
+●​ Time to First Byte (TTFB): Tempo decorrido entre a emissão do primeiro byte do 
+cabeçalho da resposta e a recepção do primeiro byte do corpo da resposta. Mede o 
+impacto direto do custo dos handshakes. 
+●​ Tempo Total de Carregamento (Total Load Time): Duração decorrida até a recepção 
+completa do último byte do objeto solicitado. 
+
+
+=== PAGE 7 ===
+●​ Requisições por Segundo (RPS): Razão entre o número total de requisições concluídas 
+com sucesso e a duração total, em segundos, da janela de teste. 
+●​ Percentis de Latência (p50 e p99): O percentil p50 representa a mediana do tempo de 
+resposta. O p99 identifica o limite de latência para 99% das requisições, isolando 
+discrepâncias (outliers) causadas por retransmissões e perdas de pacotes. 
+ 
+Perfis de Carga de Teste 
+O cliente automatizado executará obrigatoriamente dois perfis de carga sintética contra cada um 
+dos 3 servidores sob os 2 cenários de rede: 
+1.​ Carga A (Gargalo de Banda / Regime Permanente): Download contínuo de 1 objeto 
+grande de 50 MB. Avalia o throughput sustentado e a eficiência do controle de 
+congestionamento. 
+2.​ Carga B (Gargalo de Latência e Multiplexação): Download concorrente de 100 objetos 
+pequenos, cada um de 10 KB. Avalia a capacidade de mitigação do HoL blocking, do reuso 
+de canal e do overhead de concorrência. 
+ 
+Matriz Experimental Obrigatória (12 Testes) 
+A matriz a seguir define as 12 combinações de teste que devem ser executadas e registradas 
+sequencialmente pelo ambiente de automação: 
+ID 
+Perfil de Carga 
+Protocolo 
+Alvo 
+Cenário de 
+Rede 
+Foco Analítico Principal 
+T01 
+Carga A (50 
+MB) 
+HTTP/1.1 
+Cenário 1 (LAN - 
+1ms, 0%) 
+Vazão máxima TCP em canal ideal 
+T02 
+Carga A (50 
+MB) 
+HTTPS / 
+TLS 1.3 
+Cenário 1 (LAN - 
+1ms, 0%) 
+Custo de cifragem simétrica do TLS 
+1.3 
+T03 
+Carga A (50 
+MB) 
+HTTP/3 
+(QUIC) 
+Cenário 1 (LAN - 
+1ms, 0%) 
+Eficiência do protocolo QUIC sem 
+perdas 
+
+
+=== PAGE 8 ===
+T04 
+Carga A (50 
+MB) 
+HTTP/1.1 
+Cenário 2 (WAN 
+- 50ms, 2%) 
+Sensibilidade do TCP CUBIC a 
+perdas e latência 
+T05 
+Carga A (50 
+MB) 
+HTTPS / 
+TLS 1.3 
+Cenário 2 (WAN 
+- 50ms, 2%) 
+Degradação do TCP CUBIC + TLS 
+sob perdas 
+T06 
+Carga A (50 
+MB) 
+HTTP/3 
+(QUIC) 
+Cenário 2 (WAN 
+- 50ms, 2%) 
+Controle de congestionamento do 
+QUIC sob perdas 
+T07 
+Carga B 
+(100x10KB) 
+HTTP/1.1 
+Cenário 1 (LAN - 
+1ms, 0%) 
+Overhead de múltiplos handshakes 
+TCP paralelos 
+T08 
+Carga B 
+(100x10KB) 
+HTTPS / 
+TLS 1.3 
+Cenário 1 (LAN - 
+1ms, 0%) 
+Eficiência da multiplexação HTTP/2 
+em baixa latência 
+T09 
+Carga B 
+(100x10KB) 
+HTTP/3 
+(QUIC) 
+Cenário 1 (LAN - 
+1ms, 0%) 
+Desempenho de fluxos QUIC em 
+rede ideal 
+T10 
+Carga B 
+(100x10KB) 
+HTTP/1.1 
+Cenário 2 (WAN 
+- 50ms, 2%) 
+Severidade do HoL blocking na 
+Camada de Aplicação 
+T11 
+Carga B 
+(100x10KB) 
+HTTPS / 
+TLS 1.3 
+Cenário 2 (WAN 
+- 50ms, 2%) 
+Severidade do HoL blocking na 
+Camada de Transporte TCP 
+T12 
+Carga B 
+(100x10KB) 
+HTTP/3 
+(QUIC) 
+Cenário 2 (WAN 
+- 50ms, 2%) 
+Mitigação total do HoL blocking via 
+fluxos UDP 
+Concluída a matriz experimental, os resultados processados fundamentarão a estruturação dos 
+entregáveis descritos a seguir. 
+ 
+ 
+
+
+=== PAGE 9 ===
+4. Entregáveis do Projeto e Padrões de Submissão 
+O trabalho final consiste em dois artefatos obrigatórios: a infraestrutura e os scripts de 
+código-fonte, e o Relatório Técnico conclusivo e o vídeo de 15 minutos explicando a execução, os 
+pontos importantes da implementação, os resultados e a conclusão dos experimentos. 
+ 
+Entregável 1: Repositório de Código e Infraestrutura (Zip / Git) 
+O código entregue deve conter a seguinte estrutura de arquivos: 
+●​ Arquivo docker-compose.yml com as definições de rede, portas e a declaração 
+cap_add: - NET_ADMIN. 
+●​ Scripts Shell parametrizados para aplicar e limpar as regras do tc netem. 
+●​ Código-fonte completo do cliente de benchmark em Python com suporte a exportação para 
+results.json ou results.csv. 
+●​ Script de Automação Runner de Comando Único (run_experiments.sh): Um script 
+mestre que deve, com um único comando: (1) Subir os contêineres Docker; (2) Iterar sobre 
+os cenários do tc netem; (3) Executar os 12 testes da matriz experimental através do 
+cliente Python; (4) Salvar os dados brutos exportados; e (5) Encerrar o ambiente de forma 
+limpa. 
+ 
+Entregável 2: Relatório Técnico (Formato PDF) 
+O relatório técnico deve apresentar rigor formal de publicação acadêmica, contendo: 
+1.​ Apresentação Visual e Estatística de Dados: Gráficos gerados programaticamente com 
+matplotlib ou seaborn. Requisito Obrigatório de Visualização: Todos os gráficos de 
+barras ou de linhas devem incluir barras de erro que representem o desvio padrão ou os 
+intervalos de confiança de 95% obtidos a partir de múltiplas amostragens dos testes. 
+Gráficos planos, sem indicação de variância estatística, serão penalizados. 
+2.​ Consolidação Numérica: Tabelas que sumarizam médias, medianas, desvios-padrão, 
+p50 e p99 para TTFB, RPS e Tempo Total em cada um dos 12 testes. 
+3.​ Análise Crítica Fundamentada na Teoria: A discussão dos resultados não deve ser 
+meramente descritiva. Os alunos devem confrontar rigorosamente os dados empíricos 
+observados com a literatura técnica. Em especial, o relatório deve referenciar 
+explicitamente: 
+○​ Tanenbaum §6.5.11 (TCP CUBIC): Para fundamentar o colapso de throughput 
+observado nos testes T04 e T05. Deve-se discutir analiticamente como a redução 
+da janela de congestionamento induzida por perda e a dependência do tempo real 
+transcorrido desde a última perda (cubic window function) reduzem a eficiência da 
+banda em canais com perdas estocásticas (2% WAN). 
+○​ Tanenbaum §6.6.1 (QUIC) e §6.6.2 (BBR): Para explicar por que os testes T06 e 
+T12 mantêm alto desempenho sob as mesmas condições de degradação do canal, 
+
+
+=== PAGE 10 ===
+detalhando como o QUIC isola a perda no fluxo UDP e utiliza abordagens de 
+controle de congestionamento imunes à interpretação ingênua de perdas de 
+pacotes isoladas. 
+A mensuração da qualidade dos entregáveis seguirá os parâmetros estabelecidos na rubrica de 
+avaliação. 
+ 
+5. Rubrica Detalhada de Avaliação 
+A pontuação total do trabalho é de 100 pontos, o que corresponde a 50% da nota da N2. A 
+avaliação é estruturada em quatro eixos: 
+Eixo de Avaliação 
+Pontuaçã
+o 
+Critérios Detalhados de Correção 
+1. Infraestrutura 
+Docker e 
+Emulação tc 
+netem 
+25 
+Pontos 
+Funcionamento correto dos 3 servidores (HTTP/1.1, 
+HTTPS/TLS 1.3, HTTP/3). Uso correto de cap_add: 
+NET_ADMIN. Precisão sintática nos comandos tc netem 
+garantindo RTT de 1ms (LAN) e 50ms com 2% de perda 
+(WAN). Automação de limpeza da interface. 
+2. Cliente de 
+Benchmark em 
+Python 
+25 
+Pontos 
+Código assíncrono com httpx e aioquic. 
+Implementação estrita do controle de vício de sessão 
+(fechamento para cold TTFB vs canal persistente para 
+multiplexação). Execução perfeita das Cargas A e B. 
+Exportação obrigatória para results.json/csv. 
+3. Qualidade da 
+Coleta e 
+Visualização 
+Gráfica 
+20 
+Pontos 
+Rigor estatístico nas medições. Cálculo preciso de TTFB, 
+RPS, p50 e p99. Gráficos construídos em Python 
+(matplotlib/seaborn) exibindo obrigatoriamente barras 
+de erro (desvio padrão/intervalos de confiança), eixos 
+rotulados e legendas claras. 
+4. Relatório 
+Técnico e 
+Discussão Teórica 
+30 
+Pontos 
+Profundidade analítica. Capacidade de explicar os 
+gargalos empíricos com base na teoria. Citação obrigatória 
+e articulação detalhada com Tanenbaum §6.5.11 (TCP 
+
+
+=== PAGE 11 ===
+CUBIC) e §6.6.1 (QUIC) para justificativa dos cenários 
+WAN. 
+ 
+Tabela de Penalidades Previstas 
+A inobservância de requisitos técnicos resultará na aplicação direta das seguintes sanções sobre 
+a nota final: 
+●​ Ausência 
+de 
+execução 
+automatizada 
+por 
+meio 
+de 
+um 
+único 
+comando 
+(run_experiments.sh): Subtração de 15 pontos. 
+●​ Falta de controle de vício de sessão no cliente Python (reuso indevido de conexões 
+no teste de TTFB): Subtração de 10 pontos. 
+●​ Ausência de barras de erro nos gráficos gerados: Subtração de 10 pontos. 
+●​ Relatório puramente descritivo (sem fundamentação nos capítulos teóricos do 
+Tanenbaum): Subtração de até 20 pontos no Eixo 4. 
+●​ Faltando os códigos, o relatório ou o vídeo, a nota será zero. 
+As diretrizes organizacionais e as fases operacionais da entrega constam na seção final. 
+ 
+6. Orientações Gerais, Diretrizes Éticas e Calendário de Entrega 
+A condução bem-sucedida da atividade prática exige planejamento e estrita conformidade com os 
+prazos e os padrões éticos da instituição. 
+ 
+Regras de Organização e Integridade Acadêmica 
+●​ Composição das Equipes: O trabalho poderá ser desenvolvido individualmente ou em 
+duplas. 
+●​ Política de Tolerância Zero ao Plágio: Todos os códigos entregues e o texto do Relatório 
+Técnico serão submetidos a sistemas automatizados de análise de similaridade. O plágio 
+de código entre equipes, cópias não citadas de repositórios públicos ou compilações 
+textuais sintéticas não autorizadas resultarão em nota zero (0.0) imediata para todos os 
+alunos envolvidos. 
+ 
+
+
+=== PAGE 12 ===
+Instruções de Submissão Final 
+A submissão final deverá ser realizada exclusivamente pelo SIGAA  de acordo com a data de 
+envio anexada à tarefa. Deve ser postado um único arquivo compactado no formato .zip, 
+nomeado padronizadamente como TP2_Redes2_NomeAluno1_NomeAluno2.zip, contendo o 
+diretório do código-fonte e o Relatório Técnico em PDF. O link do vídeo no Youtube deve estar no 
+Relatório Técnico. 
+A engenharia de redes de alto desempenho fundamenta-se no domínio rigoroso das interações 
+entre as camadas de protocolo. A transição do conhecimento teórico para o diagnóstico empírico 
+é o passo definitivo para a formação de arquitetos de sistemas e engenheiros de infraestrutura 
+preparados para atender às demandas da Internet moderna. Mãos à obra! 
+ 
+
+
+
+
+---
+## ARQUIVOS CRIADOS NO CÉREBRO DO PROJETO:
+
+
+==================== ARQUIVO: AGENTS.md ====================
+# Avaliacao 2 - Estudo Experimental de Desempenho de Protocolos Web
+## (HTTP/1.1 vs HTTPS/TLS vs HTTP/3-QUIC) em Ambiente Emulado com Docker e Python
+
+Repositório experimental para avaliação empírica de desempenho e sobrecarga dos protocolos da Web sob condições controladas de canal de rede (LAN vs WAN com perda) utilizando Docker, Linux Traffic Control (`tc netem`) e cliente assíncrono em Python (`httpx` + `aioquic`).
+
+Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
+Disciplina: Redes de Computadores II (2026-2)  
+Aluno: João Marcos Sousa Rufino Leal  
+E-mail: `jsousarufinoleal@ufpi.edu.br`
+
+---
+
+## Estrutura do Repositório
+
+- `run_experiments.sh` / `run_experiments.ps1`: Orquestrador mestre 1-click para Host (Linux, macOS, WSL 2, Windows).
+- `docker/`: Configurações de infraestrutura Docker:
+  - `docker-compose.yml`: Topologia com os 3 servidores Web isolados na rede `net_bench` (172.20.0.0/16).
+  - `server-http1/`: NGINX Alpine servindo HTTP/1.1 em texto claro (Porta 80 / Host 8080).
+  - `server-http2/`: NGINX Alpine servindo HTTPS/HTTP/2 com TLS 1.3 (Porta 443 / Host 8443).
+  - `server-http3/`: Caddy 2.7 Alpine servindo HTTP/3 sobre QUIC nativo (Porta 443 TCP/UDP / Host 9443).
+  - `certs/`: Certificados criptográficos TLS 1.3 locais com SANs válidos gerados via OpenSSL.
+- `benchmark/`: Código-fonte do cliente de benchmark em Python:
+  - `client.py`: Cliente assíncrono utilizando `httpx` (HTTP/1.1 e HTTP/2) e `aioquic` (HTTP/3).
+  - `session_control.py`: Módulo estrito de controle de viés de sessão (Cold TTFB com fechamento explícito vs Warm multiplexado).
+  - `metrics.py`: Coleta e cálculo de precisão (TTFB, Load Time, RPS, p50, p99).
+- `scripts/`: Scripts de emulação e controle:
+  - `setup_netem.sh`: Aplicação e remoção de regras `tc netem` (Cenário 1 LAN vs Cenário 2 WAN).
+  - `generate_payloads.py`: Geração determinística de cargas sintéticas (Carga A de 50 MB e Carga B de 100x10 KB).
+- `data/`:
+  - `static/`: Cargas estáticas (`50MB.bin` e pasta `objects/` com 100 arquivos de 10 KB).
+  - `raw/`: Dados brutos exportados pelos ensaios (`results.json` e `results.csv`).
+  - `processed/`: Consolidação estatística (médias, medianas, desvio padrão, IC 95%, percentis).
+  - `plots/`: Gráficos científicos de alta resolução com **barras de erro obrigatórias**.
+- `analysis/`: Scripts Python de processamento estatístico e geração de figuras (`process_data.py`, `plot_results.py`).
+- `relatorio/`: Artigo técnico científico em padrão formal SBC/LaTeX com citações teóricas ao Tanenbaum (§6.5.11 e §6.6.1/§6.6.2).
+- `video/`: Roteiro cronometrado e slides para o vídeo de apresentação de 15 minutos.
+- `brain/`: Diretrizes de fases, modelagem arquitetural, matriz de testes e checklists do projeto.
+
+---
+
+## Comandos Essenciais
+
+### 1. Execução Completa Automatizada (1-Click Run)
+
+No Linux / macOS / WSL 2 / Git Bash:
+```bash
+./run_experiments.sh
+```
+
+No Windows PowerShell:
+```powershell
+.\run_experiments.ps1
+```
+
+O script mestre realiza automaticamente:
+1. Subida dos contêineres dos 3 servidores Web (`docker compose up -d`);
+2. Aplicação e verificação das regras do `tc netem` para o Cenário 1 (LAN: delay 0.5ms, loss 0%);
+3. Execução dos testes T01 a T03 (Carga A) e T07 a T09 (Carga B);
+4. Aplicação das regras do `tc netem` para o Cenário 2 (WAN: delay 25ms, loss 2%);
+5. Execução dos testes T04 a T06 (Carga A) e T10 a T12 (Carga B);
+6. Limpeza e restauração das interfaces (`tc qdisc del dev eth0 root`);
+7. Exportação e consolidação dos dados brutos em `data/raw/results.json` e `results.csv`;
+8. Execução do pipeline de visualização gráfica (`python analysis/plot_results.py`);
+9. Encerramento limpo do ambiente Docker (`docker compose down`).
+
+---
+
+## Regras Críticas de Conformidade
+
+1. **Permissões de Kernel (`tc netem`)**: Todos os serviços do Docker Compose que sofrem emulação de rede possuem obrigatoriamente a diretiva `cap_add: [NET_ADMIN]`. O atraso unidirecional injetado na interface é $N/2$ para obter um RTT de $N$ ms (ex.: 0.5ms para RTT 1ms; 25ms para RTT 50ms).
+2. **Controle Estrito de Vício de Sessão (Client-Side Bias Control)**:
+   - **Cold TTFB (Handshake)**: A sessão do cliente deve ser explicitamente encerrada (`client.close()`) antes de cada requisição individual para medir o custo real do handshake (TCP 1 RTT, TLS 1.3 2 RTTs, QUIC 1 RTT).
+   - **Warm Connection (Multiplexação)**: Os testes de concorrência com 100 objetos mantêm explicitamente uma única conexão persistente aquecida para avaliar a multiplexação real sem sucessivos handshakes.
+3. **Matriz Experimental Obrigatória**: Todos os 12 testes previstos (T01 a T12) devem ser executados com no mínimo 10 repetições independentes ($N \ge 10$).
+4. **Visualização Gráfica Científica**: É terminantemente proibido plotar gráficos planos. Todos os gráficos de barras ou de linhas devem exibir **barras de erro** representando o desvio padrão ou o intervalo de confiança de 95% (penalidade de 10 pontos na nota se ausentes).
+5. **Fundamentação Teórica Mandatória no Relatório**: A análise dos resultados nos testes sob perdas (Cenário WAN) deve citar e articular expressamente:
+   - **Tanenbaum §6.5.11 (TCP CUBIC)**: para o colapso de vazão do TCP sob 2% de perda estocástica;
+   - **Tanenbaum §6.6.1 (QUIC) e §6.6.2 (BBR)**: para a resiliência e manutenção de alto desempenho no QUIC.
+6. **Critério Eliminatório (Nota Zero)**: A submissão exige impreterivelmente o código, o relatório técnico em PDF e o link público funcional para o vídeo de 15 minutos contido na 1ª página do relatório. A falta de qualquer um destes três itens resulta em **NOTA ZERO (0,0)** automática.
+
+
+
+==================== ARQUIVO: README.md ====================
+# 🧠 CÉREBRO DO PROJETO: 2ª Avaliação Prática Redes II (2026-2)
+## Estudo Experimental de Desempenho de Protocolos Web (HTTP/1.1 vs HTTPS/TLS vs HTTP/3-QUIC) em Ambiente Emulado com Docker e Python
+
+**Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
+**Curso:** Bacharelado em Sistemas de Informação  
+**Disciplina:** Redes de Computadores II (2026-2)  
+**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)  
+**Peso da Avaliação:** 50% da pontuação total da 2ª Avaliação (N2) — 100 pontos totais
+
+---
+
+## 📌 Visão Rápida e Navegação do Cérebro
+
+Este repositório centraliza toda a base de conhecimento arquitetural, científica, experimental e operacional necessária para o cumprimento integral das exigências do Trabalho Prático da 2ª Avaliação.
+
+Qualquer desenvolvedor ou agente de inteligência artificial que for operar neste projeto **DEVE** consultar os módulos do cérebro abaixo antes de implementar códigos ou relatórios:
+
+| Módulo do Cérebro | Finalidade e Conteúdo |
+| :--- | :--- |
+| 📖 [**`brain/README.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/README.md) | Mapa de navegação e índice temático completo do diretório do cérebro. |
+| 📋 [**`brain/01_diretrizes/visao_geral_e_regras.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/01_diretrizes/visao_geral_e_regras.md) | Visão executiva, fundamentação pedagógica, 3 fenômenos-chave, rubrica de 100 pontos, penalidades e critérios eliminatórios (Nota 0,0). |
+| ✅ [**`brain/01_diretrizes/checklist_progresso.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/01_diretrizes/checklist_progresso.md) | Quadro kanban das 8 fases de desenvolvimento com checklist de validação pré-submissão. |
+| 🏗️ [**`brain/02_arquitetura/arquitetura_e_docker.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/02_arquitetura/arquitetura_e_docker.md) | Topologia em Docker Compose, rede `net_bench` (172.20.0.0/16), 3 servidores (Nginx HTTP/1.1, Nginx HTTPS TLS 1.3, Caddy HTTP/3 QUIC), certificados TLS locais e diretiva `cap_add: NET_ADMIN`. |
+| 🧪 [**`brain/03_experimentos/cenarios_de_teste.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/03_experimentos/cenarios_de_teste.md) | Cenário 1 (LAN: delay 0.5ms = RTT 1ms, 0% perda) vs Cenário 2 (WAN: delay 25ms = RTT 50ms, 2% perda), Cargas A (50 MB) e B (100x10 KB), e a matriz experimental exaustiva dos 12 testes (T01 a T12). |
+| 📊 [**`brain/03_experimentos/metricas_e_analise_dados.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/03_experimentos/metricas_e_analise_dados.md) | Definição matemática de TTFB, Total Load Time, RPS, percentis p50/p99, rigor estatístico ($N \ge 10$, IC 95%, desvio padrão), controle de vício de sessão e regras de gráficos com **barras de erro obrigatórias**. |
+| 📄 [**`brain/04_entregaveis/relatorio_tecnico_academico.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/relatorio_tecnico_academico.md) | Estrutura formal do relatório em PDF (padrão SBC/LaTeX), link mandatório do vídeo na 1ª página e articulação teórica obrigatória com Tanenbaum §6.5.11 (TCP CUBIC) e §6.6.1/§6.6.2 (QUIC/BBR). |
+| 🎥 [**`brain/04_entregaveis/roteiro_video_15min.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/roteiro_video_15min.md) | Roteiro estruturado e cronometrado minuto a minuto para gravação do vídeo técnico de 15 minutos (código, execução ao vivo, gráficos e fundamentação teórica). |
+| 🤖 [**`brain/05_prompts_ia/guia_de_prompts_ia.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/05_prompts_ia/guia_de_prompts_ia.md) | Prompts modulares prontos para delegar tarefas a agentes de IA em Docker, Shell, Python assíncrono (`httpx` + `aioquic`), tratamento estatístico e redação LaTeX. |
+| 📑 [**`brain/06_relatorios_de_fases/README.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/06_relatorios_de_fases/README.md) | Diário de bordo detalhado com relatórios de engenharia e decisões de projeto registrados a cada fase. |
+
+---
+
+## 🚨 REGRAS CRÍTICAS E CRITÉRIOS DE NOTA ZERO
+
+> [!CAUTION]
+> ### 🛑 AVISO IMPORTANTE — CRITÉRIO EXCLUDENTE (NOTA ZERO)
+> A avaliação prescreve que a entrega final deve conter impreterivelmente:
+> 1. O **código-fonte completo e funcional** da infraestrutura Docker e do cliente Python de benchmark;
+> 2. O **Relatório Técnico em PDF** com rigor de publicação acadêmica;
+> 3. O **link público funcional para o vídeo de exatamente 15 minutos** gravado e hospedado no YouTube (Público/Não-listado), inserido **obrigatoriamente na 1ª página do relatório técnico**.
+>
+> **A ausência do código, a ausência do relatório em PDF ou a ausência/inoperância do link do vídeo implicará a atribuição automática de NOTA ZERO (0,0), sem possibilidade de recuperação ou recurso.**
+
+### ⚠️ Tabela de Penalidades Diretas do Edital
+
+| Infração Técnica | Penalidade na Nota |
+| :--- | :---: |
+| Ausência de execução automatizada via comando único (`run_experiments.sh`) | **-15 Pontos** |
+| Falta de controle de vício de sessão no cliente Python (reuso indevido de conexões no teste de TTFB) | **-10 Pontos** |
+| Ausência de barras de erro (desvio padrão / IC 95%) nos gráficos gerados | **-10 Pontos** |
+| Relatório puramente descritivo (sem fundamentação explícita em Tanenbaum §6.5.11 e §6.6.1) | **-20 Pontos** |
+| Falta de código, relatório ou vídeo | **NOTA ZERO (0.0)** |
+
+---
+
+## 🎯 Síntese da Matriz Experimental dos 12 Testes
+
+| Teste | Perfil de Carga | Protocolo Alvo | Servidor Docker | Cenário de Rede | Foco Analítico Principal |
+| :---: | :---: | :---: | :---: | :---: | :--- |
+| **T01** | Carga A (50 MB) | HTTP/1.1 | `server_http11` (Porta 8080) | Cenário 1 (LAN: 1ms, 0%) | Vazão máxima TCP em canal ideal sem segurança |
+| **T02** | Carga A (50 MB) | HTTPS / TLS 1.3 | `server_http2_tls` (Porta 8443) | Cenário 1 (LAN: 1ms, 0%) | Custo de cifragem simétrica TLS 1.3 em regime permanente |
+| **T03** | Carga A (50 MB) | HTTP/3 (QUIC) | `server_http3_quic` (Porta 9443) | Cenário 1 (LAN: 1ms, 0%) | Eficiência do protocolo QUIC em user-space sem perdas |
+| **T04** | Carga A (50 MB) | HTTP/1.1 | `server_http11` (Porta 8080) | Cenário 2 (WAN: 50ms, 2%) | Sensibilidade do TCP CUBIC a perdas e latência (Tanenbaum §6.5.11) |
+| **T05** | Carga A (50 MB) | HTTPS / TLS 1.3 | `server_http2_tls` (Porta 8443) | Cenário 2 (WAN: 50ms, 2%) | Degradação do TCP CUBIC + TLS 1.3 sob perdas estocásticas |
+| **T06** | Carga A (50 MB) | HTTP/3 (QUIC) | `server_http3_quic` (Porta 9443) | Cenário 2 (WAN: 50ms, 2%) | Controle de congestionamento QUIC/BBR sob perdas (Tanenbaum §6.6.1/§6.6.2) |
+| **T07** | Carga B (100x10KB) | HTTP/1.1 | `server_http11` (Porta 8080) | Cenário 1 (LAN: 1ms, 0%) | Overhead de múltiplos handshakes TCP e conexões paralelas |
+| **T08** | Carga B (100x10KB) | HTTPS / TLS 1.3 | `server_http2_tls` (Porta 8443) | Cenário 1 (LAN: 1ms, 0%) | Eficiência da multiplexação HTTP/2 em canal de baixa latência |
+| **T09** | Carga B (100x10KB) | HTTP/3 (QUIC) | `server_http3_quic` (Porta 9443) | Cenário 1 (LAN: 1ms, 0%) | Desempenho de fluxos QUIC independentes em rede ideal |
+| **T10** | Carga B (100x10KB) | HTTP/1.1 | `server_http11` (Porta 8080) | Cenário 2 (WAN: 50ms, 2%) | Severidade do HoL blocking na Camada de Aplicação |
+| **T11** | Carga B (100x10KB) | HTTPS / TLS 1.3 | `server_http2_tls` (Porta 8443) | Cenário 2 (WAN: 50ms, 2%) | Severidade do HoL blocking na Camada de Transporte TCP |
+| **T12** | Carga B (100x10KB) | HTTP/3 (QUIC) | `server_http3_quic` (Porta 9443) | Cenário 2 (WAN: 50ms, 2%) | Mitigação total do HoL blocking via fluxos UDP isolados |
+
+---
+
+## 📁 Estrutura de Diretórios Recomendada para o Projeto
+
+```text
+Avaliação_2/
+├── Segunda Avaliação Redes 2.pdf   # Edital oficial da 2ª Avaliação
+├── README.md                       # Este arquivo (Dashboard e Índice Central)
+├── AGENTS.md                       # Instruções de contexto para agentes de IA
+├── run_experiments.sh              # Orquestrador mestre 1-click (Linux / WSL / Mac)
+├── run_experiments.ps1             # Orquestrador mestre 1-click (Windows PowerShell)
+├── brain/                          # Cérebro técnico e científico do projeto
+│   ├── README.md                   # Mapa do cérebro
+│   ├── 01_diretrizes/              # Regras, visão geral e checklist kanban
+│   │   ├── visao_geral_e_regras.md
+│   │   └── checklist_progresso.md
+│   ├── 02_arquitetura/             # Docker Compose, Caddy, NGINX, certs e tc netem
+│   │   └── arquitetura_e_docker.md
+│   ├── 03_experimentos/            # Cenários de teste, cargas e análise de dados
+│   │   ├── cenarios_de_teste.md
+│   │   └── metricas_e_analise_dados.md
+│   ├── 04_entregaveis/             # Relatório técnico e roteiro do vídeo de 15min
+│   │   ├── relatorio_tecnico_academico.md
+│   │   └── roteiro_video_15min.md
+│   ├── 05_prompts_ia/              # Prompts cirúrgicos para automação de IA
+│   │   └── guia_de_prompts_ia.md
+│   └── 06_relatorios_de_fases/     # Diário de bordo detalhado por fase
+│       ├── README.md
+│       └── fase_01_analise_e_estruturacao.md
+├── docker/                         # Infraestrutura dos 3 servidores Web
+│   ├── docker-compose.yml          # Topologia com net_bench (172.20.0.0/16) e cap_add: NET_ADMIN
+│   ├── certs/                      # Certificados TLS 1.3 locais com SANs válidos
+│   ├── server-http1/               # Configuração Nginx HTTP/1.1 (porta 80 / 8080)
+│   │   └── nginx.conf
+│   ├── server-http2/               # Configuração Nginx HTTPS / HTTP/2 (porta 443 / 8443)
+│   │   └── nginx.conf
+│   └── server-http3/               # Configuração Caddy HTTP/3 QUIC (porta 443 TCP/UDP / 9443)
+│       └── Caddyfile
+├── benchmark/                      # Cliente de benchmark em Python
+│   ├── client.py                   # Cliente assíncrono httpx + aioquic
+│   ├── session_control.py          # Controle de viés de sessão (Cold TTFB vs Warm)
+│   └── requirements.txt            # Dependências Python (httpx, aioquic, etc.)
+├── scripts/                        # Scripts de automação e emulação
+│   ├── setup_netem.sh              # Aplicação e limpeza de tc netem (LAN vs WAN)
+│   └── generate_payloads.py        # Geração das cargas sintéticas (50MB e 100x10KB)
+├── data/                           # Armazenamento de dados do experimento
+│   ├── static/                     # Objetos de teste (50MB.bin e objects/obj_*.bin)
+│   ├── raw/                        # results.json e results.csv com timestamps
+│   ├── processed/                  # Tabelas consolidadas (médias, medianas, p50, p99, IC95%)
+│   └── plots/                      # Figuras científicas com barras de erro obrigatórias
+├── analysis/                       # Pipeline estatístico e de visualização
+│   ├── process_data.py             # Consolidação dos resultados brutos
+│   └── plot_results.py             # Geração de gráficos com matplotlib/seaborn e barras de erro
+├── relatorio/                      # Artigo técnico científico em padrão SBC (LaTeX)
+│   ├── sbc-template.tex            # Documento principal
+│   ├── sbc.sty                     # Folha de estilo SBC
+│   ├── referencias.bib             # Referências bibliográficas (Tanenbaum, RFCs)
+│   └── figures/                    # Figuras e diagramas exportados
+└── video/                          # Materiais de suporte ao vídeo de 15 minutos
+    ├── slide_deck/                 # Slides de apoio
+    └── roteiro_cronometrado.md     # Roteiro detalhado para apresentação
+```
+
+
+
+==================== ARQUIVO: brain\README.md ====================
+# 🧠 Mapa de Navegação do Cérebro — 2ª Avaliação
+
+Este diretório centraliza todo o conhecimento técnico, arquitetural, científico e operacional da **2ª Avaliação Prática de Redes de Computadores II (UFPI - 2026-2)**:
+*Estudo Experimental de Desempenho de Protocolos Web (HTTP/1.1 vs HTTPS/TLS vs HTTP/3-QUIC) em Ambiente Emulado com Docker e Python*.
+
+- **Aluno:** João Marcos Sousa Rufino Leal
+- **E-mail:** `jsousarufinoleal@ufpi.edu.br`
+- **Curso:** Bacharelado em Sistemas de Informação
+- **Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)
+- **Peso:** 50% da nota da 2ª Avaliação (N2) — 100 pontos totais
+
+---
+
+## 🗺️ Estrutura Temática do Cérebro
+
+```text
+brain/
+├── README.md                                  # Este mapa de navegação
+│
+├── 01_diretrizes/                             # Regras, escopo, rubricas e checklist
+│   ├── visao_geral_e_regras.md                # Fundamentação, 3 fenômenos, rubrica 100pts, penalidades e Nota Zero
+│   └── checklist_progresso.md                 # Quadro kanban com as 8 fases do projeto e validação pré-submissão
+│
+├── 02_arquitetura/                            # Infraestrutura e redes
+│   └── arquitetura_e_docker.md                # Docker Compose, net_bench, NGINX HTTP/1.1, NGINX HTTPS TLS 1.3, Caddy HTTP/3, certs e tc netem
+│
+├── 03_experimentos/                           # Especificações práticas e dados
+│   ├── cenarios_de_teste.md                   # Cenário 1 (LAN 1ms, 0%), Cenário 2 (WAN 50ms, 2%), Cargas A (50MB) e B (100x10KB), Matriz T01 a T12
+│   └── metricas_e_analise_dados.md            # Fórmulas de TTFB, Load Time, RPS, p50/p99, bias control, rigor estatístico (IC 95%) e gráficos com barras de erro
+│
+├── 04_entregaveis/                            # Materiais de avaliação final
+│   ├── relatorio_tecnico_academico.md         # Estrutura do artigo LaTeX SBC, citação de Tanenbaum §6.5.11 (CUBIC) e §6.6.1/§6.6.2 (QUIC/BBR), link do vídeo
+│   └── roteiro_video_15min.md                 # Roteiro cronometrado minuto a minuto (00:00 a 15:00) para apresentação e demo ao vivo
+│
+├── 05_prompts_ia/                             # Aceleração e automação com IAs
+│   └── guia_de_prompts_ia.md                  # Prompts prontos para delegar tarefas a agentes de IA em Docker, Shell, Python e LaTeX
+│
+└── 06_relatorios_de_fases/                    # Diário de bordo detalhado fase a fase
+    ├── README.md                              # Índice das fases registradas
+    └── fase_01_analise_e_estruturacao.md      # Relatório da Fase 1 (Concluída com sucesso)
+```
+
+---
+
+## 🔗 Links Rápidos para os Documentos
+
+### 📌 1. Diretrizes & Planejamento
+- [**`01_diretrizes/visao_geral_e_regras.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/01_diretrizes/visao_geral_e_regras.md): Leia primeiro para entender o problema, os 3 fenômenos investigados, os critérios eliminatórios (Nota Zero) e a tabela de penalidades.
+- [**`01_diretrizes/checklist_progresso.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/01_diretrizes/checklist_progresso.md): Acompanhe o status e tarefas das 8 fases do projeto.
+
+### 🏗️ 2. Arquitetura & Docker
+- [**`02_arquitetura/arquitetura_e_docker.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/02_arquitetura/arquitetura_e_docker.md): Topologia de contêineres na rede `net_bench` (172.20.0.0/16), configuração dos 3 servidores (Nginx e Caddy), certificados TLS 1.3 locais e permissão `cap_add: NET_ADMIN`.
+
+### 🧪 3. Experimentos & Métricas
+- [**`03_experimentos/cenarios_de_teste.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/03_experimentos/cenarios_de_teste.md): Configurações de canal (`tc/netem`), cargas estáticas (50 MB e 100x10 KB) e detalhamento exaustivo dos 12 testes (T01 a T12).
+- [**`03_experimentos/metricas_e_analise_dados.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/03_experimentos/metricas_e_analise_dados.md): Definições de TTFB, RPS, Load Time, p50/p99, controle de vício de sessão (Cold TTFB vs Warm) e obrigatoriedade de barras de erro.
+
+### 📄 4. Entregáveis Oficiais
+- [**`04_entregaveis/relatorio_tecnico_academico.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/relatorio_tecnico_academico.md): Guia de redação no padrão SBC, modelo de citação obrigatória de Tanenbaum §6.5.11 (CUBIC) e §6.6.1/§6.6.2 (QUIC/BBR), e posicionamento do link do vídeo na 1ª página.
+- [**`04_entregaveis/roteiro_video_15min.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/roteiro_video_15min.md): Divisão cronometrada de 15 minutos para apresentação, código, demonstração ao vivo e discussão dos gráficos.
+
+### 🤖 5. Prompts para IAs
+- [**`05_prompts_ia/guia_de_prompts_ia.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/05_prompts_ia/guia_de_prompts_ia.md): Prompts modulares de alta precisão para orquestrar e acelerar o desenvolvimento com agentes de IA.
+
+### 📑 6. Relatórios de Execução por Fase (Diário de Bordo)
+- [**`06_relatorios_de_fases/README.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/06_relatorios_de_fases/README.md): Histórico e decisões de engenharia registradas a cada fase executada.
+
+
+
+==================== ARQUIVO: brain\01_diretrizes\visao_geral_e_regras.md ====================
+# 00. Visão Geral, Objetivos e Regras Críticas
+
+**Disciplina:** Redes de Computadores II (2026-2)  
+**Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
+**Curso:** Bacharelado em Sistemas de Informação  
+**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)  
+**Trabalho:** 2ª Avaliação Prática: Estudo Experimental de Desempenho de Protocolos Web (HTTP/1.1 vs HTTPS/TLS vs HTTP/3-QUIC) em Ambiente Emulado com Docker e Python  
+**Peso Acadêmico:** 50% da pontuação total da 2ª Avaliação (N2) — Valor total: 100 pontos
+
+---
+
+## 1. Visão Geral do Problema e Objetivos Pedagógicos
+
+Este trabalho prático foi elaborado para conduzir o aluno da abstração conceitual à análise experimental rigorosa dos protocolos das camadas de aplicação e de transporte que estruturam a Web contemporânea. A avaliação empírica sob condições estritamente controladas de rede permite compreender como decisões arquiteturais de projeto de protocolos impactam a latência, a vazão e a entrega de dados em escala global.
+
+Com base no referencial teórico clássico de redes (Tanenbaum, Kurose & Ross, RFCs do IETF), os ensaios investigam três fenômenos fundamentais:
+
+### 1.1. Overhead de Handshakes e Latência Inicial (Cold TTFB)
+- **HTTP/1.1 (sobre TCP em texto claro):** O estabelecimento da conexão exige a troca de mensagens de controle em 3 vias (*3-way handshake*: SYN, SYN-ACK, ACK), consumindo exatamente **1 RTT** antes do envio do primeiro byte de dados da aplicação.
+- **HTTPS / HTTP/2 (sobre TCP + TLS 1.3):** Acopla a camada criptográfica de segurança sobre a conexão TCP já estabelecida. São necessários **2 RTTs cumulativos** de latência inicial (1 RTT para o handshake TCP + 1 RTT para a negociação de parâmetros e chaves do TLS 1.3).
+- **HTTP/3-QUIC (sobre datagramas UDP):** O protocolo QUIC funde o handshake de transporte com o handshake criptográfico do TLS 1.3 em um único procedimento integrado de **1 RTT** (ou **0-RTT** em cenários de reconexão via *session resumption*).
+- **Impacto Avaliado:** Mensuração do *Time to First Byte* (TTFB) e seus reflexos diretos na Qualidade de Experiência (*Quality of Experience* - QoE).
+
+### 1.2. Bloqueio de Início de Linha (*Head-of-Line* - HoL Blocking)
+- **HTTP/1.1:** O HoL blocking manifesta-se prioritariamente na **Camada de Aplicação**. As requisições enviadas sobre o mesmo canal TCP precisam ser processadas e respondidas em ordem estritamente sequencial (ou mitigadas de forma custosa pela abertura de múltiplas conexões TCP paralelas).
+- **HTTPS (HTTP/2):** Resolve o HoL blocking na aplicação ao introduzir a multiplexação por quadros binários sobre uma única conexão TCP. No entanto, desloca o gargalo para a **Camada de Transporte TCP**: como o TCP exige entrega sequencial ininterrupta do buffer, a perda de um único segmento TCP força o sistema operacional a reter todos os dados de todos os fluxos multiplexados até a retransmissão do pacote perdido ser confirmada.
+- **HTTP/3-QUIC:** Elimina o HoL blocking em ambas as camadas ao estruturar fluxos (*streams*) independentes e isolados encapsulados em datagramas UDP. A perda de um pacote afeta única e exclusivamente o stream ao qual pertence, permitindo a progressão livre dos demais.
+
+### 1.3. Efeito das Condições de Canal e Controle de Congestionamento
+- **TCP CUBIC:** A injeção de latência de 50ms com 2% de perda estocástica expõe as fragilidades do controle de congestionamento do TCP no kernel. O CUBIC interpreta qualquer descarte como congestionamento severo, colapsando a janela de congestionamento (*cwnd*) e congelando buffers de aplicação durante as retransmissões.
+- **QUIC / BBR:** O QUIC desacopla o controle de perdas da trava de fluxo e utiliza estimativas de largura de banda de gargalo e RTT mínimo (BBR), sustentando vazão e taxas de requisição por segundo (RPS) substancialmente superiores.
+
+---
+
+## 2. Tabela Comparativa Arquitetural dos Protocolos
+
+| Protocolo Web | Protocolo de Transporte Base | Mecanismo de Segurança | Mecanismo de Multiplexação | Suscetibilidade ao HoL Blocking |
+| :--- | :---: | :---: | :---: | :--- |
+| **HTTP/1.1** | TCP | Opcional (TLS sobre TCP) | Inexistente (requer conexões TCP paralelas) | **Alta** (Restrita à Camada de Aplicação) |
+| **HTTPS (HTTP/2)** | TCP | Obrigatório (TLS 1.3) | Multiplexação por quadros em conexão única | **Média/Alta** (Transferida para a Camada de Transporte TCP) |
+| **HTTP/3** | UDP (QUIC) | Integrado (TLS 1.3 sobre QUIC) | Fluxos (*streams*) nativos e independentes | **Nula** (Eliminado nas camadas de Aplicação e Transporte) |
+
+---
+
+## 3. Requisitos Mandatórios do Ambiente Experimental
+
+1. **Isolamento Total em Contêineres:** Toda a infraestrutura deve executar em contêineres Docker orquestrados exclusivamente por `docker-compose.yml`, eliminando interferências de cache do SO host, DNS externo ou oscilações de provedor.
+2. **Topologia de Três Servidores Distintos:**
+   - `server-http1`: `nginx:alpine` servindo HTTP/1.1 em texto claro (Porta interna 80 / Host 8080).
+   - `server-http2`: `nginx:alpine` servindo HTTPS/HTTP/2 com TLS 1.3 (Porta interna 443 / Host 8443).
+   - `server-http3`: `caddy:2.7-alpine` servindo HTTP/3 sobre QUIC nativo (Porta interna 443 TCP/UDP / Host 9443).
+3. **Rede Docker Dedicada:** Rede bridge `net_bench` com bloco estático `172.20.0.0/16`.
+4. **Permissões de Manipulação de Kernel:** Todos os contêineres de serviço devem possuir obrigatoriamente a flag `cap_add: [NET_ADMIN]` no `docker-compose.yml` para evitar erros `RTNETLINK: Operation not permitted` ao executar comandos `tc`.
+5. **Cliente de Benchmark Assíncrono em Python:**
+   - Módulos mandatórios: `httpx` (para HTTP/1.1 e HTTP/2) e `aioquic` + `asyncio` (para HTTP/3).
+   - **Controle de Viés de Sessão (Client-Side Bias Control):**
+     - Desativação total de caches locais HTTP.
+     - **Cold TTFB (Teste de Handshake):** Fechamento explícito da sessão (`client.close()`) antes de cada requisição individual, proibindo connection pooling para capturar a latência real de 1 RTT (TCP), 2 RTTs (TCP+TLS) e 1 RTT (QUIC).
+     - **Warm Connection (Multiplexação):** Manutenção explícita de uma única conexão persistente nos testes com 100 objetos para avaliar a multiplexação real sem sucessivos custos de conexão.
+6. **Automação 1-Click Runner (`run_experiments.sh` e `run_experiments.ps1`):** Script mestre que executa os 12 testes de ponta a ponta sem intervenção manual.
+7. **Exportação Obrigatória de Dados:** Gravação dos resultados brutos com timestamp em `data/raw/results.json` ou `results.csv`.
+8. **Visualização Gráfica com Barras de Erro Obrigatórias:** Gráficos gerados programaticamente com `matplotlib` ou `seaborn` contendo barras de erro (desvio padrão ou IC 95%). Gráficos planos perdem 10 pontos.
+
+---
+
+## 4. Síntese dos Dois Cenários de Rede (`tc netem`)
+
+- **Cenário 1 (Rede Local - LAN):**
+  - Condições ideais: atraso unidirecional de `0.5ms` (resultando em **RTT total de 1.0ms**), 0% de perda sintética de pacotes.
+- **Cenário 2 (Rede Longa/Móvel - WAN):**
+  - Condições adversas: atraso unidirecional de `25ms` (resultando em **RTT total de 50.0ms**), taxa de perda estocástica de **2% de pacotes**.
+
+> [!NOTE]
+> **Cálculo de RTT no Linux Traffic Control (`tc netem`):**  
+> O comando `tc netem delay Xms` aplica o atraso unidirecionalmente na saída da interface de rede (`eth0`). Portanto, para emular um RTT de $N$ ms entre cliente e servidor, o atraso injetado na interface do contêiner deve ser exatamente $N/2$ ms.
+
+---
+
+## 5. Matriz Experimental Obrigatória (12 Testes)
+
+| ID | Perfil de Carga | Protocolo Alvo | Servidor Alvo | Cenário de Rede | Foco Analítico Principal |
+| :---: | :---: | :---: | :---: | :---: | :--- |
+| **T01** | Carga A (50 MB) | HTTP/1.1 | `server_http11` | Cenário 1 (LAN: 1ms, 0%) | Vazão máxima TCP em canal ideal sem criptografia |
+| **T02** | Carga A (50 MB) | HTTPS / TLS 1.3 | `server_http2_tls` | Cenário 1 (LAN: 1ms, 0%) | Custo computacional de cifragem simétrica do TLS 1.3 |
+| **T03** | Carga A (50 MB) | HTTP/3 (QUIC) | `server_http3_quic` | Cenário 1 (LAN: 1ms, 0%) | Eficiência do protocolo QUIC em user-space sem perdas |
+| **T04** | Carga A (50 MB) | HTTP/1.1 | `server_http11` | Cenário 2 (WAN: 50ms, 2%) | Sensibilidade do TCP CUBIC a perdas e latência (Tanenbaum §6.5.11) |
+| **T05** | Carga A (50 MB) | HTTPS / TLS 1.3 | `server_http2_tls` | Cenário 2 (WAN: 50ms, 2%) | Degradação do TCP CUBIC + TLS sob perdas estocásticas |
+| **T06** | Carga A (50 MB) | HTTP/3 (QUIC) | `server_http3_quic` | Cenário 2 (WAN: 50ms, 2%) | Controle de congestionamento do QUIC sob perdas (Tanenbaum §6.6.1/§6.6.2) |
+| **T07** | Carga B (100x10KB) | HTTP/1.1 | `server_http11` | Cenário 1 (LAN: 1ms, 0%) | Overhead de múltiplos handshakes TCP paralelos |
+| **T08** | Carga B (100x10KB) | HTTPS / TLS 1.3 | `server_http2_tls` | Cenário 1 (LAN: 1ms, 0%) | Eficiência da multiplexação HTTP/2 em canal de baixa latência |
+| **T09** | Carga B (100x10KB) | HTTP/3 (QUIC) | `server_http3_quic` | Cenário 1 (LAN: 1ms, 0%) | Desempenho de fluxos QUIC independentes em rede ideal |
+| **T10** | Carga B (100x10KB) | HTTP/1.1 | `server_http11` | Cenário 2 (WAN: 50ms, 2%) | Severidade do HoL blocking na Camada de Aplicação |
+| **T11** | Carga B (100x10KB) | HTTPS / TLS 1.3 | `server_http2_tls` | Cenário 2 (WAN: 50ms, 2%) | Severidade do HoL blocking na Camada de Transporte TCP |
+| **T12** | Carga B (100x10KB) | HTTP/3 (QUIC) | `server_http3_quic` | Cenário 2 (WAN: 50ms, 2%) | Mitigação total do HoL blocking via fluxos UDP isolados |
+
+---
+
+## 6. Rubrica Detalhada de Avaliação (100 Pontos)
+
+| Eixo de Avaliação | Pontuação Máxima | Critérios Detalhados de Correção |
+| :--- | :---: | :--- |
+| **1. Infraestrutura Docker e Emulação `tc netem`** | **25 Pontos** | Funcionamento correto dos 3 servidores (HTTP/1.1, HTTPS/TLS 1.3, HTTP/3). Uso correto de `cap_add: NET_ADMIN`. Precisão sintática nos comandos `tc netem` garantindo RTT de 1ms (LAN) e 50ms com 2% de perda (WAN). Automação de limpeza da interface. |
+| **2. Cliente de Benchmark em Python** | **25 Pontos** | Código assíncrono com `httpx` e `aioquic`. Implementação estrita do controle de viés de sessão (fechamento para cold TTFB vs canal persistente para multiplexação). Execução perfeita das Cargas A e B. Exportação obrigatória para `results.json`/`results.csv`. |
+| **3. Qualidade da Coleta e Visualização Gráfica** | **20 Pontos** | Rigor estatístico nas medições ($N \ge 10$). Cálculo preciso de TTFB, RPS, p50 e p99. Gráficos construídos em Python (`matplotlib`/`seaborn`) exibindo **obrigatoriamente barras de erro** (desvio padrão / intervalos de confiança de 95%), eixos rotulados e legendas claras. |
+| **4. Relatório Técnico e Discussão Teórica** | **30 Pontos** | Profundidade analítica formal. Capacidade de explicar os gargalos empíricos com base na teoria. **Citação obrigatória e articulação detalhada com Tanenbaum §6.5.11 (TCP CUBIC) e §6.6.1/§6.6.2 (QUIC e BBR)** para justificativa dos cenários WAN. |
+
+---
+
+## 7. Tabela de Penalidades Previstas no Edital
+
+| Infração Técnica | Penalidade Direta |
+| :--- | :---: |
+| Ausência de execução automatizada por meio de um único comando (`run_experiments.sh`) | **Subtração de 15 pontos** |
+| Falta de controle de vício de sessão no cliente Python (reuso indevido de conexões no teste de TTFB) | **Subtração de 10 pontos** |
+| Ausência de barras de erro nos gráficos gerados | **Subtração de 10 pontos** |
+| Relatório puramente descritivo (sem fundamentação nos capítulos teóricos do Tanenbaum) | **Subtração de até 20 pontos no Eixo 4** |
+| Faltando os códigos, o relatório técnico ou o vídeo | **NOTA ZERO (0,0)** |
+
+---
+
+## 8. 🚨 REGRA ELIMINATÓRIA CRÍTICA (NOTA ZERO)
+
+> [!CAUTION]
+> ### CRITÉRIO EXCLUDENTE DA AVALIAÇÃO:
+> A submissão regular desta avaliação exige, impreterivelmente:
+> 1. Os arquivos de **código-fonte completos** (Docker, shell scripts, cliente Python e notebooks/scripts de plot);
+> 2. O arquivo **PDF do relatório técnico** com formatação de publicação científica;
+> 3. O **link funcional para o vídeo explicativo de exatamente 15 minutos** gravado e hospedado no YouTube (Público ou Não-Listado), posicionado **obrigatoriamente na primeira página do relatório técnico**.
+>
+> **A ausência do código, a ausência do relatório em PDF ou a ausência/inoperância do link de vídeo implicará a atribuição automática de NOTA ZERO (0,0) à equipe, sem possibilidade de entrega posterior ou de recurso.**
+
+---
+
+## 9. Instruções de Submissão Final
+
+- **Canal de Submissão:** Exclusivamente pelo sistema SIGAA da UFPI.
+- **Formato do Arquivo:** Arquivo compactado único `.zip`.
+- **Padrão Obrigatório de Nomenclatura:**  
+  `TP2_Redes2_NomeAluno1_NomeAluno2.zip`  
+  *(Para submissão individual: `TP2_Redes2_JoaoMarcosSousa.zip`)*.
+- **Conteúdo do Arquivo ZIP:** Diretório do código-fonte completo e o Relatório Técnico em PDF (com link público do vídeo no YouTube na primeira página).
+
+
+
+==================== ARQUIVO: brain\01_diretrizes\checklist_progresso.md ====================
+# ✅ Checklist de Progresso e Validação do Projeto
+
+**Disciplina:** Redes de Computadores II (2026-2)  
+**Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
+**Projeto:** Estudo Experimental de Desempenho de Protocolos Web (HTTP/1.1 vs HTTPS/TLS vs HTTP/3-QUIC) em Ambiente Emulado com Docker e Python  
+**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)
+
+---
+
+## 🧭 Quadro Geral de Fases
+
+| Fase | Descrição da Fase | Status |
+| :--- | :--- | :---: |
+| **Fase 1** | Análise minuciosa do edital e estruturação completa do Cérebro do Projeto | ✅ CONCLUÍDA |
+| **Fase 2** | Infraestrutura Docker (Nginx HTTP/1.1, Nginx HTTPS TLS 1.3, Caddy HTTP/3 QUIC) | ⏳ A INICIAR |
+| **Fase 3** | Geração de Cargas Estáticas (50 MB e 100x10 KB) e Scripts `tc netem` | ⏳ A INICIAR |
+| **Fase 4** | Desenvolvimento do Cliente de Benchmark Python Assíncrono (`httpx` + `aioquic`) | ⏳ A INICIAR |
+| **Fase 5** | Automação Runner 1-Click (`run_experiments.sh` / `.ps1`) e Execução dos 12 Testes | ⏳ A INICIAR |
+| **Fase 6** | Pipeline de Análise Estatística e Visualização com Barras de Erro Obrigatórias | ⏳ A INICIAR |
+| **Fase 7** | Redação do Relatório Técnico com Fundamentação Tanenbaum (§6.5.11 e §6.6.1/§6.6.2) | ⏳ A INICIAR |
+| **Fase 8** | Gravação do Vídeo de 15 Minutos, Auditoria Pré-Submissão e Empacotamento | ⏳ A INICIAR |
+
+---
+
+## 📋 Itens Detalhados por Fase
+
+### Fase 1: Análise e Estruturação do Cérebro
+- [x] Leitura completa e extração textual de `Segunda Avaliação Redes 2.pdf`.
+- [x] Mapeamento dos 3 fenômenos: Overhead de Handshake (1 RTT vs 2 RTTs vs 1 RTT), HoL Blocking (aplicação vs transporte vs eliminação em fluxos UDP), e Controle de Congestionamento (CUBIC vs BBR sob 2% de perda).
+- [x] Identificação de todas as penalidades (-15pts sem runner 1-click, -10pts sem controle de vício de sessão, -10pts sem barras de erro, -20pts relatório puramente descritivo).
+- [x] Identificação do critério eliminatório crítico (falta de código, relatório em PDF ou link do vídeo de 15min = NOTA ZERO 0,0).
+- [x] Criação do diretório `brain/` e documentação técnica modular completa.
+- [x] Elaboração do guia de prompts de IA para execução acelerada das próximas etapas.
+
+### Fase 2: Infraestrutura Docker & Servidores Web
+- [ ] Validar ambiente Docker Desktop com suporte a motor WSL 2 no host Windows.
+- [ ] Criar arquivo `docker/docker-compose.yml` com rede dedicada `net_bench` (172.20.0.0/16).
+- [ ] Configurar serviço `server-http1`: imagem `nginx:alpine`, porta 8080:80, IP 172.20.0.10, `cap_add: [NET_ADMIN]`.
+- [ ] Configurar serviço `server-http2`: imagem `nginx:alpine`, porta 8443:443, IP 172.20.0.20, `cap_add: [NET_ADMIN]`, suporte TLS 1.3 e HTTP/2.
+- [ ] Configurar serviço `server-http3`: imagem `caddy:2.7-alpine`, portas 9443:443/tcp e 9443:443/udp, IP 172.20.0.30, `cap_add: [NET_ADMIN]`, suporte nativo a HTTP/3 QUIC.
+- [ ] Criar script OpenSSL para gerar certificados locais com Subject Alternative Names (SANs) válidos (`localhost`, `172.20.0.20`, `172.20.0.30`).
+- [ ] Testar subida dos contêineres e certificar que todos respondem nos respectivos protocolos.
+
+### Fase 3: Geração de Cargas Estáticas e Scripts `tc netem`
+- [ ] Criar script Python `scripts/generate_payloads.py` para gerar:
+  - Carga A: arquivo único de 50 MB (`50MB.bin`).
+  - Carga B: 100 arquivos independentes de 10 KB (`objects/obj_001.bin` a `obj_100.bin`).
+- [ ] Mapear o diretório de dados estáticos como volume compartilhado de leitura nos três servidores.
+- [ ] Criar script `scripts/setup_netem.sh` para:
+  - Aplicar Cenário 1 (LAN): `tc qdisc add dev eth0 root netem delay 0.5ms` (RTT = 1ms, perda 0%).
+  - Aplicar Cenário 2 (WAN): `tc qdisc add dev eth0 root netem delay 25ms loss 2%` (RTT = 50ms, perda 2%).
+  - Limpar interface: `tc qdisc del dev eth0 root`.
+
+### Fase 4: Desenvolvimento do Cliente de Benchmark Python
+- [ ] Criar ambiente virtual Python e instalar `httpx`, `aioquic`, `asyncio`, `pandas`, `scipy`.
+- [ ] Desenvolver `benchmark/client.py`:
+  - Cliente assíncrono para requisições HTTP/1.1 e HTTP/2 via `httpx.AsyncClient`.
+  - Cliente assíncrono para requisições HTTP/3 sobre QUIC via `aioquic`.
+- [ ] Implementar **Controle Rigoroso de Vício de Sessão (Client-Side Bias Control)**:
+  - Desabilitar cache HTTP local.
+  - Modo Cold TTFB: fechar explicitamente a sessão do cliente (`client.close()`) antes de cada requisição individual para medir latência real do handshake.
+  - Modo Warm Connection: manter conexão persistente única para download concorrente de 100 objetos (multiplexação).
+- [ ] Registrar métricas com precisão de microssegundos: TTFB, Total Load Time, RPS, status code.
+- [ ] Implementar exportação de resultados para `data/raw/results.json` e `data/raw/results.csv`.
+
+### Fase 5: Automação Runner 1-Click e Execução dos 12 Testes
+- [ ] Criar orquestrador mestre `run_experiments.sh` (Linux/WSL) e `run_experiments.ps1` (Windows):
+  1. Subir contêineres (`docker compose up -d`);
+  2. Aplicar Cenário 1 (LAN: delay 0.5ms, loss 0%);
+  3. Executar T01, T02, T03 (Carga A - 50MB);
+  4. Executar T07, T08, T09 (Carga B - 100x10KB);
+  5. Aplicar Cenário 2 (WAN: delay 25ms, loss 2%);
+  6. Executar T04, T05, T06 (Carga A - 50MB);
+  7. Executar T10, T11, T12 (Carga B - 100x10KB);
+  8. Restaurar interfaces (`tc qdisc del dev eth0 root`);
+  9. Disparar pipeline de processamento e gráficos;
+  10. Finalizar contêineres (`docker compose down`).
+- [ ] Executar bateria completa com no mínimo 10 repetições por teste ($N \ge 10$).
+- [ ] Validar integridade dos arquivos gerados em `data/raw/`.
+
+### Fase 6: Pipeline de Análise Estatística e Visualização Gráfica
+- [ ] Criar `analysis/process_data.py`:
+  - Calcular média, mediana, desvio padrão, percentis p50 e p99, e Intervalo de Confiança de 95% (t-Student).
+  - Gerar tabelas consolidadas em CSV e LaTeX para o relatório.
+- [ ] Criar `analysis/plot_results.py`:
+  - Gráfico 1: TTFB Cold vs Warm por Protocolo (LAN vs WAN) — **com barras de erro**.
+  - Gráfico 2: Vazão Sustentada (Throughput) de 50 MB (T01 a T06) — **com barras de erro**.
+  - Gráfico 3: Tempo Total de Carregamento dos 100 objetos (T07 a T12) — **com barras de erro**.
+  - Gráfico 4: Requisições por Segundo (RPS) na Carga B sob Perdas (T10 vs T11 vs T12) — **com barras de erro**.
+  - Gráfico 5: Curva CDF de latência dos fluxos demonstrando eliminação do HoL blocking no HTTP/3.
+
+### Fase 7: Redação do Relatório Técnico Científico (LaTeX SBC)
+- [ ] Configurar modelo oficial da SBC (`relatorio/sbc-template.tex`, `sbc.sty`).
+- [ ] Redigir Resumo e Abstract com palavras-chave.
+- [ ] Seção 1: Introdução, contextualização da Web moderna e objetivos pedagógicos.
+- [ ] Seção 2: Fundamentação Teórica (Handshakes, HoL Blocking nas camadas, RFCs 793, 7540, 9000, 9114).
+- [ ] Seção 3: Metodologia Experimental e Topologia (diagramas Mermaid convertidos, parâmetros do `tc netem`, cliente Python).
+- [ ] Seção 4: Resultados Experimentais e Discussão:
+  - Tabelas de consolidação com médias, medianas, desvio padrão, p50 e p99.
+  - Figuras com barras de erro de alta resolução (300 DPI).
+  - **Articulação obrigatória com Tanenbaum §6.5.11 (TCP CUBIC)**: justificativa matemática e conceitual do colapso no T04 e T05 sob 2% de perda estocástica na WAN.
+  - **Articulação obrigatória com Tanenbaum §6.6.1 (QUIC) e §6.6.2 (BBR)**: justificativa da resiliência e superioridade de throughput/RPS no T06 e T12.
+- [ ] Seção 5: Conclusões e considerações finais.
+- [ ] **INSERIR O LINK PÚBLICO DO VÍDEO DO YOUTUBE NA 1ª PÁGINA DO ARTIGO (CRÍTICO!)**.
+
+### Fase 8: Gravação do Vídeo de 15 Minutos e Auditoria Final
+- [ ] Elaborar apresentação de slides de suporte (`video/slide_deck/`).
+- [ ] Ensaiar blocos cronometrados para atingir exatamente 15 minutos (tolerância: 14:50 a 15:10).
+- [ ] Gravar vídeo demonstrativo completo com OBS Studio:
+  - Apresentação da equipe e visão geral (2 min);
+  - Código-fonte, Docker Compose e configurações de servidores (2.5 min);
+  - Código do cliente Python assíncrono e controle de viés de sessão (3 min);
+  - Execução ao vivo do `run_experiments.sh` e inspeção de logs (3 min);
+  - Análise dos gráficos com barras de erro e fundamentação teórica Tanenbaum (3 min);
+  - Conclusão e lições aprendidas (1.5 min).
+- [ ] Fazer upload do vídeo no YouTube em modo "Não listado" ou "Público".
+- [ ] Inserir o link do vídeo na 1ª página do relatório LaTeX e recompilar o PDF.
+- [ ] Testar clique no link em janela anônima para garantir que o vídeo abre diretamente.
+- [ ] Empacotar o diretório conforme edital: `TP2_Redes2_NomeAluno1_NomeAluno2.zip`.
+- [ ] Submeter no SIGAA dentro do prazo.
+
+
+
+==================== ARQUIVO: brain\02_arquitetura\arquitetura_e_docker.md ====================
+# 01. Arquitetura de Rede e Infraestrutura Docker
+
+**Disciplina:** Redes de Computadores II (2026-2)  
+**Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
+**Curso:** Bacharelado em Sistemas de Informação  
+**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)
+
+---
+
+## 1. Topologia da Rede Experimental
+
+Para isolar os experimentos de interferências de tráfego externo, oscilações de roteamento e comportamentos imprevisíveis de caches locais de sistema operacional, a infraestrutura é integralmente modelada em contêineres Docker, interconectados por uma rede bridge dedicada com endereçamento IPv4 estático.
+
+```mermaid
+flowchart TD
+    subgraph DOCKER_HOST ["Host de Execução (Linux / Docker Desktop WSL 2)"]
+        subgraph NET_BENCH ["Rede Bridge Docker: net_bench (172.20.0.0/16)"]
+            
+            subgraph CLI_BENCH ["Cliente de Benchmark em Python"]
+                PY_CLIENT["Cliente Assíncrono (Python 3.12+)<br>• httpx (HTTP/1.1 & HTTP/2 TLS 1.3)<br>• aioquic + asyncio (HTTP/3 QUIC)<br>• Controle de Viés de Sessão (Cold vs Warm)"]
+            end
+
+            subgraph SRV1 ["Servidor 1: server_http11 (172.20.0.10)"]
+                NGINX1["NGINX Alpine<br>Porta 80 TCP (Host 8080)<br>HTTP/1.1 em texto claro"]
+                TC1["tc netem (eth0)<br>cap_add: NET_ADMIN"]
+            end
+
+            subgraph SRV2 ["Servidor 2: server_http2_tls (172.20.0.20)"]
+                NGINX2["NGINX Alpine<br>Porta 443 TCP (Host 8443)<br>HTTPS / HTTP/2 com TLS 1.3"]
+                TC2["tc netem (eth0)<br>cap_add: NET_ADMIN"]
+                CERTS2["Certificados TLS 1.3 (OpenSSL)"]
+            end
+
+            subgraph SRV3 ["Servidor 3: server_http3_quic (172.20.0.30)"]
+                CADDY["Caddy 2.7 Alpine<br>Porta 443 TCP & 443 UDP (Host 9443)<br>HTTP/3 nativo sobre QUIC"]
+                TC3["tc netem (eth0)<br>cap_add: NET_ADMIN"]
+                CERTS3["Certificados TLS 1.3 (OpenSSL)"]
+            end
+
+            subgraph SHARED_VOL ["Volume Compartilhado de Dados Estáticos"]
+                PAYLOAD_A["Carga A: 50MB.bin (Regime Permanente / Throughput)"]
+                PAYLOAD_B["Carga B: 100 arquivos x 10KB (Multiplexação / HoL)"]
+            end
+
+            CLI_BENCH -->|TCP :8080 / 172.20.0.10:80| SRV1
+            CLI_BENCH -->|TCP :8443 / 172.20.0.20:443| SRV2
+            CLI_BENCH -->|UDP :9443 / 172.20.0.30:443| SRV3
+            
+            SHARED_VOL -.->|Montagem somente leitura| SRV1
+            SHARED_VOL -.->|Montagem somente leitura| SRV2
+            SHARED_VOL -.->|Montagem somente leitura| SRV3
+        end
+    end
+```
+
+---
+
+## 2. Especificação Declarativa do `docker-compose.yml`
+
+Conforme especificado no edital da 2ª Avaliação, o ambiente orquestra três contêineres de servidores distintos:
+
+```yaml
+version: '3.8'
+
+services:
+  server-http1:
+    image: nginx:alpine
+    container_name: server_http11
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "8080:80"
+    volumes:
+      - ./server-http1/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../data/static:/usr/share/nginx/html:ro
+    networks:
+      net_bench:
+        ipv4_address: 172.20.0.10
+
+  server-http2:
+    image: nginx:alpine
+    container_name: server_http2_tls
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "8443:443"
+    volumes:
+      - ./server-http2/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+      - ../data/static:/usr/share/nginx/html:ro
+    networks:
+      net_bench:
+        ipv4_address: 172.20.0.20
+
+  server-http3:
+    image: caddy:2.7-alpine
+    container_name: server_http3_quic
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "9443:443/tcp"
+      - "9443:443/udp"
+    volumes:
+      - ./server-http3/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/etc/caddy/certs:ro
+      - ../data/static:/var/www/html:ro
+    networks:
+      net_bench:
+        ipv4_address: 172.20.0.30
+
+networks:
+  net_bench:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+```
+
+---
+
+## 3. Detalhamento dos Três Servidores Web
+
+### 3.1. Servidor 1: HTTP/1.1 em Texto Claro (`server_http11`)
+- **Software:** NGINX Alpine (`nginx:alpine`).
+- **Porta:** 80 internamente / 8080 exposta no host.
+- **Endereço IPv4 na rede Docker:** `172.20.0.10`.
+- **Objetivo Científico:** Servir como linha de base (*baseline*) pura de desempenho do protocolo de transporte TCP sem o overhead de criptografia simétrica ou assimétrica do TLS. Permite isolar o custo real do 3-way handshake do TCP (1 RTT) e a vulnerabilidade ao Head-of-Line Blocking na camada de aplicação.
+- **Configuração de Referência (`nginx.conf`):**
+  ```nginx
+  events { worker_connections 1024; }
+  http {
+      include /etc/nginx/mime.types;
+      default_type application/octet-stream;
+      sendfile on;
+      tcp_nopush on;
+      tcp_nodelay on;
+      keepalive_timeout 65;
+
+      server {
+          listen 80;
+          server_name localhost;
+          root /usr/share/nginx/html;
+
+          location / {
+              try_files $uri $uri/ =404;
+              add_header Cache-Control "no-store, no-cache, must-revalidate";
+          }
+      }
+  }
+  ```
+
+### 3.2. Servidor 2: HTTPS / HTTP/2 com TLS 1.3 (`server_http2_tls`)
+- **Software:** NGINX Alpine (`nginx:alpine`).
+- **Porta:** 443 internamente / 8443 exposta no host.
+- **Endereço IPv4 na rede Docker:** `172.20.0.20`.
+- **Objetivo Científico:** Avaliar o impacto cumulativo do handshake duplo (TCP 1 RTT + TLS 1.3 1 RTT = 2 RTTs) no TTFB e analisar a multiplexação por quadros binários do HTTP/2. Evidencia empiricamente o fenômeno em que a resolução do HoL blocking na aplicação transfere a vulnerabilidade para a camada de transporte TCP, onde a perda de um único segmento no Cenário WAN retém o buffer de todos os fluxos multiplexados.
+- **Configuração de Referência (`nginx.conf`):**
+  ```nginx
+  events { worker_connections 1024; }
+  http {
+      include /etc/nginx/mime.types;
+      default_type application/octet-stream;
+      sendfile on;
+      tcp_nopush on;
+      tcp_nodelay on;
+
+      server {
+          listen 443 ssl http2;
+          server_name localhost;
+          root /usr/share/nginx/html;
+
+          ssl_certificate /etc/nginx/certs/cert.pem;
+          ssl_certificate_key /etc/nginx/certs/key.pem;
+          ssl_protocols TLSv1.3;
+          ssl_prefer_server_ciphers off;
+
+          location / {
+              try_files $uri $uri/ =404;
+              add_header Cache-Control "no-store, no-cache, must-revalidate";
+          }
+      }
+  }
+  ```
+
+### 3.3. Servidor 3: HTTP/3 Nativo sobre QUIC (`server_http3_quic`)
+- **Software:** Caddy 2.7 Alpine (`caddy:2.7-alpine`).
+- **Portas:** 443/tcp e 443/udp internamente / 9443:443/tcp e 9443:443/udp no host.
+- **Endereço IPv4 na rede Docker:** `172.20.0.30`.
+- **Objetivo Científico:** Mensurar a eficiência do transporte QUIC sobre datagramas UDP com handshake integrado de 1 RTT e streams independentes. Demonstra a imunidade ao HoL blocking tanto na aplicação quanto no transporte, sustentando alta taxa de requisições por segundo (RPS) sob o Cenário WAN (2% de perda estocástica e 50ms de RTT).
+- **Configuração de Referência (`Caddyfile`):**
+  ```caddy
+  {
+      admin off
+      auto_https off
+      servers {
+          protocol {
+              experimental_http3
+          }
+      }
+  }
+
+  https://:443 {
+      tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
+      root * /var/www/html
+      file_server
+      header Cache-Control "no-store, no-cache, must-revalidate"
+      header Alt-Svc "h3=\":9443\"; ma=86400"
+  }
+  ```
+
+---
+
+## 4. Geração dos Certificados TLS 1.3 Locais com SANs Válidos
+
+Para que os clientes assíncronos em Python (`httpx` e `aioquic`) estabeleçam conexões seguras sem falhas de resolução de nome ou rejeição de certificado inválido, geramos um par de chaves e certificado autoassinado com extensões **Subject Alternative Name (SAN)** cobrindo todos os endereços utilizados:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+mkdir -p certs
+
+openssl req -x509 -newkey rsa:2048 -nodes \
+  -keyout certs/key.pem \
+  -out certs/cert.pem \
+  -days 365 \
+  -subj "/C=BR/ST=Piaui/L=Picos/O=UFPI/OU=RedesII/CN=localhost" \
+  -addext "subjectAltName=DNS:localhost,DNS:server_http2_tls,DNS:server_http3_quic,IP:127.0.0.1,IP:172.20.0.20,IP:172.20.0.30"
+
+echo "Certificados TLS 1.3 gerados com sucesso em ./certs/"
+```
+
+---
+
+## 5. Emulação de Rede com Linux Traffic Control (`tc netem`)
+
+### 5.1. Permissões de Kernel e RTNETLINK
+A manipulação de disciplinas de enfileiramento (*Queueing Disciplines* - `qdisc`) requer privilégios de administração de rede no kernel Linux. A declaração `cap_add: - NET_ADMIN` em cada contêiner no `docker-compose.yml` concede a capability `CAP_NET_ADMIN`, essencial para que o utilitário `tc` injete atrasos e descartes na interface virtual `eth0` do contêiner sem o erro:
+`RTNETLINK answers: Operation not permitted`.
+
+### 5.2. Cálculo do RTT no `tc netem`
+O comando `tc netem delay Xms` aplica o atraso na saída de pacotes da interface. Em uma comunicação de ida e volta (Round-Trip Time - RTT), o tempo total é a soma do tempo de envio da requisição mais o tempo de envio da resposta. Portanto:
+$$\text{RTT} = 2 \times \text{delay}_{\text{netem}} \implies \text{delay}_{\text{netem}} = \frac{\text{RTT}}{2}$$
+
+- **Cenário 1 (LAN - RTT de 1.0 ms):** $\text{delay} = 1.0 / 2 = 0.5\text{ ms}$, Perda: $0\%$.
+- **Cenário 2 (WAN - RTT de 50.0 ms):** $\text{delay} = 50.0 / 2 = 25.0\text{ ms}$, Perda: $2\%$.
+
+### 5.3. Comandos Padronizados de Execução e Limpeza
+
+```bash
+# ==============================================================================
+# Aplicação do Cenário 1 (LAN - Latência RTT de 1ms, 0% Perda):
+# ==============================================================================
+docker exec --privileged server_http11 tc qdisc add dev eth0 root netem delay 0.5ms
+docker exec --privileged server_http2_tls tc qdisc add dev eth0 root netem delay 0.5ms
+docker exec --privileged server_http3_quic tc qdisc add dev eth0 root netem delay 0.5ms
+
+# ==============================================================================
+# Aplicação do Cenário 2 (WAN - Latência RTT de 50ms, 2% de Perda Estocástica):
+# ==============================================================================
+docker exec --privileged server_http11 tc qdisc add dev eth0 root netem delay 25ms loss 2%
+docker exec --privileged server_http2_tls tc qdisc add dev eth0 root netem delay 25ms loss 2%
+docker exec --privileged server_http3_quic tc qdisc add dev eth0 root netem delay 25ms loss 2%
+
+# ==============================================================================
+# Limpeza e Restauração das Interfaces (Estado Limpo):
+# ==============================================================================
+docker exec --privileged server_http11 tc qdisc del dev eth0 root 2>/dev/null || true
+docker exec --privileged server_http2_tls tc qdisc del dev eth0 root 2>/dev/null || true
+docker exec --privileged server_http3_quic tc qdisc del dev eth0 root 2>/dev/null || true
+```
+
+
+
+==================== ARQUIVO: brain\03_experimentos\cenarios_de_teste.md ====================
+# 02. Especificação Detalhada dos Cenários e Matriz Experimental
+
+**Disciplina:** Redes de Computadores II (2026-2)  
+**Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
+**Curso:** Bacharelado em Sistemas de Informação  
+**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)
+
+Este documento estabelece as condições físicas e sintéticas de canal de rede, a modelagem dos perfis de carga e o detalhamento minucioso dos 12 testes experimentais obrigatórios estabelecidos no edital da 2ª Avaliação.
+
+---
+
+## 1. Condições dos Canais de Rede Emulados (`tc netem`)
+
+A emulação do canal é injetada diretamente na interface de rede virtual (`eth0`) dos contêineres Docker através do utilitário `tc` com o módulo `netem` (*Network Emulator*).
+
+### 1.1. Cenário 1: Rede Local (LAN) — Canal Ideal de Alta Performance
+- **Atraso Unidirecional Injetado:** `0.5 ms` ($\implies \textbf{RTT total de 1.0 ms}$).
+- **Taxa de Descarte Sintético (Packet Loss):** `0.0%` (Canal sem ruído ou interferência).
+- **Largura de Banda:** Sem limitação artificial de taxa (vazão nativa do Docker bridge > 1 Gbps).
+- **Comando de Aplicação:**
+  ```bash
+  docker exec --privileged <container_name> tc qdisc add dev eth0 root netem delay 0.5ms
+  ```
+- **Finalidade Científica:** Isolar o desempenho ótimo de cada protocolo em regime livre de perdas, permitindo mensurar a sobrecarga pura de processamento de cabeçalhos, custos de cifragem criptográfica do TLS 1.3 e eficiência das pilhas de software em espaço de usuário (*user space*) versus núcleo do sistema operacional (*kernel space*).
+
+### 1.2. Cenário 2: Rede Geográfica / Móvel (WAN) — Canal Degradado e Ruidoso
+- **Atraso Unidirecional Injetado:** `25.0 ms` ($\implies \textbf{RTT total de 50.0 ms}$).
+- **Taxa de Descarte Sintético (Packet Loss):** `2.0%` (Taxa estocástica de perda de pacotes).
+- **Comando de Aplicação:**
+  ```bash
+  docker exec --privileged <container_name> tc qdisc add dev eth0 root netem delay 25ms loss 2%
+  ```
+- **Finalidade Científica:** Expor os limites operacionais e os mecanismos de controle de congestionamento e recuperação de perdas. Demonstra empiricamente o colapso de vazão do algoritmo TCP CUBIC sob descarte contínuo e a superioridade de resiliência do QUIC / BBR ao manter fluxos independentes desacoplados.
+
+---
+
+## 2. Perfis de Carga Sintética
+
+Para testar as duas dimensões fundamentais de desempenho na Web (largura de banda e concorrência/latência), o cliente automatizado submeterá os servidores a dois perfis padronizados de carga:
+
+### 2.1. Carga A: Gargalo de Banda / Regime Permanente (Transferência Massiva)
+- **Tamanho do Payload:** 1 arquivo binário estático de **50 MB** (`50MB.bin`).
+- **Dimensão Analisada:** Vazão sustentada (*Throughput* / *Goodput*), saturação do canal, tempo total de carregamento e evolução da janela de congestionamento em transferências contínuas.
+- **Hipótese Central:** No Cenário 1 (LAN), o TCP se sobressai devido às otimizações maduras de kernel (TSO, GRO e menor uso de CPU) contra o QUIC em user space. No Cenário 2 (WAN com 2% de perda), o TCP CUBIC colapsa violentamente sua janela de congestionamento (Tanenbaum §6.5.11), enquanto o QUIC/BBR sustenta alta taxa de entrega.
+
+### 2.2. Carga B: Gargalo de Latência e Multiplexação (Página Web Rica)
+- **Tamanho do Payload:** Download concorrente de **100 objetos pequenos e independentes de 10 KB cada** (`obj_001.bin` a `obj_100.bin`), totalizando 1 MB transferido.
+- **Dimensão Analisada:** Capacidade de multiplexação sobre canal persistente (*warm connection*), impacto do Bloqueio de Início de Linha (*Head-of-Line Blocking*), dispersão de percentis de latência (p50 e p99) e taxa de requisições por segundo (RPS).
+- **Hipótese Central:** No HTTP/1.1, ocorre severo HoL blocking na aplicação ou sobrecarga de abertura paralela de sockets. No HTTP/2 (HTTPS), a multiplexação funciona perfeitamente na LAN, mas no Cenário WAN a perda de um único segmento TCP retém todos os 100 fluxos simultâneos no buffer do kernel. No HTTP/3, a perda atinge apenas o fluxo individual afetado, eliminando completamente o HoL blocking.
+
+---
+
+## 3. Matriz Experimental Obrigatória (Detalhamento dos 12 Testes)
+
+| ID | Carga | Protocolo Alvo | Servidor Alvo | Cenário de Rede | Foco Analítico e Hipótese Científica |
+| :---: | :---: | :---: | :---: | :---: | :--- |
+| **T01** | Carga A (50 MB) | HTTP/1.1 | `server_http11` (Porta 8080) | Cenário 1 (LAN: 1ms, 0%) | **Vazão máxima TCP em canal ideal:** Linha de base de throughput sem o overhead de criptografia TLS. Avalia a saturação pura da pilha de rede do kernel Linux. |
+| **T02** | Carga A (50 MB) | HTTPS / TLS 1.3 | `server_http2_tls` (Porta 8443) | Cenário 1 (LAN: 1ms, 0%) | **Custo computacional de cifragem TLS 1.3:** Mensura a penalidade imposta pela cifra simétrica AES-GCM / ChaCha20-Poly1305 sobre o TCP em regime permanente. |
+| **T03** | Carga A (50 MB) | HTTP/3 (QUIC) | `server_http3_quic` (Porta 9443) | Cenário 1 (LAN: 1ms, 0%) | **Eficiência do QUIC em user-space sem perdas:** Avalia a sobrecarga de context-switches e processamento UDP no espaço de usuário do Caddy/QUIC em comparação com o kernel TCP. |
+| **T04** | Carga A (50 MB) | HTTP/1.1 | `server_http11` (Porta 8080) | Cenário 2 (WAN: 50ms, 2%) | **Sensibilidade do TCP CUBIC a perdas estocásticas:** Colapso drástico de vazão decorrente da redução severa de *cwnd* provocada pela função cúbica pós-perda (Tanenbaum §6.5.11). |
+| **T05** | Carga A (50 MB) | HTTPS / TLS 1.3 | `server_http2_tls` (Porta 8443) | Cenário 2 (WAN: 50ms, 2%) | **Degradação cumulativa de TCP CUBIC + TLS sob perdas:** Combinação da retração da janela do TCP com a latência de retransmissão de blocos cifrados. |
+| **T06** | Carga A (50 MB) | HTTP/3 (QUIC) | `server_http3_quic` (Porta 9443) | Cenário 2 (WAN: 50ms, 2%) | **Resiliência do controle de congestionamento QUIC/BBR:** Sustentação de vazão e recuperação ágil de perdas em canal de alta latência e descarte contínuo (Tanenbaum §6.6.1/§6.6.2). |
+| **T07** | Carga B (100x10KB) | HTTP/1.1 | `server_http11` (Porta 8080) | Cenário 1 (LAN: 1ms, 0%) | **Overhead de concorrência no HTTP/1.1:** Custo de sucessivos handshakes ou paralelização ineficiente na requisição de múltiplos pequenos recursos na LAN. |
+| **T08** | Carga B (100x10KB) | HTTPS / TLS 1.3 | `server_http2_tls` (Porta 8443) | Cenário 1 (LAN: 1ms, 0%) | **Eficiência da multiplexação HTTP/2 em canal ideal:** Excelente aproveitamento do canal persistente aquecido com divisão de recursos em quadros sobre uma única conexão TCP. |
+| **T09** | Carga B (100x10KB) | HTTP/3 (QUIC) | `server_http3_quic` (Porta 9443) | Cenário 1 (LAN: 1ms, 0%) | **Desempenho de múltiplos fluxos QUIC em rede limpa:** Comportamento da abertura instantânea de streams em paralelo sobre o canal QUIC inicializado. |
+| **T10** | Carga B (100x10KB) | HTTP/1.1 | `server_http11` (Porta 8080) | Cenário 2 (WAN: 50ms, 2%) | **Severidade do HoL blocking na Camada de Aplicação:** Desempenho crítico decorrente da espera sequencial de respostas e da latência de 50ms acrescida de descarte de 2%. |
+| **T11** | Carga B (100x10KB) | HTTPS / TLS 1.3 | `server_http2_tls` (Porta 8443) | Cenário 2 (WAN: 50ms, 2%) | **Severidade do HoL blocking na Camada de Transporte TCP:** Perda de pacotes isolados força a retenção de todos os fluxos multiplexados no buffer TCP, elevando violentamente o percentil p99. |
+| **T12** | Carga B (100x10KB) | HTTP/3 (QUIC) | `server_http3_quic` (Porta 9443) | Cenário 2 (WAN: 50ms, 2%) | **Mitigação total do HoL blocking via fluxos UDP isolados:** A perda de datagramas atrasa exclusivamente o stream afetado, garantindo que os 99 demais continuem sendo entregues imediatamente. |
+
+---
+
+## 4. Rigor Experimental e Repetibilidade
+
+Para assegurar validade científica aos testes e atender às exigências do edital:
+1. **Número Mínimo de Repetições:** Cada um dos 12 testes será executado no mínimo **10 vezes de forma independente** ($N \ge 10$).
+2. **Total de Amostragens da Bateria:**
+   - Carga A (T01 a T06): $6 \text{ testes} \times 10 \text{ repetições} = 60 \text{ execuções de download de 50MB}$.
+   - Carga B (T07 a T12): $6 \text{ testes} \times 10 \text{ repetições} = 60 \text{ execuções de lotes de 100 objetos}$.
+   - Totalizando **120 ensaios experimentais completos**.
+3. **Isolamento entre Amostras:** Entre cada repetição, haverá um intervalo de dissipação de buffers de 1 segundo (`sleep 1`) para evitar contaminação por pacotes remanescentes na interface virtual.
+
+
+
+==================== ARQUIVO: brain\03_experimentos\metricas_e_analise_dados.md ====================
+# 03. Métricas de Desempenho, Análise Estatística e Controle de Viés
+
+**Disciplina:** Redes de Computadores II (2026-2)  
+**Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
+**Curso:** Bacharelado em Sistemas de Informação  
+**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)
+
+Este documento estabelece a modelagem matemática das métricas operacionais, as regras de controle de viés de sessão no cliente Python, o tratamento estatístico com intervalos de confiança e as diretrizes obrigatórias para os gráficos científicos.
+
+---
+
+## 1. Mapeamento das Métricas Operacionais
+
+O cliente de benchmark em Python (`benchmark/client.py`) deve coletar dados temporais com **precisão de microssegundos** utilizando timers monotônicos de alta resolução (`time.perf_counter()`):
+
+### 1.1. Time to First Byte (TTFB)
+- **Definição:** Intervalo de tempo transcorrido entre a emissão do primeiro byte do cabeçalho da requisição pelo cliente e a recepção do primeiro byte do corpo (*payload*) da resposta vinda do servidor:
+  $$\text{TTFB} = t_{\text{first\_byte\_received}} - t_{\text{request\_started}}$$
+- **Significado Científico:** Em conexões frias (*Cold TTFB*), o TTFB quantifica diretamente o custo de latência de estabelecimento da conexão (handshakes de transporte e criptografia):
+  - **HTTP/1.1:** 1 RTT (Handshake de 3 vias TCP: SYN $\to$ SYN-ACK $\to$ ACK) + tempo de processamento do servidor;
+  - **HTTPS / HTTP/2:** 2 RTTs cumulativos (1 RTT TCP + 1 RTT TLS 1.3);
+  - **HTTP/3-QUIC:** 1 RTT integrado (QUIC + TLS 1.3 embutido sobre UDP) ou 0-RTT em conexões subsequentes.
+
+### 1.2. Tempo Total de Carregamento (Total Load Time)
+- **Definição:** Duração total decorrida desde a inicialização do pedido até a recepção completa do último byte do recurso solicitado:
+  $$\text{Total Load Time} = t_{\text{last\_byte\_received}} - t_{\text{request\_started}}$$
+- **Cálculo da Vazão Útil (Goodput):**  
+  Para a Carga A (50 MB), a vazão útil efetiva de aplicação é dada por:
+  $$\text{Goodput (Mbps)} = \frac{\text{Bytes Úteis de Aplicação} \times 8}{\text{Total Load Time (segundos)} \times 10^6}$$
+
+### 1.3. Requisições por Segundo (RPS)
+- **Definição:** Razão entre a quantidade total de requisições concluídas com código de status HTTP `200 OK` e a duração total da janela de execução do teste da Carga B (100 objetos):
+  $$\text{RPS} = \frac{N_{\text{requisições\_sucesso}}}{\Delta t_{\text{janela\_total\_teste}}}$$
+- **Significado Científico:** Mede a capacidade de multiplexação de conexões concorrentes. No Cenário WAN sob 2% de perda, o RPS do HTTP/3 demonstrará superioridade expressiva em relação ao HTTP/2 e ao HTTP/1.1 devido ao isolamento de perdas por stream.
+
+### 1.4. Percentis de Latência (p50 e p99)
+- **Percentil p50 (Mediana):** Valor central da distribuição de tempo de resposta. Representa a experiência típica da maioria das requisições, sendo robusto contra outliers.
+- **Percentil p99 (Cauda Longa / Pior Caso):** Limite de latência para 99% das requisições amostradas. É a métrica mais sensível para revelar o impacto do **Head-of-Line (HoL) Blocking** e retransmissões:
+  - No HTTP/2 com perda de 2% (T11), o p99 dispara porque a retransmissão do pacote TCP atrasa a entrega de todo o buffer da aplicação.
+  - No HTTP/3 (T12), o p99 permanece estreito, pois streams não afetados pela perda progridem imediatamente.
+
+---
+
+## 2. Controle Estrito de Viés de Sessão (Client-Side Bias Control)
+
+> [!WARNING]
+> ### SANÇÃO DO EDITAL (-10 PONTOS):
+> A inobservância do controle de viés de sessão (como o reuso indevido de conexões no teste de TTFB) acarreta a **subtração direta de 10 pontos na nota final**.
+
+Para assegurar rigor metodológico, o cliente de benchmark implementa dois modos operacionais mutualmente exclusivos:
+
+```mermaid
+flowchart TD
+    subgraph BIAS_CONTROL ["Mecanismos de Controle de Viés no Cliente Python"]
+        direction TB
+        CACHE["1. Desativação Absoluta de Cache<br>• Headers: Cache-Control: no-store, no-cache<br>• Headers: Pragma: no-cache"]
+        
+        subgraph MODE_COLD ["Modo Cold TTFB (Isolamento de Handshake)"]
+            COLD1["• Criação de nova sessão por requisição"]
+            COLD2["• client.close() explícito ao final"]
+            COLD3["• Connection Pooling = DESATIVADO"]
+            COLD4["• Mede: 1 RTT (TCP), 2 RTTs (TCP+TLS), 1 RTT (QUIC)"]
+        end
+
+        subgraph MODE_WARM ["Modo Warm Connection (Multiplexação e HoL)"]
+            WARM1["• Abertura prévia de 1 única conexão"]
+            WARM2["• Disparo concorrente dos 100 objetos pequenos"]
+            WARM3["• Reuso estrito do canal pré-aquecido"]
+            WARM4["• Mede: Capacidade de multiplexação e HoL Blocking real"]
+        end
+    end
+```
+
+1. **Desativação Total de Cache:** O cliente Python não armazena cookies, respostas em memória ou em disco. Todas as requisições incluem cabeçalhos explícitos `Cache-Control: no-cache, no-store`.
+2. **Modo Conexão Fria (Cold TTFB):**
+   - Utilizado para medir com precisão a latência inicial de handshake.
+   - Antes de cada requisição individual, uma nova instância do cliente é criada e, imediatamente após a recepção do primeiro byte/resposta, a sessão é explicitamente destruída com `await client.aclose()`.
+   - Impede o reaproveitamento de sockets TCP ou conexões QUIC prévias.
+3. **Modo Conexão Aquecida (Warm Connection):**
+   - Utilizado nos testes da Carga B (100 objetos de 10 KB).
+   - O cliente estabelece uma única conexão persistente e dispara as requisições concorrentes sobre essa mesma conexão aquecida.
+   - Permite mensurar a eficiência real de divisão de canal por quadros no HTTP/2 e por streams no HTTP/3, sem a contaminação do custo de sucessivos handshakes.
+
+---
+
+## 3. Rigor Estatístico Obrigatório ($N \ge 10$)
+
+Para mitigar variações estocásticas do agendador de processos do sistema operacional e da emulação de pacotes, cada ponto de teste possui no mínimo **10 repetições independentes** ($N = 10$).
+
+### 3.1. Estimadores Estatísticos
+Para cada conjunto amostral $X = \{x_1, x_2, \dots, x_N\}$ coletado:
+- **Média Amostral ($\bar{x}$):**
+  $$\bar{x} = \frac{1}{N} \sum_{i=1}^{N} x_i$$
+- **Variância Amostral ($s^2$):**
+  $$s^2 = \frac{1}{N - 1} \sum_{i=1}^{N} (x_i - \bar{x})^2$$
+- **Desvio Padrão Amostral ($s$):**
+  $$s = \sqrt{s^2}$$
+
+### 3.2. Intervalo de Confiança de 95% (Distribuição t-Student)
+Como o tamanho da amostra é pequeno ($N = 10 < 30$) e o desvio padrão populacional é desconhecido, utiliza-se a distribuição **t-Student** com $\nu = N - 1 = 9$ graus de liberdade:
+$$CI_{95\%} = \left[ \bar{x} - t_{\alpha/2, \nu} \times \frac{s}{\sqrt{N}}, \quad \bar{x} + t_{\alpha/2, \nu} \times \frac{s}{\sqrt{N}} \right]$$
+Para $\alpha = 0.05$ (confiança de 95%) e $\nu = 9$:
+$$t_{0.025, 9} \approx 2.262$$
+A margem de erro ($ME$) é dada por:
+$$ME = 2.262 \times \frac{s}{\sqrt{10}} \approx 0.715 \times s$$
+
+---
+
+## 4. Esquema de Exportação de Dados Brutos (`results.json` e `results.csv`)
+
+Ao término dos ensaios, o cliente exporta os registros estruturados para `data/raw/`:
+
+### 4.1. Estrutura do `results.json`
+```json
+[
+  {
+    "test_id": "T01",
+    "repetition": 1,
+    "timestamp": "2026-10-21T11:00:00.123456Z",
+    "protocol": "HTTP/1.1",
+    "scenario": "LAN",
+    "load_profile": "Carga A (50MB)",
+    "rtt_emulated_ms": 1.0,
+    "loss_emulated_pct": 0.0,
+    "status_code": 200,
+    "ttfb_ms": 1.254,
+    "total_load_time_ms": 412.305,
+    "bytes_transferred": 52428800,
+    "goodput_mbps": 1017.25,
+    "rps": null
+  }
+]
+```
+
+### 4.2. Colunas do `results.csv`
+`test_id,repetition,timestamp,protocol,scenario,load_profile,rtt_ms,loss_pct,status_code,ttfb_ms,total_time_ms,goodput_mbps,rps`
+
+---
+
+## 5. Requisitos Mandatórios de Visualização Gráfica
+
+> [!CAUTION]
+> ### REGRA CRÍTICA DE VISUALIZAÇÃO (-10 PONTOS):
+> **"Todos os gráficos de barras ou de linhas devem incluir barras de erro que representem o desvio padrão ou os intervalos de confiança de 95% obtidos a partir de múltiplas amostragens dos testes. Gráficos planos, sem indicação de variância estatística, serão penalizados."** (Subtração de 10 pontos).
+
+O pipeline em Python (`analysis/plot_results.py`) deve gerar os seguintes gráficos salvos em `data/plots/` a 300 DPI:
+
+1. **Figura 1: TTFB Cold vs Warm por Protocolo (LAN vs WAN)**
+   - Tipo: Gráfico de barras agrupadas com **barras de erro ($CI_{95\%}$)**.
+   - Evidencia: Custo dos handshakes (1 RTT vs 2 RTTs vs 1 RTT).
+2. **Figura 2: Vazão Sustentada (Goodput em Mbps) na Carga A de 50 MB (T01 a T06)**
+   - Tipo: Gráfico de barras com **barras de erro ($s$)**.
+   - Evidencia: Colapso do TCP CUBIC sob 2% de perda no Cenário WAN e manutenção da taxa no QUIC/BBR.
+3. **Figura 3: Tempo Total de Carregamento da Carga B (100 objetos x 10KB) (T07 a T12)**
+   - Tipo: Gráfico de barras horizontais com **barras de erro ($CI_{95\%}$)**.
+   - Evidencia: Eficiência da multiplexação e penalidade de HoL blocking.
+4. **Figura 4: Requisições por Segundo (RPS) na Carga B sob Perdas (T10 vs T11 vs T12)**
+   - Tipo: Gráfico de barras comparativo com **barras de erro**.
+   - Evidencia: Superioridade de concorrência do HTTP/3 em conexões móveis degradadas.
+5. **Figura 5: Função de Distribuição Acumulada (CDF) de Latência por Objeto**
+   - Tipo: Curva CDF contínua dos tempos individuais dos 100 objetos no Cenário WAN.
+   - Evidencia: A cauda longa do HTTP/2 gerada pelo HoL blocking no TCP em contraste com a curva homogênea do HTTP/3.
+
+
+
+==================== ARQUIVO: brain\04_entregaveis\relatorio_tecnico_academico.md ====================
+# 04. Diretrizes para o Relatório Técnico Acadêmico (Padrão SBC / LaTeX)
+
+**Disciplina:** Redes de Computadores II (2026-2)  
+**Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
+**Curso:** Bacharelado em Sistemas de Informação  
+**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)
+
+O Relatório Técnico conclusivo deve apresentar rigor formal de publicação científica, sendo elaborado preferencialmente no modelo da **Sociedade Brasileira de Computação (SBC)**, padrão consagrado no **Simpósio Brasileiro de Redes de Computadores e Sistemas Distribuídos (SBRC)**.
+
+---
+
+## 1. 🚨 Elemento Mandatório e Eliminatório na 1ª Página
+
+> [!CAUTION]
+> ### REGRA DE NOTA ZERO (0,0):
+> **"O relatório técnico conclusivo e o vídeo de 15 minutos explicando a execução, os pontos importantes da implementação, os resultados e a conclusão dos experimentos... O link do vídeo no Youtube deve estar no Relatório Técnico... Faltando os códigos, o relatório ou o vídeo, a nota será zero."**
+
+O link público do vídeo no YouTube deve ser obrigatoriamente inserido na **primeira página**, logo abaixo dos dados do autor ou como nota de rodapé dos autores.
+
+### Código de Inserção no LaTeX (`sbc-template.tex`):
+```latex
+\author{
+  João Marcos Sousa Rufino Leal\inst{1}
+}
+
+\address{Departamento de Computação -- Universidade Federal do Piauí (UFPI)\\
+  Campus Senador Helvídio Nunes de Barros (CSHNB) -- Picos -- PI -- Brasil\\
+  \email{jsousarufinoleal@ufpi.edu.br}
+  \vspace{0.25cm}
+  \newline
+  \textbf{Vídeo de Apresentação e Demonstração Técnica (15 min):} \\
+  \url{https://youtu.be/SEU_LINK_AQUI}
+}
+```
+
+---
+
+## 2. Estrutura Obrigatória das Seções do Relatório
+
+O documento deve seguir a estrutura acadêmica formal composta pelas seções abaixo:
+
+### 2.1. Resumo e Abstract
+- **Resumo (Português):** Síntese estruturada (150 a 250 palavras) contendo contexto da pilha de transporte da Web, objetivos da investigação experimental (handshakes, HoL blocking e perdas), metodologia com Docker e cliente Python assíncrono, principais resultados empíricos e conclusões.
+- **Abstract (Inglês):** Versão fiel e fluida em inglês acadêmico.
+- **Palavras-chave / Keywords:** Protocolos Web, HTTP/1.1, HTTPS, HTTP/2, HTTP/3, QUIC, TLS 1.3, TCP CUBIC, BBR, Linux Traffic Control, Avaliação de Desempenho.
+
+### 2.2. Seção 1: Introdução e Objetivos
+- Evolução histórica dos protocolos de aplicação: das limitações de concorrência do HTTP/1.1 à multiplexação em conexão única do HTTP/2 e à transição para datagramas UDP no HTTP/3 (QUIC).
+- Apresentação clara dos 3 fenômenos pedagógicos investigados:
+  1. O custo cumulativo de RTTs de handshakes de transporte e criptografia (1 RTT vs 2 RTTs vs 1 RTT);
+  2. O Bloqueio de Início de Linha (*Head-of-Line Blocking*) na aplicação e no transporte;
+  3. O comportamento sob canais ruidosos e com perdas estocásticas.
+- Definição formal das hipóteses científicas do trabalho.
+
+### 2.3. Seção 2: Fundamentação Teórica
+Apresentação detalhada da literatura técnica e normas do IETF:
+- **Handshakes e Estabelecimento de Conexão:**
+  - TCP 3-Way Handshake (SYN, SYN-ACK, ACK — RFC 793);
+  - TLS 1.3 Handshake (negociação integrada em 1 RTT com Diffie-Hellman efêmero — RFC 8446);
+  - QUIC Crypto & Transport Handshake (fusão do transporte e chaves criptográficas em 1 RTT conjunto sobre UDP — RFC 9000 e RFC 9001).
+- **Mecanismos de Multiplexação e HoL Blocking:**
+  - HTTP/1.1 (RFC 7230): ausência de multiplexação nativa, dependência de conexões TCP paralelas ou pipelining ineficiente;
+  - HTTP/2 (RFC 7540): multiplexação por quadros binários sobre TCP e a vulnerabilidade à perda de pacotes no transporte;
+  - HTTP/3 (RFC 9114): multiplexação sobre streams QUIC independentes.
+
+### 2.4. Seção 3: Metodologia Experimental e Topologia
+- Descrição da topologia de contêineres na rede Docker `net_bench` (172.20.0.0/16).
+- Especificações dos 3 servidores: Nginx HTTP/1.1 (8080), Nginx HTTPS TLS 1.3 (8443) e Caddy HTTP/3 (9443).
+- Modelagem de canal com Linux Traffic Control (`tc netem`) e justificativa matemática do atraso unidirecional $N/2$ para RTT de $N$ ms (Cenário 1: 0.5ms delay = 1ms RTT; Cenário 2: 25ms delay, 2% loss = 50ms RTT).
+- Arquitetura do Cliente de Benchmark Python:
+  - Assincronismo com `httpx` e `aioquic`;
+  - Procedimentos de **Controle de Viés de Sessão (Client-Side Bias Control)**: destruição explícita de sessão (`client.close()`) para Cold TTFB vs canal persistente mantido para Carga B concorrente.
+- Matriz Experimental dos 12 testes (T01 a T12) e protocolo de 10 repetições independentes ($N \ge 10$).
+
+### 2.5. Seção 4: Resultados Experimentais e Discussão Analítica
+Esta seção constitui o cerne científico da avaliação (peso de 30 pontos no Eixo 4):
+
+#### A. Consolidação Numérica em Tabelas
+Apresentação de tabelas com dados consolidados para os 12 testes:
+- Média ($\bar{x}$) e Desvio Padrão ($s$);
+- Mediana e Intervalo de Confiança de 95% ($CI_{95\%}$);
+- Percentis p50 e p99 para:
+  - TTFB (ms);
+  - Tempo Total de Carregamento (ms);
+  - Vazão Útil / Goodput (Mbps);
+  - Requisições por Segundo (RPS).
+
+#### B. Visualização Gráfica com Barras de Erro Obrigatórias
+- Todos os gráficos devem conter **barras de erro** representando a dispersão amostral (desvio padrão ou IC 95%).
+- Gráficos gerados programaticamente com eixos rotulados, unidades expressas e legendas nítidas.
+
+#### C. Articulação Teórica Obrigatória com Tanenbaum
+
+> [!IMPORTANT]
+> ### EXIGÊNCIA EXPRESSA DO EDITAL (-20 PONTOS SE FALTAR):
+> O edital prescreve que o relatório **não pode ser meramente descritivo**. A discussão dos dados deve confrontar os números observados com a literatura clássica:
+>
+> 1. **Tanenbaum §6.5.11 (TCP CUBIC):**  
+>    Utilizar para fundamentar analiticamente o colapso de throughput e elevação de latência observado nos testes **T04** (HTTP/1.1 WAN) e **T05** (HTTP/2 WAN).  
+>    - Demonstrar matematicamente a função de janela cúbica do CUBIC:  
+>      $$W_{\text{cubic}}(t) = C (t - K)^3 + W_{\text{max}}$$  
+>      onde $C$ é a constante de escala, $t$ é o tempo transcorrido desde a última redução de janela, $W_{\text{max}}$ é o tamanho da janela no instante da perda e $K = \sqrt[3]{(W_{\text{max}} \beta) / C}$.
+>    - Explicar por que a injeção contínua de 2% de perda estocástica impede o CUBIC de alcançar a fase côncava/convexa de saturação de banda, forçando sucessivas retrações multiplicativas ($\beta = 0.7$) e mantendo a janela *cwnd* permanentemente estrangulada em canais com RTT de 50ms.
+>
+> 2. **Tanenbaum §6.6.1 (QUIC) e §6.6.2 (BBR):**  
+>    Utilizar para justificar por que os testes **T06** (Carga A QUIC WAN) e **T12** (Carga B QUIC WAN) sustentam alto desempenho e RPS superior sob as mesmíssimas condições adversas.  
+>    - Explicar como o QUIC elimina o HoL blocking na camada de transporte ao encapsular fluxos independentes em datagramas UDP separados, garantindo que o descarte de um pacote atrase apenas a entrega do stream correspondente, sem congelar os buffers dos 99 streams restantes.  
+>    - Descrever como os algoritmos modernos de controle de congestionamento associados ao QUIC (como o BBR — *Bottleneck Bandwidth and RTT*) dissociam a perda de pacotes da estimativa de capacidade do enlace, regulando a injeção de pacotes pelo modelo de ritmo (*pacing*) fundamentado na largura de banda de gargalo real e no RTT mínimo de propagação física.
+
+### 2.6. Seção 5: Considerações Finais e Conclusões
+- Síntese dos achados empíricos e confirmação das hipóteses teóricas.
+- Implicações práticas para arquitetos de software e engenheiros de infraestrutura de redes: quando adotar HTTP/2 vs HTTP/3 na produção.
+
+### 2.7. Referências Bibliográficas
+- Citação completa do livro texto:
+  - TANENBAUM, Andrew S.; WETHERALL, David J. *Redes de Computadores*. 5ª ou 6ª Edição. Pearson.
+- Citação formal das RFCs mandatórias do IETF:
+  - RFC 793 (TCP)
+  - RFC 768 (UDP)
+  - RFC 7540 (HTTP/2)
+  - RFC 8446 (TLS 1.3)
+  - RFC 9000 (QUIC Transport)
+  - RFC 9001 (QUIC TLS)
+  - RFC 9114 (HTTP/3)
+
+
+
+==================== ARQUIVO: brain\04_entregaveis\roteiro_video_15min.md ====================
+# 05. Roteiro Cronometrado para o Vídeo Técnico (15 Minutos Exatos)
+
+**Disciplina:** Redes de Computadores II (2026-2)  
+**Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
+**Curso:** Bacharelado em Sistemas de Informação  
+**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)  
+**Título:** Estudo Experimental de Desempenho de Protocolos Web (HTTP/1.1 vs HTTPS/TLS vs HTTP/3-QUIC) em Ambiente Emulado com Docker e Python
+
+---
+
+## ⏱️ Visão Geral e Distribuição do Tempo (00:00 a 15:00)
+
+O vídeo deve possuir duração de **exatamente 15 minutos** (margem de segurança recomendada: 14:50 a 15:05) e cobrir integralmente a infraestrutura, a implementação do cliente Python, a execução dos ensaios ao vivo, a análise gráfica com barras de erro e o embasamento teórico em Tanenbaum.
+
+| Bloco | Janela de Tempo | Duração | Conteúdo Principal e Ação em Tela |
+| :---: | :---: | :---: | :--- |
+| **Bloco 1** | 00:00 - 02:00 | 2m 00s | **Abertura e Contextualização:** Apresentação da equipe, tema da 2ª Avaliação, objetivos pedagógicos (Overhead de Handshake, HoL Blocking e perdas). |
+| **Bloco 2** | 02:00 - 04:30 | 2m 30s | **Arquitetura e Infraestrutura Docker:** Apresentação do `docker-compose.yml`, rede `net_bench`, NGINX HTTP/1.1, NGINX HTTPS TLS 1.3, Caddy HTTP/3 QUIC e regras de emulação `tc netem`. |
+| **Bloco 3** | 04:30 - 07:30 | 3m 00s | **Implementação do Cliente Python:** Código assíncrono com `httpx` e `aioquic`, módulo de controle de viés de sessão (Cold TTFB vs Warm Connection) e orquestrador 1-click. |
+| **Bloco 4** | 07:30 - 10:30 | 3m 00s | **Demonstração Experimental ao Vivo:** Disparo do `./run_experiments.sh`, acompanhamento dos testes T01 a T12 em tempo real, aplicação do `tc netem` e exportação do `results.json`. |
+| **Bloco 5** | 10:30 - 13:30 | 3m 00s | **Análise de Resultados e Fundamentação Teórica:** Apresentação dos gráficos com barras de erro e discussão teórica profunda com Tanenbaum §6.5.11 (CUBIC) e §6.6.1/§6.6.2 (QUIC/BBR). |
+| **Bloco 6** | 13:30 - 15:00 | 1m 30s | **Conclusões e Encerramento:** Síntese dos achados empíricos, validação das hipóteses e considerações finais. |
+
+---
+
+## 🎬 Roteiro Detalhado Minuto a Minuto
+
+### 📌 Bloco 1: Abertura e Contextualização Pedagógica [00:00 - 02:00]
+- **Tela:** Slide de abertura contendo título do trabalho, logo da UFPI/CSHNB, disciplina Redes II, nome do aluno e e-mail.
+- **Fala (00:00 - 00:45):**
+  > *"Olá a todos! Sejam bem-vindos à apresentação do Trabalho Prático da 2ª Avaliação da disciplina de Redes de Computadores II da Universidade Federal do Piauí, ministrada no Campus de Picos. Meu nome é João Marcos Sousa Rufino Leal e hoje apresentaremos o estudo experimental de desempenho dos protocolos Web: HTTP/1.1 versus HTTPS com TLS 1.3 versus HTTP/3 sobre QUIC, em um ambiente emulado de alta precisão com Docker e Python."*
+- **Fala (00:45 - 02:00):**
+  > *"O objetivo central deste trabalho é investigar quantitativamente três fenômenos fundamentais que regem a Internet moderna: primeiro, a sobrecarga de handshakes e o impacto no Time to First Byte, comparando o 1 RTT do TCP puro, os 2 RTTs cumulativos do HTTPS com TLS 1.3 e o handshake integrado de 1 RTT do QUIC sobre UDP; segundo, o Bloqueio de Início de Linha (Head-of-Line Blocking), analisando como o HTTP/2 resolveu o problema na camada de aplicação mas transferiu a vulnerabilidade para o transporte TCP, enquanto o HTTP/3 elimina totalmente o HoL em ambas as camadas via streams UDP independentes; e terceiro, a resiliência a perdas de pacotes sob controle de congestionamento, confrontando o algoritmo TCP CUBIC com a arquitetura do QUIC sob uma rede móvel WAN com 2% de descarte estocástico e 50 milissegundos de RTT."*
+
+---
+
+### 🏗️ Bloco 2: Arquitetura e Infraestrutura Docker [02:00 - 04:30]
+- **Tela:** VS Code exibindo o arquivo `docker/docker-compose.yml` e o diagrama de arquitetura Mermaid.
+- **Fala (02:00 - 03:15):**
+  > *"Para garantir isolamento absoluto e reprodutibilidade científica, nossa infraestrutura foi modelada em contêineres Docker interconectados pela rede bridge dedicada `net_bench` na sub-rede 172.20.0.0/16. Temos três servidores Web operando simultaneamente: no IP 172.20.0.10, temos o `server_http11`, utilizando NGINX Alpine na porta 8080 para servir HTTP/1.1 em texto claro, sem overhead criptográfico, servindo como nosso baseline de transporte TCP; no IP 172.20.0.20, temos o `server_http2_tls`, também NGINX, servindo HTTPS com HTTP/2 e TLS 1.3 forçado na porta 8443; e no IP 172.20.0.30, temos o `server_http3_quic`, utilizando o servidor Caddy 2.7 Alpine na porta 9443, tanto em TCP quanto em UDP, para oferecer HTTP/3 nativo com suporte a QUIC."*
+- **Fala (03:15 - 04:30):**
+  > *"Um detalhe crítico de engenharia exigido pelo edital é a declaração `cap_add: [NET_ADMIN]` em todos os contêineres. Sem essa funcionalidade de kernel do Linux, qualquer tentativa de executar o utilitário `tc` para controle de tráfego resultaria no erro fatal `RTNETLINK: Operation not permitted`. Os certificados digitais foram gerados localmente via OpenSSL com extensões Subject Alternative Names (SAN) cobrindo tanto localhost quanto os IPs e hostnames da rede Docker, assegurando que nossos clientes TLS e QUIC estabeleçam conexões seguras sem exceções de validação."*
+
+---
+
+### 💻 Bloco 3: Implementação do Cliente de Benchmark Python [04:30 - 07:30]
+- **Tela:** VS Code exibindo `benchmark/client.py` e `benchmark/session_control.py`.
+- **Fala (04:30 - 06:00):**
+  > *"Como navegadores comerciais utilizam heurísticas agressivas de cache e renderização que mascaram o comportamento da rede, desenvolvemos um cliente de benchmark assíncrono dedicado em Python 3. Utilizamos a biblioteca `httpx` para as requisições assíncronas em HTTP/1.1 e HTTP/2, e o módulo `aioquic` com `asyncio` para gerenciar nativamente os eventos e fluxos de transporte do HTTP/3 QUIC sobre UDP. Todas as medições de tempo utilizam `time.perf_counter()` para precisão de microssegundos."*
+- **Fala (06:00 - 07:30):**
+  > *"Aqui implementamos com rigor absoluto o **Controle de Viés de Sessão** exigido no edital para evitar a perda de 10 pontos: primeiro, qualquer forma de cache local é totalmente suprimida nos headers. Segundo, no teste de handshake e Cold TTFB, o cliente fecha e destrói explicitamente a sessão com `await client.aclose()` antes de cada requisição individual, proibindo o reaproveitamento de conexões para medir exatamente o custo dos RTTs iniciais de conexão. Terceiro, nos testes da Carga B com 100 objetos pequenos de 10 KB, o cliente estabelece uma única conexão prévia e mantém essa conexão aquecida (Warm Connection), disparando os downloads concorrentes para avaliar com fidelidade a multiplexação de fluxos do HTTP/2 e HTTP/3 sem contaminação de sucessivos handshakes."*
+
+---
+
+### 🧪 Bloco 4: Demonstração Experimental ao Vivo (1-Click Run) [07:30 - 10:30]
+- **Tela:** Terminal aberto no diretório raiz do projeto.
+- **Fala (07:30 - 08:30):**
+  > *"Agora, vamos demonstrar a automação completa do ambiente através do orquestrador mestre `run_experiments.sh`. Com um único comando, o script sobe os contêineres Docker, configura as regras do `tc netem`, dispara os 12 testes experimentais mandatórios da matriz e gera os resultados brutos."*
+- **Ação em Tela:** Executar `./run_experiments.sh`. Mostrar os contêineres subindo com `docker compose up -d`.
+- **Fala (08:30 - 09:30):**
+  > *"O runner inicia aplicando o Cenário 1 (LAN): reparem no comando `docker exec tc qdisc add dev eth0 root netem delay 0.5ms`. Como o atraso no Linux é injetado unidirecionalmente na saída da interface, 0.5ms em cada sentido resulta exatamente no RTT de 1.0 milissegundo de rede local. Em seguida, os testes T01, T02 e T03 da Carga A de 50 MB são executados com 10 repetições independentes cada, seguidos pelos testes T07, T08 e T09 da Carga B com 100 objetos simultâneos."*
+- **Ação em Tela:** Mostrar a transição para o Cenário 2 (WAN).
+- **Fala (09:30 - 10:30):**
+  > *"Agora o script reconfigura a interface via `tc netem delay 25ms loss 2%`, emulando o Cenário 2: RTT total de 50 milissegundos e 2% de perda estocástica de pacotes. Notem imediatamente no terminal o tempo de resposta dos testes T04 e T05 do TCP CUBIC disparando, enquanto o teste T06 e T12 do HTTP/3 progridem com muito mais agilidade. Ao final, a interface é restaurada com `tc qdisc del` e os dados brutos são salvos com sucesso em `data/raw/results.json` e `results.csv`."*
+
+---
+
+### 📊 Bloco 5: Análise dos Resultados e Fundamentação em Tanenbaum [10:30 - 13:30]
+- **Tela:** Apresentação dos gráficos científicos gerados em `data/plots/` (exibindo as barras de erro).
+- **Fala (10:30 - 11:30):**
+  > *"Vamos agora aos resultados obtidos, apresentados com rigor científico. Conforme exigência expressa do edital, todos os nossos gráficos possuem **barras de erro** representando o intervalo de confiança de 95% calculado via distribuição t-Student com 9 graus de liberdade. Na Figura 1, observamos o Cold TTFB: na LAN, o HTTP/1.1 registra cerca de 1.2ms, o HTTPS salta para 2.3ms devido ao handshake cumulativo de 2 RTTs (TCP + TLS 1.3), e o HTTP/3 estabiliza em 1.3ms graças ao handshake unificado de 1 RTT sobre UDP."*
+- **Fala (11:30 - 12:30):**
+  > *"Na Figura 2, temos a vazão sustentada da Carga A de 50 MB, e aqui reside o ponto alto do embasamento teórico exigido no Eixo 4: no Cenário LAN, o TCP em texto claro atinge mais de 900 Mbps graças às otimizações consolidadas de kernel (TSO e GRO). Contudo, no Cenário WAN sob 2% de perda, observamos o colapso dramático do TCP CUBIC (testes T04 e T05), cuja vazão desaba para menos de 15 Mbps. Conforme explica Tanenbaum na seção 6.5.11, o TCP CUBIC utiliza uma função cúbica de janela $W_{\text{cubic}}(t) = C(t - K)^3 + W_{\text{max}}$. A cada evento de descarte, o CUBIC sofre recuo multiplicativo de 30% em sua janela de congestionamento ($\beta = 0.7$). Como o canal possui 2% de perda aleatória contínua e RTT de 50ms, a janela nunca consegue atingir a fase de crescimento rápido, mantendo o throughput permanentemente estrangulado."*
+- **Fala (12:30 - 13:30):**
+  > *"Em contrapartida, no teste T06 e T12, o HTTP/3 sustenta vazão e RPS substancialmente superiores. Conforme Tanenbaum detalha nas seções 6.6.1 e 6.6.2 sobre o QUIC e o BBR, o QUIC isola a perda no fluxo UDP específico e utiliza modelos de controle de congestionamento baseados na taxa real de entrega (pacing) e no RTT mínimo físico do canal, sem interpretar perdas de pacotes isoladas como sinal ingênuo de colapso de largura de banda. Na Carga B com 100 objetos (Figura 3 e 4), a perda no HTTP/2 fez o percentil p99 explodir devido ao Head-of-Line Blocking no transporte TCP, enquanto no HTTP/3 os 99 streams restantes continuaram sendo entregues em tempo recorde."*
+
+---
+
+### 🎯 Bloco 6: Conclusões e Encerramento [13:30 - 15:00]
+- **Tela:** Slide final com síntese das conclusões e referências bibliográficas.
+- **Fala (13:30 - 14:30):**
+  > *"Em conclusão, este trabalho prático comprovou empiricamente que o HTTP/3 sobre QUIC representa um salto arquitetural indispensável para a Internet móvel moderna. Enquanto o HTTP/2 sobre TCP é extremamente eficiente em redes locais de altíssima qualidade e sem ruído, ele se torna vulnerável em redes móveis e de longa distância devido ao Head-of-Line Blocking de transporte e à hiper-sensibilidade do TCP CUBIC a perdas estocásticas. O HTTP/3 supera essas limitações ao integrar segurança em 1 RTT, eliminar o HoL blocking via streams UDP independentes e adotar controle de congestionamento moderno."*
+- **Fala (14:30 - 15:00):**
+  > *"Nosso repositório completo com Docker, cliente Python, scripts e relatório técnico em PDF encontra-se disponível, e o link deste vídeo está registrado na primeira página do artigo conforme as regras do edital. Agradeço a atenção de todos e ao professor pela excelente oportunidade pedagógica. Muito obrigado!"*
+
+---
+
+## 📋 Checklist Pré-Gravação do Vídeo
+
+- [ ] Microfone testado e com volume calibrado sem ruídos de fundo.
+- [ ] Resolução de gravação configurada em 1080p (1920x1080) a 30 ou 60 FPS no OBS Studio.
+- [ ] Fontes do terminal e do VS Code ampliadas para leitura nítida em telas menores.
+- [ ] Cenário de teste pré-executado uma vez para garantir que todos os contêineres e scripts rodam suavemente.
+- [ ] Cronômetro visível na tela secundária para manter a fala rigorosamente dentro dos 15 minutos (14:50 a 15:05).
+- [ ] Upload efetuado no YouTube em modo "Não listado" ou "Público" e link testado em aba anônima.
+
+
+
+==================== ARQUIVO: brain\05_prompts_ia\guia_de_prompts_ia.md ====================
+# 06. Guia de Prompts Prontos para IAs
+
+**Disciplina:** Redes de Computadores II (2026-2)  
+**Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
+**Curso:** Bacharelado em Sistemas de Informação  
+**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)
+
+Utilize os prompts estruturados abaixo para orientar agentes de inteligência artificial em cada uma das fases subsequentes do desenvolvimento, garantindo conformidade estrita com o edital e prevenindo penalidades.
+
+---
+
+## 🚀 Prompt 1: Criação da Infraestrutura Docker e Configuração dos 3 Servidores
+
+```text
+Você é um engenheiro de redes e especialista em Linux e Docker. Estamos implementando a 2ª Avaliação Prática de Redes de Computadores II da UFPI (2026-2): Estudo Experimental de Desempenho de Protocolos Web (HTTP/1.1 vs HTTPS/TLS vs HTTP/3-QUIC).
+
+Consulte os arquivos de contexto no cérebro do projeto:
+- brain/01_diretrizes/visao_geral_e_regras.md
+- brain/02_arquitetura/arquitetura_e_docker.md
+
+Sua tarefa é criar a infraestrutura completa de contêineres e configurações dos servidores:
+1. `docker/docker-compose.yml`:
+   - Rede bridge dedicada `net_bench` (172.20.0.0/16).
+   - Serviço `server-http1`: imagem `nginx:alpine`, porta "8080:80", IP estático 172.20.0.10, `cap_add: [NET_ADMIN]`.
+   - Serviço `server-http2`: imagem `nginx:alpine`, porta "8443:443", IP estático 172.20.0.20, `cap_add: [NET_ADMIN]`, volumes para certificados e config.
+   - Serviço `server-http3`: imagem `caddy:2.7-alpine`, portas "9443:443/tcp" e "9443:443/udp", IP estático 172.20.0.30, `cap_add: [NET_ADMIN]`, volumes para certificados e Caddyfile.
+2. `docker/server-http1/nginx.conf`: NGINX servindo HTTP/1.1 em texto claro na porta 80, com sendfile on, tcp_nopush on, tcp_nodelay on e cabeçalhos desativando cache.
+3. `docker/server-http2/nginx.conf`: NGINX servindo HTTPS/HTTP/2 com TLS 1.3 forçado (`ssl_protocols TLSv1.3;`), certificados locais e cabeçalhos sem cache.
+4. `docker/server-http3/Caddyfile`: Caddy servindo HTTP/3 sobre QUIC na porta 443 TCP/UDP com TLS local e cabeçalho `Alt-Svc "h3=\":9443\"; ma=86400"`.
+5. `docker/certs/generate_certs.sh`: Script OpenSSL que gera chaves RSA 2048 e certificado autoassinado com Subject Alternative Names (SANs) cobrindo localhost, 127.0.0.1, 172.20.0.20, 172.20.0.30, server_http2_tls e server_http3_quic.
+
+Gere os arquivos com sintaxe impecável e quebras de linha padrão Unix (LF).
+```
+
+---
+
+## 📦 Prompt 2: Cargas Estáticas, Scripts `tc netem` e Orquestrador 1-Click
+
+```text
+Você é um especialista em automação e emulação de redes no Linux. Estamos implementando a automação da 2ª Avaliação Prática de Redes II da UFPI.
+
+Consulte:
+- brain/02_arquitetura/arquitetura_e_docker.md
+- brain/03_experimentos/cenarios_de_teste.md
+
+Sua tarefa é criar os scripts de suporte, emulação e o runner mestre:
+1. `scripts/generate_payloads.py`:
+   - Gera `data/static/50MB.bin` (arquivo binário determinístico de exatamente 50 * 1024 * 1024 bytes para a Carga A).
+   - Gera `data/static/objects/obj_001.bin` a `obj_100.bin` (100 arquivos binários de exatamente 10 * 1024 bytes cada para a Carga B).
+2. `scripts/setup_netem.sh`:
+   - Função `apply_lan`: aplica nos 3 contêineres `tc qdisc add dev eth0 root netem delay 0.5ms` (RTT = 1.0ms, perda 0%).
+   - Função `apply_wan`: aplica nos 3 contêineres `tc qdisc add dev eth0 root netem delay 25ms loss 2%` (RTT = 50.0ms, perda 2%).
+   - Função `clean_netem`: executa `tc qdisc del dev eth0 root` em todos os contêineres.
+3. `run_experiments.sh` e `run_experiments.ps1`:
+   - Orquestrador mestre 1-click (exigido pelo edital para evitar penalidade de -15 pontos).
+   - Executa sequencialmente: subida dos contêineres -> setup LAN -> testes T01 a T03 (Carga A) e T07 a T09 (Carga B) -> setup WAN -> testes T04 a T06 (Carga A) e T10 a T12 (Carga B) -> limpeza netem -> disparo do script de análise e gráficos -> encerramento do ambiente.
+
+Garanta tratamento de erros e logs coloridos e informativos no terminal.
+```
+
+---
+
+## 🐍 Prompt 3: Cliente de Benchmark em Python Assíncrono (`httpx` + `aioquic`)
+
+```text
+Você é um desenvolvedor sênior em Python especializado em sistemas assíncronos e redes de alta performance. Estamos implementando o cliente de medição da 2ª Avaliação Prática de Redes II da UFPI.
+
+Consulte:
+- brain/03_experimentos/cenarios_de_teste.md
+- brain/03_experimentos/metricas_e_analise_dados.md
+
+Implemente a aplicação cliente em `benchmark/`:
+1. `benchmark/requirements.txt`: `httpx[http2]`, `aioquic`, `asyncio`, `pandas`, `scipy`.
+2. `benchmark/client.py`:
+   - Suporte a HTTP/1.1 e HTTP/2 via `httpx.AsyncClient`.
+   - Suporte nativo a HTTP/3 QUIC via `aioquic`.
+   - Coleta de métricas com precisão de microssegundos via `time.perf_counter()`: TTFB, Total Load Time, Goodput (Mbps), RPS, Status Code.
+3. **Controle Rigoroso de Viés de Sessão (Client-Side Bias Control - OBRIGATÓRIO PARA EVITAR -10 PONTOS)**:
+   - Modo Cold TTFB: deve criar e fechar explicitamente a sessão com `await client.aclose()` antes de cada requisição individual, proibindo connection pooling / reuso de conexões.
+   - Modo Warm Connection: deve estabelecer previamente uma única conexão persistente e disparar as 100 requisições simultâneas da Carga B sobre o mesmo canal aquecido para avaliar a multiplexação real.
+4. Exportação dos dados brutos com timestamp detalhado para `data/raw/results.json` e `data/raw/results.csv`.
+5. Parâmetros de CLI (`argparse`) permitindo rodar repetições individuais ou lotes completos com $N=10$.
+
+Código limpo, com tipagem e tratamento de exceções de conexão e timeouts.
+```
+
+---
+
+## 📊 Prompt 4: Pipeline de Tratamento Estatístico e Visualização Gráfica
+
+```text
+Você é um cientista de dados especializado em redes e medições experimentais. Estamos implementando a análise estatística da 2ª Avaliação Prática de Redes II da UFPI.
+
+Consulte:
+- brain/03_experimentos/metricas_e_analise_dados.md
+
+Implemente:
+1. `analysis/process_data.py`:
+   - Carrega `data/raw/results.json` ou `results.csv`.
+   - Calcula média, mediana, desvio padrão, percentis p50 e p99, e Intervalo de Confiança de 95% via t-Student ($t_{0.025, 9} \approx 2.262$ para $N=10$) para TTFB, Goodput, Total Load Time e RPS em cada um dos 12 testes (T01 a T12).
+   - Exporta tabelas consolidadas em CSV e código de tabelas formatadas em LaTeX para inclusão no artigo.
+2. `analysis/plot_results.py`:
+   - Gera gráficos científicos de alta qualidade visual a 300 DPI salvos em `data/plots/`.
+   - **EXIGÊNCIA MANDATÓRIA (PENALIDADE DE -10 PONTOS SE FALTAR): TODOS os gráficos de barras e de linhas DEVEM conter barras de erro explícitas (`yerr=ci95` ou `yerr=std`) com capas visíveis (`capsize=5`)**.
+   - Gráfico 1: Cold TTFB vs Warm TTFB por Protocolo (LAN vs WAN).
+   - Gráfico 2: Vazão Sustentada (Goodput Mbps) na Carga A de 50MB (T01 a T06).
+   - Gráfico 3: Tempo Total de Carregamento dos 100 objetos na Carga B (T07 a T12).
+   - Gráfico 4: Requisições por Segundo (RPS) sob Perdas no Cenário WAN (T10 vs T11 vs T12).
+   - Gráfico 5: Curva CDF de latência dos fluxos demonstrando a mitigação do HoL blocking no HTTP/3.
+```
+
+---
+
+## 📝 Prompt 5: Redação do Relatório Técnico Científico (Padrão SBC / LaTeX)
+
+```text
+Você é um pesquisador em ciência da computação e especialista em redação científica. Estamos redigindo o artigo da 2ª Avaliação Prática de Redes de Computadores II da UFPI (2026-2).
+
+Consulte:
+- brain/04_entregaveis/relatorio_tecnico_academico.md
+- brain/03_experimentos/cenarios_de_teste.md
+- data/processed/ (tabelas e métricas)
+
+Sua tarefa é redigir o documento completo em LaTeX no modelo oficial da SBC (`relatorio/artigo.tex` e `sbc.sty`):
+1. **PÁGINA 1 OBRIGATÓRIA (CRITÉRIO ELIMINATÓRIO - NOTA ZERO SE FALTAR):**
+   - Inserir o link público funcional do vídeo explicativo de 15 minutos no YouTube logo abaixo do resumo ou nos dados do autor.
+2. Resumo e Abstract em inglês com palavras-chave formais.
+3. Introdução e Metodologia detalhando a topologia Docker, parâmetros `tc netem` e o cliente Python com controle de viés.
+4. Tabelas consolidadas e figuras científicas com barras de erro inseridas nos floats.
+5. **FUNDAMENTAÇÃO TEÓRICA MANDATÓRIA (EXIGÊNCIA EXPRESSA DO EDITAL - ATÉ -20 PONTOS SE FALTAR):**
+   - Confronte e articule formalmente os resultados dos testes WAN com:
+     - **Tanenbaum §6.5.11 (TCP CUBIC)**: demonstrar a fórmula da janela cúbica $W_{\text{cubic}}(t) = C(t - K)^3 + W_{\text{max}}$, explicar o recuo multiplicativo por perda ($\beta = 0.7$) e o colapso de throughput sob 2% de perda estocástica e RTT de 50ms nos testes T04 e T05.
+     - **Tanenbaum §6.6.1 (QUIC) e §6.6.2 (BBR)**: explicar por que T06 e T12 mantêm alto desempenho, detalhando o desacoplamento de perdas por stream UDP e o modelo de pacing baseado em taxa de gargalo e RTT mínimo sem retração ingênua de janela.
+6. Conclusões e bibliografia completa com referências formais (Tanenbaum, RFC 793, RFC 768, RFC 7540, RFC 8446, RFC 9000, RFC 9001, RFC 9114).
+```
+
+---
+
+## 🔍 Prompt 6: Auditoria Final Pré-Submissão e Empacotamento
+
+```text
+Você é um auditor de conformidade técnica e acadêmica.
+Sua missão é realizar uma checagem rigorosa de todos os critérios eliminatórios e penalidades do edital da 2ª Avaliação Prática de Redes II da UFPI:
+
+1. Checar se todos os contêineres no `docker-compose.yml` possuem `cap_add: [NET_ADMIN]`.
+2. Checar se o orquestrador `run_experiments.sh` executa de ponta a ponta sem comandos manuais intermediários.
+3. Checar se o cliente Python implementou o fechamento de conexão para o teste de Cold TTFB.
+4. Checar se todos os gráficos em `data/plots/` contêm barras de erro visíveis.
+5. Checar se o PDF do relatório contém o link do YouTube na 1ª página e as seções citando Tanenbaum §6.5.11 e §6.6.1.
+6. Gerar o arquivo ZIP final no padrão exigido: `TP2_Redes2_NomeAluno1_NomeAluno2.zip`.
+```
+
+
+
+==================== ARQUIVO: brain\06_relatorios_de_fases\README.md ====================
+# 📑 Diário de Bordo e Relatórios de Execução por Fase
+
+Este diretório registra detalhadamente o histórico, as decisões de engenharia, os artefatos gerados e os resultados obtidos em cada uma das fases do projeto da **2ª Avaliação Prática de Redes de Computadores II (UFPI - 2026-2)**.
+
+---
+
+## 🗺️ Fases Registradas
+
+| Fase | Título do Relatório | Status | Arquivo de Documentação |
+| :---: | :--- | :---: | :--- |
+| **Fase 1** | Análise Minuciosa do Edital e Estruturação do Cérebro | ✅ CONCLUÍDA | [**`fase_01_analise_e_estruturacao.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/06_relatorios_de_fases/fase_01_analise_e_estruturacao.md) |
+| **Fase 2** | Infraestrutura Docker (Nginx HTTP/1.1, Nginx HTTPS TLS 1.3, Caddy HTTP/3) | ⏳ A INICIAR | `fase_02_infraestrutura_docker.md` |
+| **Fase 3** | Cargas Estáticas (50MB e 100x10KB) e Emulação `tc netem` | ⏳ A INICIAR | `fase_03_cargas_e_emulacao.md` |
+| **Fase 4** | Desenvolvimento do Cliente de Benchmark Python Assíncrono (`httpx` + `aioquic`) | ⏳ A INICIAR | `fase_04_cliente_benchmark.md` |
+| **Fase 5** | Automação 1-Click e Execução da Matriz dos 12 Testes ($N=10$) | ⏳ A INICIAR | `fase_05_execucao_experimental.md` |
+| **Fase 6** | Pipeline de Análise Estatística e Visualização com Barras de Erro | ⏳ A INICIAR | `fase_06_analise_e_graficos.md` |
+| **Fase 7** | Redação do Relatório Técnico com Fundamentação Tanenbaum (§6.5.11 e §6.6.1/§6.6.2) | ⏳ A INICIAR | `fase_07_relatorio_tecnico.md` |
+| **Fase 8** | Gravação do Vídeo de 15 Minutos, Auditoria Final e Submissão SIGAA | ⏳ A INICIAR | `fase_08_video_e_submissao.md` |
+
+*(Os relatórios são criados e atualizados incrementalmente ao término de cada fase de engenharia)*
+
+
+
+==================== ARQUIVO: brain\06_relatorios_de_fases\fase_01_analise_e_estruturacao.md ====================
+# Relatório de Execução — Fase 1: Análise Minuciosa do Edital e Estruturação do Cérebro
+
+**Data:** 21 de Outubro de 2026  
+**Disciplina:** Redes de Computadores II (2026-2)  
+**Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
+**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)  
+**Status da Fase:** ✅ CONCLUÍDA COM SUCESSO
+
+---
+
+## 1. Contexto e Objetivos da Fase
+
+A Fase 1 teve como meta o exame exaustivo e rigoroso do documento oficial de especificação do Trabalho Prático da 2ª Avaliação (`Segunda Avaliação Redes 2.pdf`), com peso de **50% da pontuação total da N2 (100 pontos totais)**. 
+
+A finalidade primordial foi conceber e estruturar a arquitetura de informação do projeto — o chamado **Cérebro do Projeto (`brain/`)** —, estabelecendo diretrizes técnicas, modelagem arquitetural de contêineres, definição da matriz experimental de 12 testes, equacionamento estatístico das métricas, checklist kanban e planejamento detalhado para evitar penalidades e a atribuição de nota zero.
+
+---
+
+## 2. Levantamento Detalhado dos Requisitos e Fenômenos Investigados
+
+Do estudo do edital foram extraídos os pilares conceituais do trabalho:
+
+1. **Overhead de Handshake e Latência Inicial (Cold TTFB):**
+   - *HTTP/1.1:* 1 RTT para o handshake TCP de 3 vias.
+   - *HTTPS (HTTP/2):* 2 RTTs cumulativos (1 RTT TCP + 1 RTT TLS 1.3).
+   - *HTTP/3-QUIC:* 1 RTT conjunto sobre UDP com TLS 1.3 integrado (ou 0-RTT com resumption).
+2. **Bloqueio de Início de Linha (Head-of-Line Blocking):**
+   - *HTTP/1.1:* HoL na aplicação (respostas sequenciais sobre o canal TCP).
+   - *HTTP/2:* HoL no transporte TCP (a perda de 1 segmento congela todo o buffer de fluxos multiplexados).
+   - *HTTP/3:* HoL totalmente eliminado em ambas as camadas (streams UDP independentes).
+3. **Efeito das Condições de Canal:**
+   - *Cenário 1 (LAN):* 0.5ms delay (RTT = 1ms), 0% perda — canal ideal.
+   - *Cenário 2 (WAN):* 25ms delay (RTT = 50ms), 2% perda estocástica — canal móvel/longa distância degradado.
+   - Demonstração do colapso do TCP CUBIC sob 2% de perda versus a resiliência do QUIC/BBR.
+
+---
+
+## 3. Mapeamento das Penalidades e Critérios Críticos de Avaliação
+
+Foi realizado o mapeamento das penalidades diretas para garantir conformidade estrita durante as fases de implementação:
+
+| Penalidade Prevista | Sanção | Medida Adotada no Cérebro |
+| :--- | :---: | :--- |
+| Ausência de execução automatizada 1-click (`run_experiments.sh`) | **-15 Pontos** | Especificação e planejamento de `run_experiments.sh` e `run_experiments.ps1`. |
+| Falta de controle de viés de sessão no cliente Python | **-10 Pontos** | Modelagem de modos estritos: fechamento explícito de sessão (`client.close()`) para Cold TTFB vs canal persistente para Carga B. |
+| Ausência de barras de erro nos gráficos | **-10 Pontos** | Regra mandatória no pipeline Python de plotar barras de erro com desvio padrão ou IC 95% ($t=2.262, N=10$). |
+| Relatório descritivo sem fundamentação em Tanenbaum | **-20 Pontos** | Diretriz com modelos matemáticos de Tanenbaum §6.5.11 (TCP CUBIC) e §6.6.1/§6.6.2 (QUIC/BBR). |
+| Falta de código, relatório ou vídeo de 15 minutos com link na 1ª página | **NOTA ZERO (0,0)** | Inclusão de checklist de validação pré-submissão e posicionamento mandatório do link no template LaTeX. |
+
+---
+
+## 4. Decisões de Arquitetura de Engenharia Adotadas
+
+1. **Topologia Docker Declarativa:**
+   - Rede bridge isolada `net_bench` (172.20.0.0/16).
+   - Três servidores Web independentes:
+     - `server_http11` (172.20.0.10, Nginx Alpine, porta 8080);
+     - `server_http2_tls` (172.20.0.20, Nginx Alpine, porta 8443, TLS 1.3);
+     - `server_http3_quic` (172.20.0.30, Caddy 2.7 Alpine, porta 9443 TCP/UDP, HTTP/3 nativo).
+   - Diretiva obrigatória `cap_add: [NET_ADMIN]` em todos os nós.
+2. **Certificados Criptográficos:**
+   - Par OpenSSL autoassinado com Subject Alternative Names (SANs) abrangendo localhost, IPs dos contêineres e nomes de host internos.
+3. **Cliente de Benchmark Python:**
+   - Utilização assíncrona de `httpx` (HTTP/1.1 e HTTP/2) e `aioquic` (HTTP/3).
+   - Temporização monotônica de microssegundos com `time.perf_counter()`.
+   - Exportação estruturada para `results.json` e `results.csv`.
+4. **Matriz Experimental dos 12 Testes:**
+   - Estruturação completa dos testes T01 a T12 com $N \ge 10$ repetições para rigor estatístico.
+
+---
+
+## 5. Artefatos Criados na Fase 1
+
+Todos os documentos foram criados com profundidade e rigor em `c:\Users\jsous\Desktop\Redes 2\Avaliação_2\`:
+
+1. [`AGENTS.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/AGENTS.md): Guia de contexto operacional e regras de conformidade para agentes de IA.
+2. [`README.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/README.md): Dashboard principal do projeto com matriz dos 12 testes, resumo de penalidades e árvore de diretórios.
+3. [`brain/README.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/README.md): Mapa temático de navegação do cérebro.
+4. [`brain/01_diretrizes/visao_geral_e_regras.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/01_diretrizes/visao_geral_e_regras.md): Visão geral, objetivos, 3 fenômenos, tabela comparativa, rubrica e regras de nota zero.
+5. [`brain/01_diretrizes/checklist_progresso.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/01_diretrizes/checklist_progresso.md): Quadro kanban com as 8 fases e checklist pré-submissão.
+6. [`brain/02_arquitetura/arquitetura_e_docker.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/02_arquitetura/arquitetura_e_docker.md): Topologia de rede, docker-compose, configs de servidores e sintaxe do `tc netem`.
+7. [`brain/03_experimentos/cenarios_de_teste.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/03_experimentos/cenarios_de_teste.md): Configurações dos cenários LAN/WAN, Cargas A e B, e detalhamento exaustivo dos testes T01 a T12.
+8. [`brain/03_experimentos/metricas_e_analise_dados.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/03_experimentos/metricas_e_analise_dados.md): Fórmulas de TTFB, Goodput, RPS, percentis p50/p99, controle de viés e barras de erro obrigatórias.
+9. [`brain/04_entregaveis/relatorio_tecnico_academico.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/relatorio_tecnico_academico.md): Modelo acadêmico SBC, link de vídeo na 1ª página e fundamentação teórica obrigatória Tanenbaum §6.5.11 e §6.6.1/§6.6.2.
+10. [`brain/04_entregaveis/roteiro_video_15min.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/04_entregaveis/roteiro_video_15min.md): Roteiro minuto a minuto (00:00 a 15:00) com falas prontas e transições.
+11. [`brain/05_prompts_ia/guia_de_prompts_ia.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/05_prompts_ia/guia_de_prompts_ia.md): 6 prompts estruturados para orientar o desenvolvimento com IAs nas fases seguintes.
+12. [`brain/06_relatorios_de_fases/README.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/06_relatorios_de_fases/README.md): Índice do diário de bordo.
+13. [`brain/06_relatorios_de_fases/fase_01_analise_e_estruturacao.md`](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/06_relatorios_de_fases/fase_01_analise_e_estruturacao.md): Este relatório conclusivo da Fase 1.
+
+---
+
+## 6. Próximos Passos (Fase 2)
+
+Com a fundação do Cérebro 100% estabelecida e documentada, o projeto está pronto para a **Fase 2: Construção da Infraestrutura Docker e Configuração dos Servidores Web** (`docker-compose.yml`, configs do NGINX, Caddyfile e certificados TLS).
+
+
+
+---
+## INSTRUÇÕES PARA A AUDITORIA:
+Como Agente Auditor, analise criteriosamente se TUDO o que foi exigido no edital foi coberto com exatidão e sem omissões nos arquivos do Cérebro. Verifique especificamente:
+
+1. **Requisitos de Infraestrutura e Docker:**
+   - 3 servidores declarados (server_http11 em Nginx 8080 HTTP/1.1, server_http2_tls em Nginx 8443 HTTPS/TLS 1.3, server_http3_quic em Caddy 9443 HTTP/3 QUIC)?
+   - Rede bridge `net_bench` (172.20.0.0/16) e IPs estáticos (172.20.0.10, 172.20.0.20, 172.20.0.30)?
+   - Diretiva obrigatória de permissão de kernel `cap_add: [NET_ADMIN]`?
+
+2. **Emulação de Rede com `tc netem`:**
+   - Cenário 1 (LAN: delay 0.5ms = RTT 1.0ms, perda 0%) e Cenário 2 (WAN: delay 25ms = RTT 50.0ms, perda 2%)?
+   - Justificativa matemática do atraso unidirecional RTT/2?
+   - Comandos sintáticos exatos para aplicar e limpar (`tc qdisc del dev eth0 root`)?
+
+3. **Cliente de Benchmark em Python:**
+   - Uso de `httpx` (HTTP/1.1 e HTTP/2) e `aioquic` com `asyncio` (HTTP/3)?
+   - **Controle de Viés de Sessão (Client-Side Bias Control)**: desativação de cache, fechamento explícito de sessão (`client.close()`) para Cold TTFB, e canal persistente mantido para multiplexação (Carga B)?
+   - Métricas com precisão de microssegundos: TTFB, Total Load Time, RPS, percentis p50 e p99?
+   - Exportação para `results.json` e `results.csv`?
+
+4. **Perfis de Carga e Matriz Experimental:**
+   - Carga A (1 objeto grande de 50 MB) e Carga B (100 objetos pequenos de 10 KB)?
+   - Matriz completa de 12 testes (T01 a T12) com protocolo alvo, servidor, cenário e foco analítico?
+   - Rigor estatístico ($N \ge 10$ repetições independentes com média, desvio padrão, p50, p99 e IC 95%)?
+
+5. **Entregáveis, Rubrica e Penalidades:**
+   - Rubrica de 100 pontos detalhada (Eixo 1 Infra 25pts, Eixo 2 Client 25pts, Eixo 3 Coleta/Gráficos 20pts, Eixo 4 Relatório 30pts)?
+   - Tabela de penalidades: -15pts sem runner 1-click, -10pts sem controle de viés no TTFB, -10pts sem barras de erro nos gráficos, -20pts relatório meramente descritivo sem Tanenbaum?
+   - **Critério Eliminatório (NOTA ZERO)**: ausência de código, relatório ou vídeo de 15 minutos com link na página 1?
+   - **Fundamentação teórica obrigatória com Tanenbaum**:
+     - Tanenbaum §6.5.11 (TCP CUBIC): colapso de throughput no T04/T05 em canal WAN (função cúbica de janela e recuo multiplicativo sob 2% de perda estocástica)?
+     - Tanenbaum §6.6.1 (QUIC) e §6.6.2 (BBR): isolamento de perdas por stream UDP e pacing de entrega imune a perdas pontuais no T06/T12?
+   - **Exigência mandatória de BARRAS DE ERRO** em todos os gráficos?
+   - Roteiro estruturado minuto a minuto (00:00 a 15:00) para o vídeo de apresentação?
+   - Submissão via SIGAA no formato `TP2_Redes2_NomeAluno1_NomeAluno2.zip`?
+
+---
+## FORMATO DO SEU RELATÓRIO DE AUDITORIA:
+Estruture sua resposta como um Relatório Oficial de Auditoria Técnica:
+1. **Cabeçalho:** Identificação do Auditor, Data, Projeto Auditado e Escopo.
+2. **Veredito Geral:** (APROVADO / APROVADO COM RESSALVAS / REPROVADO) com Pontuação de Conformidade (0 a 100%).
+3. **Matriz de Conformidade por Requisito:** Tabela detalhada comparando cada exigência do edital com o que foi entregue nos arquivos do cérebro.
+4. **Análise dos Pontos Fortes e Diferenciais de Engenharia:** O que foi além do básico.
+5. **Checagem de Mitigação de Riscos de Penalidade:** Verificação específica das 4 penalidades (-15, -10, -10, -20) e do critério de Nota Zero.
+6. **Recomendações e Diretrizes para as Próximas Fases.**
+7. **Conclusão Formal do Auditor.**

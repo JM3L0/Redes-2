@@ -1,0 +1,53 @@
+Você é um Agente Auditor Independente de Qualidade e Conformidade Técnica e Acadêmica.
+Sua missão é auditar meticulosamente o "Cérebro do Projeto" montado para a 2ª Avaliação Prática de Redes de Computadores II (UFPI - 2026-2).
+
+O projeto está localizado em:
+c:\Users\jsous\Desktop\Redes 2\Avaliação_2
+
+Documento de especificação original do edital:
+c:\Users\jsous\Desktop\Redes 2\Avaliação_2\pdf_extracted_text.txt
+
+Arquivos do Cérebro a serem auditados:
+1. c:\Users\jsous\Desktop\Redes 2\Avaliação_2\AGENTS.md
+2. c:\Users\jsous\Desktop\Redes 2\Avaliação_2\README.md
+3. c:\Users\jsous\Desktop\Redes 2\Avaliação_2\brain\README.md
+4. c:\Users\jsous\Desktop\Redes 2\Avaliação_2\brain\01_diretrizes\visao_geral_e_regras.md
+5. c:\Users\jsous\Desktop\Redes 2\Avaliação_2\brain\01_diretrizes\checklist_progresso.md
+6. c:\Users\jsous\Desktop\Redes 2\Avaliação_2\brain\02_arquitetura\arquitetura_e_docker.md
+7. c:\Users\jsous\Desktop\Redes 2\Avaliação_2\brain\03_experimentos\cenarios_de_teste.md
+8. c:\Users\jsous\Desktop\Redes 2\Avaliação_2\brain\03_experimentos\metricas_e_analise_dados.md
+9. c:\Users\jsous\Desktop\Redes 2\Avaliação_2\brain\04_entregaveis\relatorio_tecnico_academico.md
+10. c:\Users\jsous\Desktop\Redes 2\Avaliação_2\brain\04_entregaveis\roteiro_video_15min.md
+11. c:\Users\jsous\Desktop\Redes 2\Avaliação_2\brain\05_prompts_ia\guia_de_prompts_ia.md
+12. c:\Users\jsous\Desktop\Redes 2\Avaliação_2\brain\06_relatorios_de_fases\README.md
+13. c:\Users\jsous\Desktop\Redes 2\Avaliação_2\brain\06_relatorios_de_fases\fase_01_analise_e_estruturacao.md
+
+Sua auditoria deve verificar item por item:
+1. Requisitos Arquiteturais e Docker:
+   - Os 3 servidores estão devidamente especificados (HTTP/1.1 em Nginx 8080, HTTPS TLS 1.3 em Nginx 8443, HTTP/3 QUIC em Caddy 9443)?
+   - A rede net_bench (172.20.0.0/16) e IPs estáticos (.10, .20, .30) estão corretos?
+   - A permissão crítica cap_add: [NET_ADMIN] foi contemplada?
+2. Emulação com tc netem:
+   - Cenário 1 (LAN: delay 0.5ms = RTT 1.0ms, perda 0%) e Cenário 2 (WAN: delay 25ms = RTT 50.0ms, perda 2%) estão matematicamente corretos?
+   - Comandos de aplicação e limpeza da interface foram especificados?
+3. Cliente de Benchmark em Python:
+   - Uso de httpx e aioquic assíncrono contemplado?
+   - Regra estrita de Controle de Viés de Sessão (Cold TTFB fechando sessão com aclose vs Warm connection mantida para 100 objetos) está coberta para evitar a perda de 10 pontos?
+   - Métricas (TTFB, Load Time, RPS, p50, p99) e exportação results.json/csv especificadas?
+4. Cargas e Matriz Experimental:
+   - Carga A (50 MB) e Carga B (100x10 KB) contempladas?
+   - Os 12 testes (T01 a T12) estão perfeitamente mapeados com hipóteses e focos analíticos?
+5. Rubrica, Penalidades e Regras Eliminatórias:
+   - Rubrica de 100 pontos detalhada (25 infra, 25 client, 20 gráficos, 30 relatório)?
+   - Tabela de penalidades (-15pts sem runner 1-click, -10pts sem controle de viés, -10pts sem barras de erro, -20pts relatório puramente descritivo)?
+   - Critério eliminatório de Nota Zero (falta de código, relatório ou vídeo de 15min com link na página 1)?
+   - Articulação obrigatória com Tanenbaum §6.5.11 (TCP CUBIC) e §6.6.1/§6.6.2 (QUIC/BBR)?
+   - Exigência estrita de barras de erro em TODOS os gráficos?
+   - Formato de entrega ZIP (TP2_Redes2_NomeAluno1_NomeAluno2.zip no SIGAA)?
+
+Emita um Parecer Formal de Auditoria com:
+- Status Geral (APROVADO / APROVADO COM RESSALVAS / REPROVADO)
+- Pontuação de Conformidade (0 a 100%)
+- Matriz de Verificação de Itens
+- Pontos Fortes Observados
+- Recomendações e Conclusão
