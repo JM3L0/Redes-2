@@ -38,7 +38,11 @@ brain/
 │
 └── 06_relatorios_de_fases/                    # Diário de bordo detalhado fase a fase
     ├── README.md                              # Índice das fases registradas
-    └── fase_01_analise_e_estruturacao.md      # Relatório da Fase 1 (Concluída com sucesso)
+    ├── fase_01_analise_e_estruturacao.md      # Relatório da Fase 1 (Cérebro do Projeto)
+    ├── fase_02_e_03_infra_e_cargas.md         # Relatório das Fases 2 e 3 (Docker, Certificados e Cargas)
+    ├── fase_04_e_05_cliente_e_runner.md       # Relatório das Fases 4 e 5 (Cliente Python e Runner 1-Click)
+    ├── fase_06_e_07_analise_e_relatorio.md    # Relatório das Fases 6 e 7 (Estatística, Plots e Artigo SBC)
+    └── fase_08_video_e_submissao.md           # Relatório da Fase 8 (Slides, Roteiro do Vídeo e Submissão)
 ```
 
 ---
@@ -65,4 +69,9 @@ brain/
 - [**`05_prompts_ia/guia_de_prompts_ia.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/05_prompts_ia/guia_de_prompts_ia.md): Prompts modulares de alta precisão para orquestrar e acelerar o desenvolvimento com agentes de IA.
 
 ### 📑 6. Relatórios de Execução por Fase (Diário de Bordo)
-- [**`06_relatorios_de_fases/README.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/06_relatorios_de_fases/README.md): Histórico e decisões de engenharia registradas a cada fase executada.
+- [**`06_relatorios_de_fases/README.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/06_relatorios_de_fases/README.md): Índice consolidado do diário de bordo.
+- [**`06_relatorios_de_fases/fase_01_analise_e_estruturacao.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/06_relatorios_de_fases/fase_01_analise_e_estruturacao.md): Relatório da Fase 1 (Cérebro do Projeto).
+- [**`06_relatorios_de_fases/fase_02_e_03_infra_e_cargas.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/06_relatorios_de_fases/fase_02_e_03_infra_e_cargas.md): Relatório das Fases 2 e 3 (Docker, Certificados e Cargas).
+- [**`06_relatorios_de_fases/fase_04_e_05_cliente_e_runner.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/06_relatorios_de_fases/fase_04_e_05_cliente_e_runner.md): Relatório das Fases 4 e 5 (Cliente Python e Runner 1-Click).
+- [**`06_relatorios_de_fases/fase_06_e_07_analise_e_relatorio.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/06_relatorios_de_fases/fase_06_e_07_analise_e_relatorio.md): Relatório das Fases 6 e 7 (Estatística, Plots e Artigo SBC).
+- [**`06_relatorios_de_fases/fase_08_video_e_submissao.md`**](file:///c:/Users/jsous/Desktop/Redes%202/Avalia%C3%A7%C3%A3o_2/brain/06_relatorios_de_fases/fase_08_video_e_submissao.md): Relatório da Fase 8 (Slides, Roteiro e Preparação da Submissão).
