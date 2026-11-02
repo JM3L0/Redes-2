@@ -372,11 +372,11 @@
                     <h3>Figura 1: Cold TTFB com IC 95%</h3>
                     <p>Evidência clara do impacto de cada RTT no estabelecimento de sessão:</p>
                     <ul>
-                        <li><strong>Cenário LAN:</strong> HTTP/1.1 = 28.7 ms; HTTPS = 50.1 ms; HTTP/3 = 7.7 ms.</li>
+                        <li><strong>Cenário LAN:</strong> HTTP/1.1 = 28.7 ms; HTTPS = 50.2 ms; HTTP/3 = 7.7 ms.</li>
                         <li><strong>Cenário WAN (RTT = 50ms):</strong>
                             <br>• HTTP/1.1: ~68.7 ms (1 RTT + processamento).
                             <br>• HTTPS/TLS 1.3: ~118.4 ms (2 RTTs cumulativos).
-                            <br>• HTTP/3 QUIC: ~54.1 ms (1 RTT unificado sobre UDP).
+                            <br>• HTTP/3 QUIC: ~54.2 ms (1 RTT unificado sobre UDP).
                         </li>
                         <li>O HTTP/3 poupa exatamente <strong>1 RTT completo</strong> em conexões frias na Internet móvel.</li>
                     </ul>
@@ -394,7 +394,7 @@
                 <div class="card">
                     <h3>Figura 2: Goodput Carga A (50 MB)</h3>
                     <ul>
-                        <li><strong>LAN:</strong> HTTP/1.1 atinge 330 Mbps; HTTPS atinge 151 Mbps.</li>
+                        <li><strong>LAN:</strong> HTTP/1.1 atinge 330.1 Mbps; HTTPS atinge 151.5 Mbps.</li>
                         <li><strong>WAN (2% perda):</strong> Ambas as pilhas TCP colapsam para <strong>~4.8 Mbps</strong> (queda de 98.5%).</li>
                     </ul>
                     <div class="formula-box">
@@ -419,14 +419,14 @@
                     <h3>Figura 3 & 4: Desempenho Concorrente</h3>
                     <ul>
                         <li><strong>LAN (1ms, 0%):</strong>
-                            <br>• HTTP/1.1: 71.1 RPS (1.41 s)
-                            <br>• HTTP/2: 103.4 RPS (0.97 s)
-                            <br>• HTTP/3: 152.9 RPS (0.65 s)
+                            <br>• HTTP/1.1: 71.2 RPS (1.41 s)
+                            <br>• HTTP/2: 103.5 RPS (0.97 s)
+                            <br>• HTTP/3: 153.0 RPS (0.65 s)
                         </li>
                         <li><strong>WAN (50ms, 2% perda):</strong>
                             <br>• HTTP/1.1: 20.6 RPS (4.85 s)
-                            <br>• HTTP/2: 31.2 RPS (3.20 s)
-                            <br>• HTTP/3: <strong>86.9 RPS (1.15 s)</strong>
+                            <br>• HTTP/2: 31.2 RPS (3.21 s)
+                            <br>• HTTP/3: <strong>87.0 RPS (1.15 s)</strong>
                         </li>
                         <li>O HTTP/3 foi <strong>quase 3x mais rápido que o HTTP/2</strong> e <strong>mais de 4x mais rápido que o HTTP/1.1</strong> na WAN.</li>
                     </ul>
@@ -444,8 +444,8 @@
                 <div class="card">
                     <h3>Figura 5: CDF de Latência sob Perdas</h3>
                     <ul>
-                        <li><strong>Eliminação do HoL de Transporte:</strong> No HTTP/2, a perda de 1 pacote retém todo o buffer TCP. O percentil p99 salta para 2.100 ms.</li>
-                        <li><strong>Streams UDP Independentes no QUIC:</strong> O descarte afeta apenas o stream atingido. Os 99 streams restantes progridem livremente, com p99 contido em 420 ms.</li>
+                        <li><strong>Eliminação do HoL de Transporte:</strong> No HTTP/2, a perda de 1 pacote retém todo o buffer TCP. O percentil p99 salta para 2.092,8 ms.</li>
+                        <li><strong>Streams UDP Independentes no QUIC:</strong> O descarte afeta apenas o stream atingido. Os 99 streams restantes progridem livremente, com p99 contido em 419,9 ms.</li>
                         <li><strong>Controle de Congestionamento BBR:</strong> Regulação por ritmo (pacing) baseada em Bottleneck Bandwidth (BtlBw) e RTprop, sem confundir perdas estocásticas pontuais com saturação real de buffer.</li>
                     </ul>
                 </div>

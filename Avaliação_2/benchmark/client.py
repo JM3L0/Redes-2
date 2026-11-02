@@ -9,7 +9,8 @@ Aluno: João Marcos Sousa Rufino Leal (jsousarufinoleal@ufpi.edu.br)
 Atende rigorosamente a todas as especificações do edital:
 1. Chamadas assíncronas via httpx (HTTP/1.1 e HTTP/2) e aioquic (HTTP/3).
 2. Controle Estrito de Viés de Sessão (Client-Side Bias Control):
-   - Cold TTFB: client.aclose() explícito antes de cada requisição individual.
+   - Cold TTFB: client.aclose() / client.close() explícito antes de cada requisição individual,
+     contabilizando integralmente os handshakes de 1 RTT (TCP), 2 RTTs (TCP+TLS 1.3) e 1 RTT (QUIC).
    - Warm Concurrency: canal persistente único aquecido para download simultâneo de 100 objetos.
    - Desativação absoluta de cache HTTP local.
 3. Precisão temporal de microssegundos via time.perf_counter().
@@ -24,7 +25,6 @@ import ssl
 import asyncio
 import datetime
 from typing import List, Dict, Any, Optional
-from urllib.parse import urlparse
 
 import httpx
 from aioquic.asyncio.client import connect
@@ -73,12 +73,18 @@ class H3BenchmarkProtocol(QuicConnectionProtocol):
                         if stream_id in self.stream_futures and not self.stream_futures[stream_id].done():
                             self.stream_futures[stream_id].set_result(True)
 
-    async def fetch_path(self, path: str, authority: str) -> Dict[str, Any]:
+    async def fetch_path(
+        self,
+        path: str,
+        authority: str,
+        t_start_override: Optional[float] = None,
+        defer_transmit: bool = False
+    ) -> Dict[str, Any]:
         stream_id = self._quic.get_next_available_stream_id()
         fut = asyncio.get_running_loop().create_future()
         self.stream_futures[stream_id] = fut
         self.stream_data[stream_id] = bytearray()
-        
+
         headers = [
             (b":method", b"GET"),
             (b":scheme", b"https"),
@@ -87,12 +93,13 @@ class H3BenchmarkProtocol(QuicConnectionProtocol):
             (b"user-agent", b"UFPI-Redes2-H3Client/1.0"),
             (b"cache-control", b"no-cache, no-store"),
         ]
-        
-        t_start = time.perf_counter()
+
+        t_start = t_start_override if t_start_override is not None else time.perf_counter()
         self.stream_start[stream_id] = t_start
-        
+
         self._http.send_headers(stream_id=stream_id, headers=headers, end_stream=True)
-        self.transmit()
+        if not defer_transmit:
+            self.transmit()
 
         await asyncio.wait_for(fut, timeout=120.0)
         t_end = time.perf_counter()
@@ -128,24 +135,30 @@ async def fetch_httpx_cold(
     iteration: int,
     request_id: int
 ) -> RequestMetric:
-    """Executa requisição no modo Cold TTFB: conexão isolada, fechamento forçado."""
+    """Executa requisição no modo Cold TTFB: conexão isolada sem pool, fechamento explícito."""
     headers = get_no_cache_headers()
+    limits = httpx.Limits(max_keepalive_connections=0, max_connections=1)
+    client = httpx.AsyncClient(http2=http2, verify=False, limits=limits, timeout=120.0)
     t_start = time.perf_counter()
     t_first_byte = None
     bytes_downloaded = 0
     status_code = 0
 
-    async with httpx.AsyncClient(http2=http2, verify=False, timeout=120.0) as client:
-        try:
-            async with client.stream("GET", url, headers=headers) as response:
-                t_first_byte = time.perf_counter()
-                status_code = response.status_code
-                async for chunk in response.aiter_bytes():
-                    bytes_downloaded += len(chunk)
-        except Exception as e:
-            print(f"[!] Erro no cold fetch {url}: {e}", file=sys.stderr)
+    try:
+        async with client.stream("GET", url, headers=headers) as response:
+            status_code = response.status_code
+            async for chunk in response.aiter_bytes():
+                if t_first_byte is None:
+                    t_first_byte = time.perf_counter()
+                bytes_downloaded += len(chunk)
             if t_first_byte is None:
                 t_first_byte = time.perf_counter()
+    except Exception as e:
+        print(f"[!] Erro no cold fetch {url}: {e}", file=sys.stderr)
+        if t_first_byte is None:
+            t_first_byte = time.perf_counter()
+    finally:
+        await client.aclose()
 
     t_end = time.perf_counter()
     if t_first_byte is None:
@@ -187,9 +200,11 @@ async def fetch_httpx_warm_batch(
     metrics: List[RequestMetric] = []
     headers = get_no_cache_headers()
 
-    limits = httpx.Limits(max_keepalive_connections=100, max_connections=100)
-    async with httpx.AsyncClient(http2=http2, verify=False, limits=limits, timeout=120.0) as client:
-        # Aquecimento inicial (1 handshake prévio)
+    # Garante estritamente 1 única conexão persistente aquecida (warm connection)
+    limits = httpx.Limits(max_keepalive_connections=1, max_connections=1)
+    client = httpx.AsyncClient(http2=http2, verify=False, limits=limits, timeout=120.0)
+    try:
+        # Aquecimento inicial (1 handshake prévio na conexão única)
         try:
             await client.get(f"{base_url}{paths[0]}", headers=headers)
         except Exception:
@@ -203,17 +218,20 @@ async def fetch_httpx_warm_batch(
             code = 0
             try:
                 async with client.stream("GET", url, headers=headers) as resp:
-                    t_first = time.perf_counter()
                     code = resp.status_code
                     async for chunk in resp.aiter_bytes():
+                        if t_first is None:
+                            t_first = time.perf_counter()
                         bytes_dl += len(chunk)
-            except Exception as e:
+                    if t_first is None:
+                        t_first = time.perf_counter()
+            except Exception:
                 if t_first is None:
                     t_first = time.perf_counter()
             t_end = time.perf_counter()
             if t_first is None:
                 t_first = t_end
-            
+
             dur = t_end - t_start
             return RequestMetric(
                 test_id=test_id,
@@ -235,6 +253,8 @@ async def fetch_httpx_warm_batch(
         tasks = [fetch_single(path, idx + 1) for idx, path in enumerate(paths)]
         results = await asyncio.gather(*tasks)
         metrics.extend(results)
+    finally:
+        await client.aclose()
 
     return metrics
 
@@ -253,14 +273,22 @@ async def fetch_h3_cold(
     iteration: int,
     request_id: int
 ) -> RequestMetric:
-    """Executa requisição HTTP/3 Cold TTFB: conexão QUIC criada e fechada imediatamente."""
-    config = QuicConfiguration(is_client=True, alpn_protocols=H3_ALPN)
+    """Executa requisição HTTP/3 Cold TTFB: inclui o handshake QUIC 1-RTT e fecha imediatamente."""
+    config = QuicConfiguration(
+        is_client=True,
+        alpn_protocols=H3_ALPN,
+        max_data=100 * 1024 * 1024,
+        max_stream_data=100 * 1024 * 1024,
+    )
     config.verify_mode = ssl.CERT_NONE
     authority = f"{host}:{port}"
     url = f"https://{authority}{path}"
 
+    # Mede o tempo desde o início do handshake QUIC (1 RTT integrado)
+    t_conn_start = time.perf_counter()
     async with connect(host, port, configuration=config, create_protocol=H3BenchmarkProtocol) as client:
-        res = await client.fetch_path(path, authority)
+        res = await client.fetch_path(path, authority, t_start_override=t_conn_start)
+        client.close()
 
     return RequestMetric(
         test_id=test_id,
@@ -291,7 +319,12 @@ async def fetch_h3_warm_batch(
 ) -> List[RequestMetric]:
     """Executa requisições HTTP/3 no modo Warm: única conexão persistente QUIC multiplexando streams."""
     metrics: List[RequestMetric] = []
-    config = QuicConfiguration(is_client=True, alpn_protocols=H3_ALPN)
+    config = QuicConfiguration(
+        is_client=True,
+        alpn_protocols=H3_ALPN,
+        max_data=100 * 1024 * 1024,
+        max_stream_data=100 * 1024 * 1024,
+    )
     config.verify_mode = ssl.CERT_NONE
     authority = f"{host}:{port}"
 
@@ -325,6 +358,7 @@ async def fetch_h3_warm_batch(
         tasks = [fetch_single(path, idx + 1) for idx, path in enumerate(paths)]
         results = await asyncio.gather(*tasks)
         metrics.extend(results)
+        client.close()
 
     return metrics
 
@@ -366,6 +400,19 @@ async def run_single_test(
     # Lista de caminhos da Carga B (100 objetos)
     paths_b = [f"/objects/obj_{i:03d}.bin" for i in range(1, 101)]
 
+    # Descarta 1 requisição leve de inicialização do worker do container antes da Iteração 1
+    if defn["payload"] == "A":
+        try:
+            if srv == "http1":
+                await fetch_httpx_cold(f"http://127.0.0.1:{http1_port}/objects/obj_001.bin", False, test_id, proto, scenario_str, payload_type, 0, 0)
+            elif srv == "http2":
+                await fetch_httpx_cold(f"https://127.0.0.1:{http2_port}/objects/obj_001.bin", True, test_id, proto, scenario_str, payload_type, 0, 0)
+            elif srv == "http3":
+                await fetch_h3_cold("127.0.0.1", http3_port, "/objects/obj_001.bin", test_id, proto, scenario_str, payload_type, 0, 0)
+            await asyncio.sleep(0.5)
+        except Exception:
+            pass
+
     for it in range(1, iterations + 1):
         t0 = time.perf_counter()
         if defn["payload"] == "A":
@@ -381,8 +428,7 @@ async def run_single_test(
             elif srv == "http3":
                 m = await fetch_h3_cold("127.0.0.1", http3_port, "/50MB.bin", test_id, proto, scenario_str, payload_type, it, 1)
                 collector.record(m)
-            
-            elapsed = time.perf_counter() - t0
+
             print(f"    [Iter {it:02d}/{iterations}] TTFB: {m.ttfb_ms:.2f} ms | Load: {m.load_time_ms:.2f} ms | Goodput: {m.goodput_mbps:.2f} Mbps")
 
         else:
@@ -404,6 +450,10 @@ async def run_single_test(
             rps = len(results) / elapsed if elapsed > 0 else 0
             print(f"    [Iter {it:02d}/{iterations}] 100 objetos | Tempo Janela: {elapsed:.3f} s | RPS: {rps:.1f} | TTFB Médio: {avg_ttfb:.2f} ms")
 
+        # Intervalo de 1s entre repetições para dissipação de buffers da qdisc netem
+        if it < iterations:
+            await asyncio.sleep(1.0)
+
 async def main():
     import argparse
     parser = argparse.ArgumentParser(description="Cliente de Benchmark Web UFPI (HTTP/1.1 vs HTTP/2 vs HTTP/3)")
@@ -418,7 +468,7 @@ async def main():
     args = parser.parse_args()
 
     collector = MetricsCollector()
-    
+
     # Se o arquivo de resultados já existir, carrega os dados anteriores para acumular testes
     if os.path.exists(args.output_json):
         try:
@@ -446,11 +496,11 @@ async def main():
             sys.exit(1)
         tests_to_run = [test_id]
 
-    print(f"================================================================================")
+    print("================================================================================")
     print(f" INICIANDO BATERIA EXPERIMENTAL: {len(tests_to_run)} testes x {args.iterations} repetições")
     print(f" Testes agendados: {', '.join(tests_to_run)}")
     print(f" Portas: HTTP/1.1={args.http1_port}, HTTP/2={args.http2_port}, HTTP/3={args.http3_port}")
-    print(f"================================================================================")
+    print("================================================================================")
 
     for tid in tests_to_run:
         # Remove métricas anteriores desse mesmo test_id para não duplicar se estiver re-executando
