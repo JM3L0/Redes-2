@@ -4,8 +4,8 @@
 **Universidade Federal do Piauí (UFPI)** — Campus Senador Helvídio Nunes de Barros (CSHNB)  
 **Curso:** Bacharelado em Sistemas de Informação  
 **Disciplina:** Redes de Computadores II (2026-2)  
-**Aluno:** João Marcos Sousa Rufino Leal  
-**E-mail:** `jsousarufinoleal@ufpi.edu.br`  
+**Equipe:** João Marcos Sousa Rufino Leal & Marcos Willian de Sousa e Silva  
+**E-mails:** `jsousarufinoleal@ufpi.edu.br` | `marcos.sousa@ufpi.edu.br`  
 **Peso da Avaliação:** 50% da pontuação total da N2 (100 pontos totais)
 
 ---
@@ -151,7 +151,7 @@ Avaliação_2/
 
 ## 🖥 Como Visualizar os Slides de Apresentação
 
-Abra o arquivo `video/slides.html` diretamente em qualquer navegador Web (Chrome, Edge ou Firefox).  
+Abra o arquivo `brain/video/slides.html` diretamente em qualquer navegador Web (Chrome, Edge ou Firefox).  
 Utilize as setas do teclado (`◀` e `▶`) ou a barra de espaço para navegar pelos 10 slides durante a gravação do vídeo de 15 minutos.
 
 ---
@@ -161,5 +161,5 @@ Utilize as setas do teclado (`◀` e `▶`) ou a barra de espaço para navegar p
 Para gerar o arquivo compactado final no formato padronizado pelo edital:
 
 ```powershell
-Compress-Archive -Path "docker", "benchmark", "scripts", "analysis", "data", "relatorio", "video", "brain", "run_experiments.ps1", "run_experiments.sh", "README.md", "AGENTS.md" -DestinationPath "TP2_Redes2_JoaoMarcosSousaRufinoLeal.zip" -Force
+Compress-Archive -Path "docker", "benchmark", "scripts", "analysis", "data", "relatorio", "run_experiments.ps1", "run_experiments.sh", "README.md" -DestinationPath "TP2_Redes2_JoaoMarcosSousaRufinoLeal_MarcosWilliandeSousaeSilva.zip" -Force
 ```

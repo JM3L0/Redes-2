@@ -25,11 +25,11 @@
 Uma Análise Comparativa entre HTTP/1.1, HTTPS/TLS 1.3 e HTTP/3-QUIC\\
 sob Degradação Controlada de Canal com Docker e Python}
 
-\author{João Marcos Sousa Rufino Leal\inst{1}}
+\author{João Marcos Sousa Rufino Leal\inst{1} \and Marcos Willian de Sousa e Silva\inst{1}}
 
 \address{Departamento de Computação -- Universidade Federal do Piauí (UFPI)\\
   Campus Senador Helvídio Nunes de Barros (CSHNB) -- Picos -- PI -- Brasil\\
-  \texttt{jsousarufinoleal@ufpi.edu.br}
+  \texttt{jsousarufinoleal@ufpi.edu.br}, \texttt{marcos.sousa@ufpi.edu.br}
   \par\vspace{0.35cm}
   \textbf{Vídeo de Apresentação e Demonstração Técnica (15 Minutos):} \\
   \url{https://youtu.be/DEMO_UFPI_REDES2_H3_BENCHMARK}
@@ -110,8 +110,8 @@ O atraso unidirecional de saída injetado pela ferramenta corresponde a $\text{R
 \subsection{Cliente de Benchmark em Python e Controle de Viés de Sessão}
 O cliente experimental (\texttt{benchmark/client.py}) foi construído de forma assíncrona sobre as bibliotecas \texttt{httpx} e \texttt{aioquic}, incorporando as diretrizes de controle de viés:
 \begin{itemize}
-    \item \textbf{Desativação de Cache:} Inclusão dos cabeçalhos \texttt{Cache-Control: no-store, no-cache} e expiração nula em todas as chamadas.
-    \item \textbf{Modo Conexão Fria (\textit{Cold TTFB}):} Fechamento explícito da sessão (\texttt{client.aclose()}) antes de cada requisição individual nos ensaios de handshake, evitando o reuso de pools de conexões TCP ou tickets QUIC.
+    \item \textbf{Desativação de Cache:} inclusão obrigatória das diretivas \texttt{Cache-Control: no-store, no-cache} e expiração nula em todas as requisições enviadas.
+    \item \textbf{Modo Conexão Fria (\textit{Cold TTFB}):} encerramento explícito da sessão através do comando \mbox{\texttt{client.aclose()}} previamente a cada medição individual, impedindo reaproveitamento de sockets TCP ou tíquetes QUIC.
     \item \textbf{Modo Conexão Aquecida (\textit{Warm Concurrency}):} Estabelecimento prévio de uma única sessão persistente mantida aberta durante o download simultâneo dos 100 arquivos da Carga B, avaliando o comportamento puro de multiplexação.
 \end{itemize}
 
