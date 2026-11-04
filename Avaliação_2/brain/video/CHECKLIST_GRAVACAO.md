@@ -57,7 +57,7 @@
 
 #### 🟢 Bloco 4: Demonstração Experimental ao Vivo (1-Click Run) [07:30 - 10:30] (~3 min)
 - [ ] **Clicar para abrir:** ⚡ [run_experiments.ps1](../../run_experiments.ps1) e [run_experiments.sh](../../run_experiments.sh) (mostrando que o projeto inteiro roda com 1 único comando, evitando a penalidade de -15 pontos).
-- [ ] **Na Tela (Terminal PowerShell):** Seguir os comandos de 📋 [GUIA_EXECUCAO_AO_VIVO.md](GUIA_EXECUCAO_AO_VIVO.md):
+- [ ] **Na Tela (Terminal PowerShell):** Seguir os comandos integrados no Bloco 4 do [roteiro_video_15min.md](roteiro_video_15min.md):
   - [ ] Aplicar `.\scripts\setup_netem.ps1 lan` e rodar testes rápidos na LAN (`T01`, `T02`, `T09`).
   - [ ] Aplicar `.\scripts\setup_netem.ps1 wan` e rodar ao vivo `T10` (HTTP/1.1), `T11` (HTTP/2) e `T12` (HTTP/3) na WAN, mostrando o HTTP/3 terminando os 100 objetos em ~1 segundo enquanto o HTTP/2 e o HTTP/1.1 demoram de 3 a 5 segundos.
   - [ ] Limpar a interface com `.\scripts\setup_netem.ps1 clean` e rodar [process_data.py](../../analysis/process_data.py) e [plot_results.py](../../analysis/plot_results.py).

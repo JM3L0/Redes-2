@@ -1,9 +1,36 @@
-# Roteiro de Apresentação em Dupla (15 Minutos — Fluido, Natural e Conceitual)
+# Roteiro Mestre de Apresentação em Dupla (15 Minutos — Guia Único e Completo)
 
 **Disciplina:** Redes de Computadores II (2026-2) — UFPI / CSHNB  
 **Equipe:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`) & Marcos Willian de Sousa e Silva (`marcos.sousa@ufpi.edu.br`)  
 
-> **Dica de Apresentação:** Todos os arquivos citados neste roteiro são **links clicáveis** (`Ctrl + Clique` no editor ou clique direto no Preview do Markdown) para você abrir cada arquivo na hora exata durante a gravação.
+> **Como usar este documento:** Este é o **único arquivo** que você precisa abrir para gravar o vídeo. Ele contém:
+> 1. A preparação rápida do terminal antes de abrir o OBS;
+> 2. O roteiro de falas falado e conceitual dividido 50/50 entre João Marcos e Marcos Willian;
+> 3. Os blocos de código PowerShell do terminal prontos para copiar e colar na hora exata da fala;
+> 4. Todos os arquivos citados como **links clicáveis** (`Ctrl + Clique` no VS Code ou clique direto no Preview);
+> 5. A limpeza pós-gravação.
+
+---
+
+## 🛠️ PASSO 0: Preparação Rápida ANTES de Gravar (2 min antes no OBS)
+
+Abra o **PowerShell** na pasta raiz do projeto (`c:\Users\jsous\Desktop\Redes 2\Avaliação_2`) e rode este bloco **antes** de começar a gravar:
+
+```powershell
+# 1. Sobe os 3 servidores Docker em segundo plano
+docker compose -f docker\docker-compose.yml up -d
+
+# 2. Garante a ferramenta 'tc' instalada nos 3 contêineres Alpine
+docker exec server_http11 apk add --no-cache iproute2
+docker exec server_http2_tls apk add --no-cache iproute2
+docker exec server_http3_quic apk add --no-cache iproute2
+
+# 3. Cria backup dos dados oficiais (N=10) para proteger o relatório de sobrescritas
+Copy-Item -Path "data" -Destination "data_backup_n10" -Recurse -Force
+
+# 4. Limpa o terminal para começar a gravação com a tela bonita e vazia
+Clear-Host
+```
 
 ---
 
@@ -14,13 +41,13 @@
 | **Bloco 1** | 00:00 - 02:00 | 2m 00s | **João Marcos & Marcos Willian** | 📄 [sbc-template.pdf](../../relatorio/sbc-template.pdf) *(Págs. 1 e 2)* · [README.md](../../README.md) |
 | **Bloco 2** | 02:00 - 04:30 | 2m 30s | **Marcos Willian & João Marcos** | 🐳 [docker-compose.yml](../../docker/docker-compose.yml) · [nginx.conf (H1)](../../docker/server-http1/nginx.conf) · [nginx.conf (H2)](../../docker/server-http2/nginx.conf) · [Caddyfile (H3)](../../docker/server-http3/Caddyfile) · [setup_netem.ps1](../../scripts/setup_netem.ps1) |
 | **Bloco 3** | 04:30 - 07:30 | 3m 00s | **João Marcos & Marcos Willian** | 🐍 [client.py](../../benchmark/client.py) · [session_control.py](../../benchmark/session_control.py) · [metrics.py](../../benchmark/metrics.py) |
-| **Bloco 4** | 07:30 - 10:30 | 3m 00s | **João Marcos & Marcos Willian** | ⚡ [run_experiments.ps1](../../run_experiments.ps1) · [run_experiments.sh](../../run_experiments.sh) · [GUIA_EXECUCAO_AO_VIVO.md](GUIA_EXECUCAO_AO_VIVO.md) · [results.csv](../../data/raw/results.csv) · [summary_table.csv](../../data/processed/summary_table.csv) |
+| **Bloco 4** | 07:30 - 10:30 | 3m 00s | **João Marcos & Marcos Willian** | ⚡ [run_experiments.ps1](../../run_experiments.ps1) · **Comandos do Terminal PowerShell integrados abaixo** · [results.csv](../../data/raw/results.csv) |
 | **Bloco 5** | 10:30 - 13:30 | 3m 00s | **Marcos Willian & João Marcos** | 📊 [sbc-template.pdf](../../relatorio/sbc-template.pdf) *(Págs. 4 a 8)* · [Fig 1 (TTFB)](../../data/plots/fig1_ttfb_cold_comparison.png) · [Fig 2 (Throughput)](../../data/plots/fig2_throughput_carga_a.png) · [Fig 3 (Load B)](../../data/plots/fig3_load_time_carga_b.png) · [Fig 4 (RPS WAN)](../../data/plots/fig4_rps_carga_b_wan.png) · [Fig 5 (CDF)](../../data/plots/fig5_cdf_latency_distribution.png) |
 | **Bloco 6** | 13:30 - 15:00 | 1m 30s | **Marcos Willian & João Marcos** | 🎯 [sbc-template.pdf](../../relatorio/sbc-template.pdf) *(Págs. 8, 9 e 1)* · [relatorio.bib](../../relatorio/relatorio.bib) |
 
 ---
 
-## 🎬 Roteiro Falado Minuto a Minuto
+## 🎬 Roteiro Falado Minuto a Minuto com Comandos Integrados
 
 ---
 
@@ -88,30 +115,55 @@
 ---
 
 ### 🧪 Bloco 4: Demonstração Executando Ao Vivo no Terminal [07:30 - 10:30]
-* **Clique para abrir na tela:**
-  1. ⚡ [run_experiments.ps1](../../run_experiments.ps1) e [run_experiments.sh](../../run_experiments.sh)
-  2. 📋 [GUIA_EXECUCAO_AO_VIVO.md](GUIA_EXECUCAO_AO_VIVO.md) *(com os comandos prontos para colar no Terminal PowerShell)*
-  3. 📁 Ao terminar, clicar em [results.csv](../../data/raw/results.csv) e [summary_table.csv](../../data/processed/summary_table.csv)
+* **Na Tela:** Mostrar [run_experiments.ps1](../../run_experiments.ps1) no VS Code e alternar para a janela do **Terminal PowerShell**.
 
 * **Fala — João Marcos (07:30 - 08:45):**
   > *(Ação: Clicar em [run_experiments.ps1](../../run_experiments.ps1) / [run_experiments.sh](../../run_experiments.sh) e depois ir para o Terminal PowerShell).*  
-  > *"Aqui na raiz temos o script [run_experiments.ps1](../../run_experiments.ps1) (e [run_experiments.sh](../../run_experiments.sh)), que automatiza todo o experimento com um único comando: ele sobe os contêineres, aplica os cenários de rede, roda os 12 testes da matriz, processa as estatísticas, plota os gráficos e desliga o ambiente.  
-  > Aqui no terminal, nossos três contêineres já estão rodando. Vamos aplicar agora ao vivo o **Cenário 1 (LAN)** com o `setup_netem` e rodar os testes de rede local."*  
-  > *(Ação no Terminal: Rodar `.\scripts\setup_netem.ps1 lan` e em seguida os testes de LAN do [GUIA_EXECUCAO_AO_VIVO.md](GUIA_EXECUCAO_AO_VIVO.md)).*  
-  > *"Vejam que a regra de rede local já foi injetada nos três servidores e os testes rodam super rápido: na rede local sem perdas, tanto o arquivo de 50 Mega quanto o lote de 100 arquivos terminam quase instantaneamente."*
+  > *"Aqui na raiz temos o script [run_experiments.ps1](../../run_experiments.ps1), que automatiza todo o experimento com um único comando: ele sobe os contêineres, aplica os cenários de rede, roda os 12 testes da matriz, processa as estatísticas, plota os gráficos e desliga o ambiente.  
+  > Aqui no terminal, nossos três contêineres já estão rodando. Vamos aplicar agora ao vivo o **Cenário 1 (LAN)** com o `setup_netem` e rodar os testes de rede local."*
+
+  > 📋 **COPIAR E COLAR NO POWERSHELL (Comando 1 — Aplicar LAN e rodar testes rápidos):**
+  > ```powershell
+  > .\scripts\setup_netem.ps1 lan
+  > python benchmark\client.py --test T01 --iterations 1 --http1-port 8080
+  > python benchmark\client.py --test T02 --iterations 1 --http1-port 8080
+  > python benchmark\client.py --test T09 --iterations 1 --http1-port 8080
+  > ```
+
+  > *(Comentário enquanto roda na tela — dura ~15 segundos):*  
+  > *"Vejam que a regra de rede local já foi injetada com delay de 500 microssegundos nos três servidores e os testes rodam super rápido: na rede local sem perdas, tanto o arquivo de 50 Mega quanto o lote de 100 arquivos terminam quase instantaneamente."*
 
 * **Fala — Marcos Willian (08:45 - 10:30):**
-  > *(Ação no Terminal: Rodar `.\scripts\setup_netem.ps1 wan` e depois `T10`, `T11` e `T12` na WAN, seguidos de `clean`, [process_data.py](../../analysis/process_data.py) e [plot_results.py](../../analysis/plot_results.py)).*  
-  > *"Agora vamos mudar ao vivo para o **Cenário 2 (WAN)**, injetando o atraso de 50 milissegundos e a perda de pacotes nos servidores, e vamos pedir para os três protocolos baixarem os 100 arquivos simultâneos:  
-  > Olhem a diferença acontecendo na tela: o HTTP/1.1 (`T10`) demora quase 5 segundos para terminar; o HTTP/2 (`T11`), mesmo sendo multiplexado, fica preso nas perdas do TCP e leva mais de 3 segundos; e agora olhem o HTTP/3 sobre QUIC (`T12`): mesmo na rede ruim, ele entrega os 100 arquivos em pouco mais de 1 segundo!  
-  > Por fim, limpamos as regras da placa de rede com o comando `clean` e rodamos os scripts [process_data.py](../../analysis/process_data.py) e [plot_results.py](../../analysis/plot_results.py), que leem o nosso dataset completo das 10 repetições em [results.csv](../../data/raw/results.csv), geram a tabela resumo em [summary_table.csv](../../data/processed/summary_table.csv) e salvam todos os gráficos com barras de erro."*
+  > *"Agora vamos mudar ao vivo para o **Cenário 2 (WAN)**, injetando o atraso de 50 milissegundos e a perda de pacotes de 2% nos servidores, e vamos pedir para os três protocolos baixarem os 100 arquivos simultâneos:"*
+
+  > 📋 **COPIAR E COLAR NO POWERSHELL (Comando 2 — Aplicar WAN e comparar HTTP/1.1 vs HTTP/2 vs HTTP/3):**
+  > ```powershell
+  > .\scripts\setup_netem.ps1 wan
+  > python benchmark\client.py --test T10 --iterations 1 --http1-port 8080
+  > python benchmark\client.py --test T11 --iterations 1 --http1-port 8080
+  > python benchmark\client.py --test T12 --iterations 1 --http1-port 8080
+  > ```
+
+  > *(Comentário enquanto roda na tela — dura ~12 segundos):*  
+  > *"Olhem a diferença acontecendo na tela: o HTTP/1.1 (`T10`) demora quase 5 segundos para terminar; o HTTP/2 (`T11`), mesmo sendo multiplexado, fica preso nas perdas do TCP e leva mais de 3 segundos; e agora olhem o HTTP/3 sobre QUIC (`T12`): mesmo na rede ruim, ele entrega os 100 arquivos em pouco mais de 1 segundo!"*
+
+  > 📋 **COPIAR E COLAR NO POWERSHELL (Comando 3 — Limpar placa de rede e gerar gráficos ao vivo):**
+  > ```powershell
+  > .\scripts\setup_netem.ps1 clean
+  > Copy-Item -Path "data_backup_n10\raw\*" -Destination "data\raw\" -Force
+  > python analysis\process_data.py
+  > python analysis\plot_results.py
+  > ```
+
+  > *(Comentário enquanto roda na tela — dura ~5 segundos):*  
+  > *"Por fim, limpamos as regras da placa de rede com o comando `clean` e rodamos os scripts [process_data.py](../../analysis/process_data.py) e [plot_results.py](../../analysis/plot_results.py), que leem o nosso dataset completo das 10 repetições em [results.csv](../../data/raw/results.csv), geram a tabela resumo em [summary_table.csv](../../data/processed/summary_table.csv) e salvam todos os gráficos com barras de erro."*
 
 ---
 
 ### 📊 Bloco 5: Análise dos Gráficos e Explicação Teórica (Tanenbaum) [10:30 - 13:30]
 * **Clique para abrir na tela (direto nas imagens ou no PDF):**
   - 📄 [sbc-template.pdf](../../relatorio/sbc-template.pdf) *(Páginas 4 a 8)*
-  - 📈 **Gráficos individuais em alta resolução:**
+  - 📈 **Ou nas figuras individuais:**
     1. [fig1_ttfb_cold_comparison.png](../../data/plots/fig1_ttfb_cold_comparison.png) *(Cold TTFB — Handshake)*
     2. [fig2_throughput_carga_a.png](../../data/plots/fig2_throughput_carga_a.png) *(Vazão 50 MB — Colapso TCP CUBIC)*
     3. [fig3_load_time_carga_b.png](../../data/plots/fig3_load_time_carga_b.png) *(Tempo Total — 100 Objetos)*
@@ -147,3 +199,15 @@
   > *(Ação: Voltar para a Página 1 do [sbc-template.pdf](../../relatorio/sbc-template.pdf)).*  
   > *"Todo o nosso código, os contêineres Docker, os scripts de automação, os dados coletados e esse relatório em formato da SBC já estão organizados no pacote final do trabalho, com o link deste vídeo aqui na primeira página do PDF.  
   > A gente agradece ao professor e a todos que assistiram. Muito obrigado e até mais!"*
+
+---
+
+## 🧹 PASSO FINAL: Depois de Parar a Gravação no OBS
+
+Assim que terminar a gravação, cole este bloco no **PowerShell** para restaurar a pasta oficial de dados ($N=10$) e encerrar o Docker:
+
+```powershell
+Copy-Item -Path "data_backup_n10\*" -Destination "data\" -Recurse -Force
+Remove-Item -Path "data_backup_n10" -Recurse -Force
+docker compose -f docker\docker-compose.yml down
+```
