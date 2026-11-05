@@ -2,7 +2,8 @@
 # ==============================================================================
 # Orquestrador Mestre 1-Click de Experimentos Web (Bash / Linux / WSL / macOS)
 # Disciplina: Redes de Computadores II (UFPI - CSHNB)
-# Aluno: João Marcos Sousa Rufino Leal (jsousarufinoleal@ufpi.edu.br)
+# Equipe: João Marcos Sousa Rufino Leal & Marcos Willian de Sousa e Silva
+# E-mails: jsousarufinoleal@ufpi.edu.br | marcos.sousa@ufpi.edu.br
 # ==============================================================================
 
 set -euo pipefail
@@ -38,7 +39,7 @@ cd "$SCRIPT_DIR"
 echo "================================================================================"
 echo "   ORQUESTRADOR MESTRE DE EXPERIMENTOS DE REDES II (UFPI - CSHNB)             "
 echo "   Estudo Experimental: HTTP/1.1 vs HTTPS/TLS 1.3 vs HTTP/3-QUIC              "
-echo "   Aluno: João Marcos Sousa Rufino Leal                                       "
+echo "   Equipe: João Marcos Sousa Rufino Leal & Marcos Willian de Sousa e Silva     "
 echo "   Iterações por teste: $ITERATIONS                                            "
 echo "================================================================================"
 

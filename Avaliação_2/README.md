@@ -63,10 +63,10 @@ chmod +x run_experiments.sh
 ## 📂 Estrutura do Repositório
 
 ```
-Avaliação_2/
 ├── run_experiments.ps1       # Orquestrador mestre 1-click para Windows PowerShell
 ├── run_experiments.sh        # Orquestrador mestre 1-click para Linux/WSL/macOS
-├── AGENTS.md                 # Diretrizes e regras do projeto para agentes de IA
+├── requirements.txt          # Dependências Python (httpx, aioquic, matplotlib, numpy, scipy)
+├── .gitignore                # Regras de exclusão de artefatos temporários e caches
 ├── README.md                 # Este manual técnico completo
 │
 ├── docker/                   # Infraestrutura de contêineres
@@ -93,27 +93,17 @@ Avaliação_2/
 │
 ├── data/                     # Dados brutos, processados e figuras
 │   ├── static/               # Carga A (50MB.bin) e Carga B (objects/obj_001.bin a obj_100.bin)
-│   ├── raw/                  # results.json e results.csv gerados durante os ensaios
+│   ├── raw/                  # results.json e results.csv gerados durante os ensaios (10 iterações)
 │   ├── processed/            # summary_table.csv e summary_table.tex consolidados
 │   └── plots/                # Figuras 1 a 5 salvas em alta resolução (300 DPI)
 │
-├── relatorio/                # Artigo acadêmico formal em padrão SBC/LaTeX
-│   ├── sbc-template.tex      # Código-fonte LaTeX com fundamentação Tanenbaum (Seção 6.5.11 e Seção 6.6.1/2)
-│   ├── sbc-template.pdf      # Relatório final compilado em PDF com link do vídeo na 1ª página
-│   ├── sbc.sty               # Estilo oficial da Sociedade Brasileira de Computação
-│   └── relatorio.bib         # Referências formais (Tanenbaum, RFCs IETF)
-│
-├── video/                    # Slides e roteiro do vídeo de apresentação (15 minutos)
-│   ├── slides.html           # Apresentação interativa em HTML/CSS para gravação em tela
-│   └── README.md             # Roteiro cronometrado e checklist pré-gravação
-│
-└── brain/                    # Cérebro do projeto (documentação arquitetural e auditorias)
-    ├── 01_diretrizes/        # Regras, rubrica e checklist kanban
-    ├── 02_arquitetura/       # Modelagem de contêineres e topologia
-    ├── 03_experimentos/      # Matriz de 12 testes e modelagem de métricas
-    ├── 04_entregaveis/       # Especificação do artigo SBC e roteiro do vídeo
-    ├── 05_prompts_ia/        # Guia de prompts especializados
-    └── 06_relatorios_de_fases/# Diário de bordo detalhado de cada fase concluída
+└── relatorio/                # Artigo acadêmico formal em padrão SBC/LaTeX
+    ├── sbc-template.tex      # Código-fonte LaTeX com fundamentação Tanenbaum (Seção 6.5.11 e Seção 6.6.1/2)
+    ├── sbc-template.pdf      # Relatório final compilado em PDF com link do vídeo na 1ª página
+    ├── sbc.sty               # Estilo oficial da Sociedade Brasileira de Computação
+    ├── sbc.bst               # Formatação bibliográfica da SBC
+    ├── relatorio.bib         # Referências formais (Tanenbaum, RFCs IETF)
+    └── README.md             # Instruções de compilação do relatório LaTeX
 ```
 
 ---
@@ -149,17 +139,9 @@ Avaliação_2/
 
 ---
 
-## 🖥 Como Visualizar os Slides de Apresentação
+## 📦 Estrutura de Entrega e Submissão no SIGAA
 
-Abra o arquivo `brain/video/slides.html` diretamente em qualquer navegador Web (Chrome, Edge ou Firefox).  
-Utilize as setas do teclado (`◀` e `▶`) ou a barra de espaço para navegar pelos 10 slides durante a gravação do vídeo de 15 minutos.
+Conforme a Seção 6 do edital, o projeto deve ser submetido em um único arquivo compactado .zip contendo o código-fonte e o Relatório Técnico em PDF com o link público do vídeo de demonstração no YouTube inserido no relatório.
 
----
-
-## 📦 Instruções de Empacotamento Final para Submissão no SIGAA
-
-Para gerar o arquivo compactado final no formato padronizado pelo edital:
-
-```powershell
-Compress-Archive -Path "docker", "benchmark", "scripts", "analysis", "data", "relatorio", "run_experiments.ps1", "run_experiments.sh", "README.md" -DestinationPath "TP2_Redes2_JoaoMarcosSousaRufinoLeal_MarcosWilliandeSousaeSilva.zip" -Force
-```
+Nome padronizado do arquivo compactado:
+TP2_Redes2_JoaoMarcosSousaRufinoLeal_MarcosWilliandeSousaeSilva.zip

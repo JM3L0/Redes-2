@@ -18,8 +18,28 @@
 # OS junk
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# Arquivos pesados de testes de redes (gerados localmente via generate_static_data.py)
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Ambientes virtuais e IDEs
+.venv/
+env/
+venv/
+.idea/
+
+# Backups temporários
+data_backup_n10/
+Avalia*/data_backup_n10/
+
+# Arquivos compactados de submissão
+*.zip
+
+# Arquivos pesados de testes de redes (gerados localmente via script)
 Avaliacao_1/data/static/*.bin
 Avaliacao_1/data/static/objects/
 Avaliacao_1/data/raw/

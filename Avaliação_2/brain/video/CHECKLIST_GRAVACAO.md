@@ -89,5 +89,5 @@
 #### 🟢 Bloco 6: Conclusões e Encerramento [13:30 - 15:00] (~1m30s)
 - [ ] **Clicar para abrir:** 📄 [sbc-template.pdf](../../relatorio/sbc-template.pdf) *(Páginas 8 e 9 — Seção 5 e Referências)* e [relatorio.bib](../../relatorio/relatorio.bib).
 - [ ] **Síntese dos achados:** TCP em kernel é ótimo em redes locais perfeitas (LAN), mas o HTTP/3 sobre QUIC é indispensável em redes reais e móveis (WAN) sujeitas a atraso e perda de pacotes.
-- [ ] **Voltar à Página 1 do [sbc-template.pdf](../../relatorio/sbc-template.pdf):** Mostrar onde ficará o link público do vídeo no cabeçalho do artigo SBC antes da submissão no SIGAA.
+- [ ] **Voltar à Página 1 do [sbc-template.pdf](../../relatorio/sbc-template.pdf):** Mostrar os links do repositório no GitHub (https://github.com/JM3L0/Redes-2) e do vídeo no YouTube no cabeçalho do artigo SBC (Página 1).
 - [ ] **Agradecimento final:** Agradecer ao professor e encerrar a gravação.

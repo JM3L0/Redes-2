@@ -40,7 +40,7 @@ Set-Location $baseDir
 Write-Host "================================================================================" -ForegroundColor Cyan
 Write-Host "   ORQUESTRADOR MESTRE DE EXPERIMENTOS DE REDES II (UFPI - CSHNB)             " -ForegroundColor Cyan
 Write-Host "   Estudo Experimental: HTTP/1.1 vs HTTPS/TLS 1.3 vs HTTP/3-QUIC              " -ForegroundColor Cyan
-Write-Host "   Aluno: João Marcos Sousa Rufino Leal                                       " -ForegroundColor Cyan
+Write-Host "   Equipe: João Marcos Sousa Rufino Leal & Marcos Willian de Sousa e Silva     " -ForegroundColor Cyan
 Write-Host "   Iterações por teste: $Iterations ($([math]::Max($Iterations, 10)) no edital)" -ForegroundColor Cyan
 Write-Host "================================================================================" -ForegroundColor Cyan
 

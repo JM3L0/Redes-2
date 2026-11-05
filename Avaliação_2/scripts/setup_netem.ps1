@@ -15,7 +15,17 @@ param (
 
 $containers = @("server_http11", "server_http2_tls", "server_http3_quic")
 
+function Ensure-Tc {
+    foreach ($c in $containers) {
+        docker exec $c which tc 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            docker exec $c apk add --no-cache iproute2 2>$null | Out-Null
+        }
+    }
+}
+
 function Clean-Qdisc {
+    Ensure-Tc
     Write-Host "[*] Limpando regras de enfileiramento (qdisc) anteriores em todos os servidores..." -ForegroundColor Cyan
     foreach ($c in $containers) {
         docker exec --privileged $c tc qdisc del dev eth0 root 2>$null

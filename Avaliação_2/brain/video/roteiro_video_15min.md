@@ -197,7 +197,7 @@ Clear-Host
 
 * **Fala — João Marcos (14:15 - 15:00):**
   > *(Ação: Voltar para a Página 1 do [sbc-template.pdf](../../relatorio/sbc-template.pdf)).*  
-  > *"Todo o nosso código, os contêineres Docker, os scripts de automação, os dados coletados e esse relatório em formato da SBC já estão organizados no pacote final do trabalho, com o link deste vídeo aqui na primeira página do PDF.  
+  > *"Todo o nosso código, os contêineres Docker, os scripts de automação, os dados coletados e esse relatório em formato da SBC já estão organizados no pacote final do trabalho, com o link do repositório no GitHub (https://github.com/JM3L0/Redes-2) e o link deste vídeo destacados aqui na primeira página do PDF.  
   > A gente agradece ao professor e a todos que assistiram. Muito obrigado e até mais!"*
 
 ---

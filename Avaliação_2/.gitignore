@@ -1,0 +1,44 @@
+# ==============================================================================
+# .gitignore - TP2 Redes de Computadores II (UFPI - CSHNB)
+# ==============================================================================
+
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# LaTeX auxiliary files (preserva apenas .tex, .bib, .sty, .bst e .pdf final)
+relatorio/*.aux
+relatorio/*.bbl
+relatorio/*.blg
+relatorio/*.log
+relatorio/*.out
+relatorio/*.synctex.gz
+relatorio/*.fls
+relatorio/*.fdb_latexmk
+relatorio/*.toc
+
+# Ambientes virtuais e IDEs
+.venv/
+env/
+venv/
+.vscode/
+.idea/
+
+# Payloads sintéticos de teste (gerados sob demanda via scripts/generate_payloads.py)
+data/static/*.bin
+data/static/objects/
+
+# Pastas de backup temporário
+data_backup_n10/
+
+# Arquivos compactados de submissão
+*.zip
+
+# Arquivos temporários do Sistema Operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+

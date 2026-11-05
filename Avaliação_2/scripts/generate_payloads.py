@@ -6,7 +6,6 @@ Gera os payloads sinteticos padronizados para o estudo experimental:
 """
 
 import os
-import sys
 
 def generate_payloads(output_dir: str):
     os.makedirs(output_dir, exist_ok=True)
@@ -21,10 +20,10 @@ def generate_payloads(output_dir: str):
     if os.path.exists(file_50mb) and os.path.getsize(file_50mb) == size_50mb:
         print("    [!] Arquivo 50MB.bin ja existe e possui tamanho correto. Pulando recriacao.")
     else:
-        chunk_size = 1024 * 1024  # 1 MB chunk
-        pattern = os.urandom(chunk_size)
+        chunk_size = 64 * 1024  # 64 KB chunk
+        pattern = b"A" * chunk_size
         with open(file_50mb, "wb") as f:
-            for _ in range(50):
+            for _ in range((size_50mb // chunk_size)):
                 f.write(pattern)
         print("    [+] 50MB.bin gerado com sucesso!")
 

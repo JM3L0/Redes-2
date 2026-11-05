@@ -9,7 +9,16 @@ set -euo pipefail
 
 CONTAINERS=("server_http11" "server_http2_tls" "server_http3_quic")
 
+ensure_tc() {
+    for c in "${CONTAINERS[@]}"; do
+        if ! docker exec "$c" which tc >/dev/null 2>&1; then
+            docker exec "$c" apk add --no-cache iproute2 >/dev/null 2>&1 || true
+        fi
+    done
+}
+
 clean_qdisc() {
+    ensure_tc
     echo "[*] Limpando regras de enfileiramento (qdisc) anteriores em todos os servidores..."
     for c in "${CONTAINERS[@]}"; do
         docker exec --privileged "$c" tc qdisc del dev eth0 root 2>/dev/null || true
