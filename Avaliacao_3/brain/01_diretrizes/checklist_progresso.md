@@ -3,7 +3,7 @@
 **Disciplina:** Redes de Computadores II (2026-2)  
 **Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
 **Projeto:** Análise Experimental de Controle de Congestionamento (TCP CUBIC vs. BBR) e Retomada de Sessão (0-RTT) em Redes Degradadas  
-**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)
+**Equipe:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`) & Marcos Willian de Sousa e Silva (`marcos.sousa@ufpi.edu.br`)
 
 ---
 
@@ -29,4 +29,4 @@
 - [x] Execução completa de $N = 5$ repetições independentes para os 6 testes essenciais (`E01` a `E06`), exportando `data/raw/results.csv` e `data/raw/results.json`.
 - [x] **Gráfico 1 (Bloco A)** (`data/plots/fig1_bloco_a_vazao_cc.png`) e **Gráfico 2 (Bloco B)** (`data/plots/fig2_bloco_b_ttfb_handshake.png`) gerados a 300 DPI com **barras de erro representando o desvio padrão**.
 - [x] **Relatório Técnico Conciso** (`relatorio/sbc-template.pdf`) compilado no formato oficial da **SBRC** com **6 páginas exatas** (dentro da faixa obrigatória de 4 a 6 páginas), contendo a Tabela Resumo, os 2 gráficos com barras de erro, o link do vídeo na 1ª página e a discussão teórica fundamentada em **Tanenbaum 6ª Edição (Seções 6.5.11, 6.6.1 e 6.6.2)**.
-- [x] Pacote final `TP3_Redes2_JoaoMarcosSousaRufinoLeal.zip` gerado.
+- [x] Pacote final `TP3_Redes2_JoaoMarcosSousaRufinoLeal_MarcosWilliandeSousaeSilva.zip` gerado.

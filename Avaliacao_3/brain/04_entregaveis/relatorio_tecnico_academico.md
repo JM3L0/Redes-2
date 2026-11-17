@@ -3,7 +3,7 @@
 **Disciplina:** Redes de Computadores II (2026-2)  
 **Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
 **Curso:** Bacharelado em Sistemas de Informação  
-**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)
+**Equipe:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`) & Marcos Willian de Sousa e Silva (`marcos.sousa@ufpi.edu.br`)
 
 Este documento especifica todos os requisitos formais, estruturais e teóricos do **Relatório Técnico Conciso (valendo 50 pontos na rubrica)** da 3ª Avaliação (N3).
 
@@ -22,7 +22,6 @@ Este documento especifica todos os requisitos formais, estruturais e teóricos d
      Campus Senador Helvídio Nunes de Barros (CSHNB) -- Picos -- PI -- Brasil\\
      \texttt{jsousarufinoleal@ufpi.edu.br}
      \par\vspace{0.2cm}
-     \textbf{Repositório do Projeto:} \url{https://github.com/JM3L0/Redes-2}\\
      \textbf{Vídeo Explicativo no YouTube (15--25 min):} \url{https://youtu.be/LINK_DO_VIDEO_N3}
    }
    ```

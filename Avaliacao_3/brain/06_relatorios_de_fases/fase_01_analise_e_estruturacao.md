@@ -3,7 +3,7 @@
 **Data:** 17 de Novembro de 2026  
 **Disciplina:** Redes de Computadores II (2026-2)  
 **Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
-**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)  
+**Equipe:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`) & Marcos Willian de Sousa e Silva (`marcos.sousa@ufpi.edu.br`)  
 **Status da Fase:** ✅ CONCLUÍDA COM SUCESSO
 
 ---
@@ -49,7 +49,7 @@ A partir da análise completa das 9 páginas de `Terceira Avaliacao.pdf`, foram 
 | **Eixo 4: Vídeo no YouTube (15 a 25 minutos)** | **30 Pontos** | Roteiro cronometrado de 18 minutos em `04_entregaveis/roteiro_video_15_a_25min.md` e `brain/video/`. |
 | **Penalidade: Ausência de barras de erro nos gráficos** | **-10 Pontos** | Obrigatoriedade de `yerr=std` (desvio padrão) com `capsize=6` nos Gráficos 1 e 2. |
 | **Penalidade: Relatório puramente descritivo** | **-20 Pontos** | Fundamentação teórica obrigatória nas Seções 6.5.11 (CUBIC), 6.6.2 (BBR) e 6.6.1 (QUIC) de Tanenbaum (6ª Ed.). |
-| **Penalidade: Sem vídeo, sem PDF ou sem arquivos-fonte / Plágio** | **NOTA 0,0** | Checklist de verificação pré-submissão para o pacote `TP3_Redes2_JoaoMarcosSousaRufinoLeal.zip`. |
+| **Penalidade: Sem vídeo, sem PDF ou sem arquivos-fonte / Plágio** | **NOTA 0,0** | Checklist de verificação pré-submissão para o pacote `TP3_Redes2_JoaoMarcosSousaRufinoLeal_MarcosWilliandeSousaeSilva.zip`. |
 
 ---
 

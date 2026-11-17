@@ -3,7 +3,7 @@
 **Disciplina:** Redes de Computadores II (2026-2)  
 **Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
 **Curso:** Bacharelado em Sistemas de Informação  
-**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)
+**Equipe:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`) & Marcos Willian de Sousa e Silva (`marcos.sousa@ufpi.edu.br`)
 
 Utilize os prompts estruturados abaixo para orientar agentes de inteligência artificial em cada uma das fases subsequentes do desenvolvimento da 3ª Avaliação (N3), garantindo conformidade estrita com o edital (`Terceira Avaliacao.pdf`) e prevenindo todas as penalidades.
 
@@ -96,7 +96,7 @@ Consulte:
 
 Redija `relatorio/sbc-template.tex` e compile `relatorio/sbc-template.pdf` observando estritamente:
 1. EXTENSÃO OBRIGATÓRIA: mínimo de 4 páginas e máximo de 6 páginas no formato de artigo da SBRC (`sbc.sty`).
-2. PÁGINA 1: incluir o link do vídeo no YouTube (15 a 25 min) logo abaixo da identificação dos autores (João Marcos Sousa Rufino Leal).
+2. PÁGINA 1: incluir o link do vídeo no YouTube (15 a 25 min) logo abaixo da identificação dos autores (João Marcos Sousa Rufino Leal e Marcos Willian de Sousa e Silva).
 3. ELEMENTOS VISUAIS E TABULARES:
    - Inserir o Gráfico 1 (Bloco A) e o Gráfico 2 (Bloco B) com barras de erro de desvio padrão.
    - Inserir a Tabela Resumo completa com médias, desvios-padrão e total de retransmissões (Bloco A) e médias/desvios-padrão de TTFB (Bloco B).
@@ -115,5 +115,5 @@ Você é um auditor independente de conformidade acadêmica. Verifique todos os 
 2. O script `run_n3.py` / `run_n3.sh` aplica os 3 cenários `tc netem`, executa >= 5 repetições dos 6 testes (E01 a E06), exporta `results.csv` e `results.json` e limpa as interfaces ao final?
 3. Os Gráficos 1 e 2 possuem barras de erro (desvio padrão) visíveis e eixos rotulados?
 4. O PDF do relatório (`relatorio/sbc-template.pdf`) está no formato SBRC, possui entre 4 e 6 páginas, inclui a Tabela Resumo, fundamenta os resultados nas Seções 6.5.11, 6.6.1 e 6.6.2 de Tanenbaum (6ª Ed.) e traz o link do vídeo na 1ª página?
-5. Gere o pacote final `TP3_Redes2_JoaoMarcosSousaRufinoLeal.zip`.
+5. Gere o pacote final `TP3_Redes2_JoaoMarcosSousaRufinoLeal_MarcosWilliandeSousaeSilva.zip`.
 ```

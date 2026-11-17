@@ -2,7 +2,7 @@
 
 **Disciplina:** Redes de Computadores II (2026-2)  
 **Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
-**Autor:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)  
+**Autores:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`) & Marcos Willian de Sousa e Silva (`marcos.sousa@ufpi.edu.br`)  
 **Título:** *Análise Experimental de Controle de Congestionamento (TCP CUBIC vs. BBR) e Retomada de Sessão (0-RTT) em Redes Degradadas*
 
 ---

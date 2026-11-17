@@ -3,7 +3,7 @@
 **Disciplina:** Redes de Computadores II (2026-2)  
 **Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
 **Curso:** Bacharelado em Sistemas de Informação  
-**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)  
+**Equipe:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`) & Marcos Willian de Sousa e Silva (`marcos.sousa@ufpi.edu.br`)  
 **Trabalho:** Terceira Avaliação (N3) — Análise Experimental de Controle de Congestionamento (TCP CUBIC vs. BBR) e Retomada de Sessão (0-RTT) em Redes Degradadas  
 **Pontuação Total:** 100 Pontos
 
@@ -113,7 +113,7 @@ Medindo o tempo até o início da transferência (`%{time_starttransfer}`) para 
 
 > [!CAUTION]
 > ### CRITÉRIO EXCLUDENTE DA 3ª AVALIAÇÃO:
-> A submissão via SIGAA em arquivo único `.zip` (`TP3_Redes2_JoaoMarcosSousaRufinoLeal.zip`) exige obrigatoriamente os três pilares abaixo:
+> A submissão via SIGAA em arquivo único `.zip` (`TP3_Redes2_JoaoMarcosSousaRufinoLeal_MarcosWilliandeSousaeSilva.zip`) exige obrigatoriamente os três pilares abaixo:
 > 1. **Repositório de Código e Automação Completo:** `docker-compose.yml` configurado, scripts de automação (`run_n3.py` / `run_n3.sh`), scripts de gráficos e dados brutos exportados (CSV/JSON);
 > 2. **Relatório Técnico Conciso em PDF (mínimo 4, máximo 6 páginas):** No formato de artigo da **SBRC**, contendo os 2 gráficos com barras de erro, a Tabela Resumo e a discussão fundamentada em Tanenbaum (6ª Ed., Seções 6.5.11, 6.6.1 e 6.6.2);
 > 3. **Link Funcional do Vídeo no YouTube (entre 15 e 25 minutos):** Posicionado de forma visível e clicável logo na **primeira página do relatório técnico**.
@@ -127,4 +127,4 @@ Medindo o tempo até o início da transferência (`%{time_starttransfer}`) para 
 - **Canal de Submissão:** Exclusivamente via **SIGAA**.
 - **Formato do Arquivo:** Arquivo único compactado `.zip`.
 - **Nomenclatura Obrigatória:**
-  `TP3_Redes2_JoaoMarcosSousaRufinoLeal.zip`
+  `TP3_Redes2_JoaoMarcosSousaRufinoLeal_MarcosWilliandeSousaeSilva.zip`

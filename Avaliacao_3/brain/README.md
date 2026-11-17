@@ -3,7 +3,7 @@
 Este diretório centraliza todo o conhecimento técnico, arquitetural, científico e operacional da **3ª Avaliação Prática (N3) de Redes de Computadores II (UFPI — 2026-2)**:
 *Análise Experimental de Controle de Congestionamento (TCP CUBIC vs. BBR) e Retomada de Sessão (0-RTT) em Redes Degradadas*.
 
-- **Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)
+- **Equipe:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`) & Marcos Willian de Sousa e Silva (`marcos.sousa@ufpi.edu.br`)
 - **Curso:** Bacharelado em Sistemas de Informação
 - **Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)
 - **Pontuação:** 100 pontos totais da 3ª Avaliação (N3)
@@ -30,7 +30,7 @@ brain/
 │
 ├── 04_entregaveis/                            # Materiais formais de avaliação (Relatório SBRC 50pts + Vídeo 30pts)
 │   ├── relatorio_tecnico_academico.md         # Estrutura do artigo SBRC/SBC (4 a 6 páginas), Tabela Resumo, Gráficos 1 e 2 e fundamentação Tanenbaum 6ª Ed. (Seções 6.5.11, 6.6.1 e 6.6.2)
-│   └── roteiro_video_15_a_25min.md            # Roteiro cronometrado individual (15 a 25 minutos) com demonstração prática e análise teórica
+│   └── roteiro_video_15_a_25min.md            # Roteiro cronometrado em dupla (15 a 25 minutos) com demonstração prática e análise teórica
 │
 ├── 05_prompts_ia/                             # Aceleração e orquestração com Agentes de IA
 │   └── guia_de_prompts_ia.md                  # 6 prompts cirúrgicos para Docker, Runner (run_n3), Coleta Estatística, Gráficos, Artigo SBRC e Auditoria Final

@@ -3,7 +3,7 @@
 **Disciplina:** Redes de Computadores II (2026-2)  
 **Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
 **Curso:** Bacharelado em Sistemas de Informação  
-**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)
+**Equipe:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`) & Marcos Willian de Sousa e Silva (`marcos.sousa@ufpi.edu.br`)
 
 Este documento detalha os três cenários de rede emulados via `tc netem`, a estrutura dos dois blocos experimentais e a especificação técnica e científica de cada um dos **6 testes essenciais (E01 a E06)** definidos na Seção 4 do edital da 3ª Avaliação.
 

@@ -4,7 +4,7 @@
 **Auditor Responsável:** Agente Auditor Independente de Conformidade de Sistemas de Informação  
 **Projeto Auditado:** Cérebro da 3ª Avaliação Prática (N3) — Redes de Computadores II (2026-2)  
 **Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)  
-**Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)  
+**Equipe:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`) & Marcos Willian de Sousa e Silva (`marcos.sousa@ufpi.edu.br`)  
 **Documento Base Auditado:** [`Terceira Avaliacao.pdf`](file:///c:/Users/jsous/Desktop/Redes%202/Avaliacao_3/Terceira%20Avaliacao.pdf) (Edital Oficial da N3)  
 **Diretório Auditado:** `c:\Users\jsous\Desktop\Redes 2\Avaliacao_3\`
 

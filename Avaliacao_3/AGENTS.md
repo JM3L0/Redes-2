@@ -4,7 +4,7 @@ Repositório experimental para análise empírica de mecanismos avançados da ca
 
 - **Instituição:** Universidade Federal do Piauí (UFPI) — Campus Senador Helvídio Nunes de Barros (CSHNB)
 - **Disciplina:** Redes de Computadores II (2026-2)
-- **Aluno:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`)
+- **Equipe:** João Marcos Sousa Rufino Leal (`jsousarufinoleal@ufpi.edu.br`) & Marcos Willian de Sousa e Silva (`marcos.sousa@ufpi.edu.br`)
 
 ---
 
@@ -71,4 +71,4 @@ No Windows PowerShell:
 5. **Formato e Extensão do Relatório Técnico (50 Pontos)**:
    - Padrão de artigo da **SBRC / SBC** em PDF, contendo **mínimo de 4 e máximo de 6 páginas**.
 6. **Critério Eliminatório (Nota 0,0)**:
-   - A entrega no SIGAA (`TP3_Redes2_JoaoMarcosSousaRufinoLeal.zip`) exige obrigatoriamente: **(1) arquivos-fonte e scripts de automação**, **(2) relatório técnico em PDF (4–6 páginas)** e **(3) link funcional do vídeo no YouTube (15 a 25 minutos)** inserido no relatório. A ausência de qualquer um destes itens ou plágio implica **Nota 0,0**.
+   - A entrega no SIGAA (`TP3_Redes2_JoaoMarcosSousaRufinoLeal_MarcosWilliandeSousaeSilva.zip`) exige obrigatoriamente: **(1) arquivos-fonte e scripts de automação**, **(2) relatório técnico em PDF (4–6 páginas)** e **(3) link funcional do vídeo no YouTube (15 a 25 minutos)** inserido no relatório. A ausência de qualquer um destes itens ou plágio implica **Nota 0,0**.

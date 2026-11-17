@@ -3,8 +3,8 @@
 **Universidade Federal do Piauí (UFPI)** — Campus Senador Helvídio Nunes de Barros (CSHNB)  
 **Curso:** Bacharelado em Sistemas de Informação  
 **Disciplina:** Redes de Computadores II (2026-2)  
-**Aluno:** João Marcos Sousa Rufino Leal  
-**E-mail:** `jsousarufinoleal@ufpi.edu.br`  
+**Equipe:** João Marcos Sousa Rufino Leal & Marcos Willian de Sousa e Silva  
+**E-mails:** `jsousarufinoleal@ufpi.edu.br` | `marcos.sousa@ufpi.edu.br`  
 **Pontuação Total:** 100 Pontos (3ª Avaliação — N3)
 
 ---
@@ -125,6 +125,6 @@ Avaliacao_3/
 
 A entrega final é empacotada em arquivo único compactado `.zip` nomeado segundo o padrão oficial:
 ```text
-TP3_Redes2_JoaoMarcosSousaRufinoLeal.zip
+TP3_Redes2_JoaoMarcosSousaRufinoLeal_MarcosWilliandeSousaeSilva.zip
 ```
 Contendo o repositório de código/automação completo e o Relatório Técnico em PDF (4 a 6 páginas, formato SBRC) com o link do vídeo no YouTube (15 a 25 minutos).
