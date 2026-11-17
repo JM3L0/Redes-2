@@ -1,0 +1,7 @@
+test_id,block,protocol_mode,scenario,rtt_ms,loss_pct,n,throughput_mean_mbps,throughput_std_mbps,throughput_ci95_mbps,retrans_mean,retrans_std,retrans_total,ttfb_mean_ms,ttfb_std_ms,ttfb_ci95_ms
+E01,Bloco A,TCP CUBIC,"LAN (1 ms, 0% perda)",1.0,0.0,5,21945.8,2486.81,3087.78,36.4,19.8,182,,,
+E02,Bloco A,TCP CUBIC,"WAN (50 ms, 2% perda)",50.0,2.0,5,2.63,0.56,0.69,78.0,4.9,390,,,
+E03,Bloco A,TCP BBR,"WAN (50 ms, 2% perda)",50.0,2.0,5,303.13,18.87,23.43,7819.0,527.2,39095,,,
+E04,Bloco B,HTTPS (HTTP/2 sobre TCP+TLS),"WAN (50 ms, 0% perda)",50.0,0.0,5,,,,,,,163.57,2.73,3.39
+E05,Bloco B,HTTP/3 Cold (1-RTT),"WAN (50 ms, 0% perda)",50.0,0.0,5,,,,,,,112.36,0.99,1.23
+E06,Bloco B,HTTP/3 Warm / Resumption,"WAN (50 ms, 0% perda)",50.0,0.0,5,,,,,,,61.46,0.95,1.18

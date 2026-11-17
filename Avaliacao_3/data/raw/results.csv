@@ -1,0 +1,31 @@
+test_id,block,repetition,timestamp,protocol_mode,scenario,rtt_ms,loss_pct,metric_name,throughput_mbps,retransmits,ttfb_ms
+E01,A,1,2026-11-17T21:27:57.795748+00:00,TCP CUBIC,"LAN (1 ms, 0% perda)",1.0,0.0,throughput_mbps,23656.0957,46,
+E01,A,2,2026-11-17T21:28:14.131697+00:00,TCP CUBIC,"LAN (1 ms, 0% perda)",1.0,0.0,throughput_mbps,23962.602,45,
+E01,A,3,2026-11-17T21:28:30.475424+00:00,TCP CUBIC,"LAN (1 ms, 0% perda)",1.0,0.0,throughput_mbps,20226.7398,45,
+E01,A,4,2026-11-17T21:28:46.785871+00:00,TCP CUBIC,"LAN (1 ms, 0% perda)",1.0,0.0,throughput_mbps,23468.9339,45,
+E01,A,5,2026-11-17T21:29:03.213981+00:00,TCP CUBIC,"LAN (1 ms, 0% perda)",1.0,0.0,throughput_mbps,18414.639,1,
+E02,A,1,2026-11-17T21:29:20.847816+00:00,TCP CUBIC,"WAN (50 ms, 2% perda)",50.0,2.0,throughput_mbps,3.4832,82,
+E02,A,2,2026-11-17T21:29:37.577434+00:00,TCP CUBIC,"WAN (50 ms, 2% perda)",50.0,2.0,throughput_mbps,2.2989,84,
+E02,A,3,2026-11-17T21:29:54.286887+00:00,TCP CUBIC,"WAN (50 ms, 2% perda)",50.0,2.0,throughput_mbps,2.5774,72,
+E02,A,4,2026-11-17T21:30:10.981023+00:00,TCP CUBIC,"WAN (50 ms, 2% perda)",50.0,2.0,throughput_mbps,2.7866,75,
+E02,A,5,2026-11-17T21:30:27.993525+00:00,TCP CUBIC,"WAN (50 ms, 2% perda)",50.0,2.0,throughput_mbps,2.0202,77,
+E03,A,1,2026-11-17T21:30:44.668529+00:00,TCP BBR,"WAN (50 ms, 2% perda)",50.0,2.0,throughput_mbps,319.4856,8229,
+E03,A,2,2026-11-17T21:31:01.361736+00:00,TCP BBR,"WAN (50 ms, 2% perda)",50.0,2.0,throughput_mbps,317.6827,8348,
+E03,A,3,2026-11-17T21:31:18.158732+00:00,TCP BBR,"WAN (50 ms, 2% perda)",50.0,2.0,throughput_mbps,274.4793,7036,
+E03,A,4,2026-11-17T21:31:34.881488+00:00,TCP BBR,"WAN (50 ms, 2% perda)",50.0,2.0,throughput_mbps,309.797,7602,
+E03,A,5,2026-11-17T21:31:51.575244+00:00,TCP BBR,"WAN (50 ms, 2% perda)",50.0,2.0,throughput_mbps,294.2122,7880,
+E04,B,1,2026-11-17T21:31:53.556240+00:00,HTTPS (HTTP/2 sobre TCP+TLS),"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,165.195
+E04,B,2,2026-11-17T21:31:54.244671+00:00,HTTPS (HTTP/2 sobre TCP+TLS),"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,167.037
+E04,B,3,2026-11-17T21:31:54.925532+00:00,HTTPS (HTTP/2 sobre TCP+TLS),"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,162.581
+E04,B,4,2026-11-17T21:31:55.597632+00:00,HTTPS (HTTP/2 sobre TCP+TLS),"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,159.821
+E04,B,5,2026-11-17T21:31:56.283216+00:00,HTTPS (HTTP/2 sobre TCP+TLS),"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,163.198
+E05,B,1,2026-11-17T21:31:56.984621+00:00,HTTP/3 Cold (1-RTT),"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,113.523
+E05,B,2,2026-11-17T21:31:57.671686+00:00,HTTP/3 Cold (1-RTT),"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,113.195
+E05,B,3,2026-11-17T21:31:58.377555+00:00,HTTP/3 Cold (1-RTT),"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,111.368
+E05,B,4,2026-11-17T21:31:59.057878+00:00,HTTP/3 Cold (1-RTT),"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,112.294
+E05,B,5,2026-11-17T21:31:59.745021+00:00,HTTP/3 Cold (1-RTT),"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,111.424
+E06,B,1,2026-11-17T21:31:56.984621+00:00,HTTP/3 Warm / Resumption,"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,61.729
+E06,B,2,2026-11-17T21:31:57.671686+00:00,HTTP/3 Warm / Resumption,"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,60.674
+E06,B,3,2026-11-17T21:31:58.377555+00:00,HTTP/3 Warm / Resumption,"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,60.866
+E06,B,4,2026-11-17T21:31:59.057878+00:00,HTTP/3 Warm / Resumption,"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,61.044
+E06,B,5,2026-11-17T21:31:59.745021+00:00,HTTP/3 Warm / Resumption,"WAN (50 ms, 0% perda)",50.0,0.0,ttfb_ms,,,63.01

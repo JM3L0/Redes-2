@@ -1,0 +1,197 @@
+\documentclass[12pt]{article}
+
+\usepackage{sbc}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[brazilian]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\setlist{nosep, leftmargin=*}
+\setlength{\textfloatsep}{5pt plus 1pt minus 1pt}
+\setlength{\floatsep}{5pt plus 1pt minus 1pt}
+\setlength{\intextsep}{5pt plus 1pt minus 1pt}
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{1pt}
+\setlength{\parskip}{2pt}
+
+\makeatletter
+\renewcommand\section{\@startsection{section}{1}{\z@}%
+                       {-1.8ex \@plus -0.5ex \@minus -0.2ex}%
+                       {0.8ex \@plus 0.2ex}%
+                       {\reset@font\large\bfseries}}
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
+                       {-1.4ex \@plus -0.4ex \@minus -0.2ex}%
+                       {0.5ex \@plus 0.2ex}%
+                       {\reset@font\normalsize\bfseries}}
+\makeatother
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+\sloppy
+
+\title{Análise Experimental de Controle de Congestionamento (TCP CUBIC vs. BBR) e Retomada de Sessão (0-RTT) em Redes Degradadas}
+
+\author{João Marcos Sousa Rufino Leal\inst{1}}
+
+\address{Departamento de Computação -- Universidade Federal do Piauí (UFPI) -- CSHNB -- Picos -- PI\\
+  \texttt{jsousarufinoleal@ufpi.edu.br}
+  \par\vspace{0.1cm}
+  \textbf{Repositório do GitHub:} \url{https://github.com/JM3L0/Redes-2}\\
+  \textbf{Vídeo Explicativo no YouTube (15--25 min):} \url{https://youtu.be/DEMO_UFPI_REDES2_N3_CUBIC_BBR_QUIC}
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este artigo apresenta uma avaliação experimental de dois mecanismos avançados da camada de transporte moderna utilizando contêineres Docker e emulação via Linux Traffic Control (\texttt{tc netem}): (i) o controle de congestionamento baseado em perda (TCP CUBIC) vs. baseado em modelo de BDP (TCP BBR) em fluxos de 15~s via \texttt{iperf3}; e (ii) o estabelecimento rápido de conexão e retomada de sessão no QUIC (HTTP/3 Cold 1-RTT e Warm/Resumption 0-RTT) frente ao HTTPS/HTTP/2 sobre TCP+TLS~1.3 para um objeto de 1~KB via \texttt{curl}. Os resultados ($N=5$ repetições) demonstram que, sob canal WAN degradado (50~ms RTT, 2\% perda), o TCP CUBIC colapsa para $2{,}63 \pm 0{,}56$~Mbps devido às retrações multiplicativas de \textit{cwnd}, enquanto o TCP BBR sustenta $303{,}13 \pm 18{,}87$~Mbps ($115{,}3\times$ maior) ao estimar a banda de gargalo e o RTT mínimo \cite{tanenbaum2021}. Em WAN sem perda (50~ms RTT), o TTFB médio reduziu-se em degraus exatos de 1~RTT ($\approx 51$~ms): de $163{,}57 \pm 2{,}73$~ms no HTTP/2 (3~RTTs) para $112{,}36 \pm 0{,}99$~ms no HTTP/3 Cold (2~RTTs) e $61{,}46 \pm 0{,}95$~ms no HTTP/3 Resumed (1~RTT) \cite{tanenbaum2021}.
+\end{abstract}
+
+\begin{englishabstract}
+This paper presents an experimental evaluation of two advanced transport-layer mechanisms using Docker containers and Linux Traffic Control (\texttt{tc netem}): (i) loss-based (TCP CUBIC) vs. BDP model-based (TCP BBR) congestion control over 15~s \texttt{iperf3} flows; and (ii) fast connection establishment and session resumption in QUIC (HTTP/3 Cold 1-RTT and Warm/Resumption 0-RTT) against HTTPS/HTTP/2 over TCP+TLS~1.3 for a 1~KB object via \texttt{curl}. Results ($N=5$ repetitions) show that under a degraded WAN channel (50~ms RTT, 2\% loss), TCP CUBIC collapses to $2.63 \pm 0.56$~Mbps due to multiplicative \textit{cwnd} reductions, whereas TCP BBR sustains $303.13 \pm 18.87$~Mbps ($115.3\times$ higher) by estimating bottleneck bandwidth and minimum RTT \cite{tanenbaum2021}. In lossless WAN tests (50~ms RTT), mean TTFB decreased in exact 1-RTT steps ($\approx 51$~ms): from $163.57 \pm 2.73$~ms in HTTP/2 (3~RTTs) to $112.36 \pm 0.99$~ms in HTTP/3 Cold (2~RTTs) and $61.46 \pm 0.95$~ms in HTTP/3 Resumed (1~RTT) \cite{tanenbaum2021}.
+\end{englishabstract}
+
+% ==============================================================================
+\section{Introdução e Objetivos Pedagógicos}
+% ==============================================================================
+
+O desempenho das aplicações distribuídas modernas depende criticamente da capacidade da camada de transporte em utilizar eficientemente enlaces de longa distância (alto Produto Largura de Banda-Atraso --- \textit{Bandwidth-Delay Product}, BDP) e minimizar a latência de estabelecimento de sessões criptográficas seguras \cite{tanenbaum2021}. Durante décadas, o protocolo TCP evoluiu sob o paradigma de controle de congestionamento baseado em perda (\textit{loss-based}), cujo representante padrão nos sistemas Linux atuais é o algoritmo \textbf{TCP CUBIC} \cite{ha2008cubic}. Contudo, ao interpretar qualquer descarte de pacote como sinal de saturação de buffers nos roteadores, algoritmos baseados em perda degradam severamente a vazão quando submetidos a enlaces com perdas estocásticas não-congestionais e RTT elevado. Para superar essa limitação estrutural, o algoritmo \textbf{BBR} (\textit{Bottleneck Bandwidth and Round-trip propagation time}) \cite{cardwell2017bbr} substitui a heurística de perda por um modelo contínuo da banda de gargalo e do RTT mínimo.
+
+Paralelamente, em transações Web curtas, a pilha tradicional \textbf{HTTPS (HTTP/2 sobre TCP+TLS 1.3)} impõe múltiplos tempos de ida e volta (RTTs) em handshakes sequenciais antes que o primeiro byte útil seja transferido \cite{rfc7540,rfc8446}. O protocolo \textbf{QUIC} (base do \textbf{HTTP/3}) \cite{rfc9000,rfc9114} redesenha essa arquitetura sobre UDP ao fundir o handshake de transporte e a negociação criptográfica TLS~1.3 em apenas \textbf{1-RTT} em conexões frias (\textit{Cold}) e permitir o envio imediato de dados da aplicação já no primeiro pacote (\textbf{0-RTT} / reaproveitamento de sessão) em reconexões subsequentes (\textit{Session Resumption}).
+
+Dando continuidade direta à bancada experimental em contêineres Docker e emulação via \texttt{tc netem}, este trabalho avalia empiricamente esses dois mecanismos através de seis ensaios controlados (\textbf{E01} a \textbf{E06}), confrontando as medições estatísticas com a fundamentação teórica das Seções 6.5.11, 6.6.1 e 6.6.2 de \cite{tanenbaum2021}.
+
+% ==============================================================================
+\section{Fundamentação Teórica}
+% ==============================================================================
+
+\subsection{Controle Baseado em Perda (TCP CUBIC) vs. Modelo BDP (TCP BBR)}
+
+Conforme detalhado por \cite{tanenbaum2021} na \textbf{Seção 6.5.11 (TCP CUBIC)}, em redes com grande BDP, o crescimento linear do TCP Reno tradicional (1~MSS por RTT) é excessivamente lento para recuperar a capacidade do enlace após uma perda. O TCP CUBIC substitui o incremento linear por uma função cúbica dependente do tempo real $t$ decorrido desde o último evento de perda:
+\begin{equation}
+W_{\text{cubic}}(t) = C(t - K)^3 + W_{\max}, \quad \text{onde} \quad K = \sqrt[3]{\frac{W_{\max}\beta}{C}}
+\label{eq:cubic}
+\end{equation}
+sendo $W_{\max}$ o tamanho da janela de congestionamento (\textit{cwnd}) no instante do descarte, $C$ uma constante de escala e $\beta \approx 0{,}3$ o fator de decréscimo multiplicativo (contraindo a janela para $cwnd \leftarrow (1 - \beta)W_{\max} = 0{,}7\,W_{\max}$ a cada perda). Embora eficiente em enlaces sem ruído, o CUBIC preserva a premissa de que \textit{perda equivale a congestionamento}. Quando o canal apresenta perdas estocásticas contínuas ($p = 2\%$), o emissor sofre reduções multiplicativas sucessivas de $30\%$ a cada $\approx 1/p = 50$ pacotes enviados. Se o RTT é elevado ($50$~ms), o intervalo entre perdas aleatórias é muito inferior ao tempo $K$ necessário para que $W_{\text{cubic}}(t)$ retorne ao platô $W_{\max}$, mantendo a janela \textit{cwnd} permanentemente colapsada.
+
+Em contrapartida, conforme discutido por \cite{tanenbaum2021} na \textbf{Seção 6.6.2 (BBR)}, o algoritmo BBR modela o caminho físico como um duto cujo ponto ótimo de operação (ponto de Kleinrock) corresponde exatamente ao Produto Largura de Banda-Atraso:
+\begin{equation}
+\text{BDP} = \widehat{\text{BtlBw}} \times \widehat{\text{RTprop}}
+\label{eq:bdp}
+\end{equation}
+A cada \texttt{ACK} recebido, o BBR atualiza duas estimativas ortogonais: a taxa máxima de entrega recente ($\widehat{\text{BtlBw}} = \max(\Delta \text{entregue}/\Delta t)$) e o menor atraso de ida e volta na janela temporal ($\widehat{\text{RTprop}} = \min(\text{RTT})$). Alternando entre as fases \textit{Startup}, \textit{Drain}, \textit{ProbeBW} e \textit{ProbeRTT}, o BBR regula a taxa de injeção (\textit{pacing rate}) em torno de $\widehat{\text{BtlBw}}$ e limita os dados em voo (\textit{cwnd}) a $\approx 2 \times \text{BDP}$. Assim, o BBR evita \textit{bufferbloat} e \textbf{não contrai sua janela diante de descartes estocásticos isolados}, sustentando alta vazão sob 2\% de perda.
+
+\subsection{Handshakes de Conexão e Retomada de Sessão no QUIC (1-RTT vs. 0-RTT)}
+
+Conforme exposto por \cite{tanenbaum2021} na \textbf{Seção 6.6.1 (QUIC)}, o tempo até o início da transferência (\textit{Time to First Byte} --- TTFB) de um objeto pequeno é governado pelo número de RTTs exigidos pelos handshakes de transporte e criptografia antes da entrega do dado útil:
+\begin{enumerate}
+  \item \textbf{HTTPS / HTTP/2 sobre TCP+TLS 1.3 (E04):} O transporte TCP e o TLS~1.3 operam sequencialmente. O cliente aguarda \textbf{1~RTT} para o \textit{3-way handshake} TCP (\texttt{SYN}/\texttt{SYN-ACK}), mais \textbf{1~RTT} para a negociação criptográfica TLS~1.3 (\texttt{ClientHello}/\texttt{ServerHello}), e mais \textbf{1~RTT} para enviar o \texttt{GET} e receber o primeiro byte: $\text{TTFB}_{\text{HTTP/2}} = 2\,\text{RTT}_{\text{hs}} + 1\,\text{RTT}_{\text{req}} + t_{\text{proc}} = \mathbf{3\,\text{RTT}} + t_{\text{proc}}$.
+  \item \textbf{HTTP/3 Cold Connection --- QUIC 1-RTT (E05):} O QUIC incorpora os quadros criptográficos do TLS~1.3 diretamente no pacote UDP \texttt{Initial} \cite{rfc9000,rfc9001}, concluindo transporte e chaves em \textbf{1~RTT}: $\text{TTFB}_{\text{H3-Cold}} = 1\,\text{RTT}_{\text{hs}} + 1\,\text{RTT}_{\text{req}} + t_{\text{proc}} = \mathbf{2\,\text{RTT}} + t_{\text{proc}}$.
+  \item \textbf{HTTP/3 Warm / Session Resumption --- 0-RTT (E06):} Em requisições subsequentes que reutilizam o estado criptográfico / sessão ativa, o cliente envia o pedido HTTP/3 sem espera de handshake (\textbf{0-RTT}): $\text{TTFB}_{\text{H3-Warm}} = 0\,\text{RTT}_{\text{hs}} + 1\,\text{RTT}_{\text{req}} + t_{\text{proc}} = \mathbf{1\,\text{RTT}} + t_{\text{proc}}$.
+\end{enumerate}
+
+% ==============================================================================
+\section{Arquitetura do Ambiente e Metodologia Experimental}
+% ==============================================================================
+
+A bancada experimental foi orquestrada via \texttt{docker-compose.yml} sobre uma rede bridge isolada (\texttt{net\_bench}, sub-rede \texttt{172.20.0.0/16}), composta por três contêineres com permissão \texttt{cap\_add: [NET\_ADMIN]}:
+\begin{itemize}
+  \item \textbf{\texttt{server\_tcp\_cc} (\texttt{172.20.0.10}):} Contêiner \texttt{networkstatic/iperf3} em modo servidor (\texttt{-s}) na porta 5201/TCP para os ensaios do Bloco~A.
+  \item \textbf{\texttt{server\_http3\_quic} (\texttt{172.20.0.30}):} Contêiner \texttt{caddy:2.7-alpine} com certificados X.509 v3 TLS~1.3 locais (\texttt{/etc/caddy/certs}) servindo um objeto binário determinístico de \textbf{1~KB} (\texttt{1KB.bin}, 1024~bytes) em \texttt{/usr/share/caddy} nas portas 443/TCP (HTTP/2) e 443/UDP (HTTP/3 QUIC).
+  \item \textbf{\texttt{client\_bench} (\texttt{172.20.0.50}):} Contêiner cliente padronizado (\texttt{curlimages/curl:latest}) equipado com \texttt{iperf3}, \texttt{iproute2} (\texttt{tc}) e o binário \texttt{curl}~8.22 com suporte nativo a HTTP/2 (\texttt{nghttp2}) e HTTP/3 (\texttt{ngtcp2}/\texttt{nghttp3}).
+\end{itemize}
+
+O orquestrador automatizado (\texttt{run\_n3.py} / \texttt{run\_n3.sh}) habilita os módulos \texttt{tcp\_cubic} e \texttt{tcp\_bbr} no kernel Linux e aplica as regras \texttt{tc netem} com atraso unidirecional simétrico ($\text{delay} = \text{RTT}/2$) nos três cenários definidos na especificação:
+\begin{enumerate}
+  \item \textbf{Cenário 1 (LAN --- Canal Ideal):} \texttt{tc qdisc add dev eth0 root netem delay 0.5ms} ($\text{RTT} = 1{,}0$~ms, $0\%$ de perda), aplicado em \textbf{E01};
+  \item \textbf{Cenário 2 (WAN --- Canal Degradado):} \texttt{tc qdisc add dev eth0 root netem delay 25ms loss 2\%} ($\text{RTT} = 50{,}0$~ms, $2\%$ de perda estocástica), aplicado em \textbf{E02} e \textbf{E03};
+  \item \textbf{Cenário 3 (WAN sem Perda --- Isolamento de Handshake):} \texttt{tc qdisc add dev eth0 root netem delay 25ms} ($\text{RTT} = 50{,}0$~ms, $0\%$ de perda), aplicado em \textbf{E04}, \textbf{E05} e \textbf{E06}.
+\end{enumerate}
+
+Cada um dos 6 testes foi executado com \textbf{$N = 5$ repetições independentes}. No Bloco~A, o cache de métricas TCP do kernel (\texttt{ip route flush cache}) foi limpo entre cada repetição de 15~s do \texttt{iperf3 -J}. Ao término da bateria, todas as interfaces foram restauradas com \texttt{tc qdisc del dev eth0 root} e os dados brutos foram exportados para \texttt{data/raw/results.csv} e \texttt{results.json}.
+
+% ==============================================================================
+\section{Resultados Experimentais e Discussão Fundamentada}
+% ==============================================================================
+
+A Tabela~\ref{tab:resumo_n3} consolida os resultados estatísticos obtidos nos Blocos~A e B ($N=5$ amostras por teste), apresentando as médias amostrais ($\bar{x}$), os desvios-padrão ($s$), a média de retransmissões por fluxo e o total acumulado de retransmissões TCP.
+
+\begin{table}[htbp]
+\centering
+\caption{Tabela Resumo dos Resultados Experimentais (Blocos A e B --- $N=5$ repetições por teste).}
+\label{tab:resumo_n3}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}clllcccc@{}}
+\toprule
+\textbf{ID} & \textbf{Algoritmo / Modo} & \textbf{Cenário (\texttt{tc netem})} & \textbf{Métrica} & \textbf{Média ($\bar{x}$)} & \textbf{Desv. Padrão ($s$)} & \textbf{Retr./Fluxo} & \textbf{Total Retr.} \\
+\midrule
+\multicolumn{8}{@{}l}{\textit{\textbf{Bloco A: Impacto do Controle de Congestionamento (Fluxo TCP de 15~s via \texttt{iperf3})}}} \\
+\textbf{E01} & TCP CUBIC & LAN (1~ms, 0\% perda) & Vazão (Mbps) & $21945{,}80$ & $\pm 2486{,}81$ & $36{,}4 \pm 19{,}8$ & $182$ \\
+\textbf{E02} & TCP CUBIC & WAN (50~ms, 2\% perda) & Vazão (Mbps) & $2{,}63$ & $\pm 0{,}56$ & $78{,}0 \pm 4{,}9$ & $390$ \\
+\textbf{E03} & TCP BBR & WAN (50~ms, 2\% perda) & Vazão (Mbps) & $303{,}13$ & $\pm 18{,}87$ & $7819{,}0 \pm 527{,}2$ & $39095$ \\
+\midrule
+\multicolumn{8}{@{}l}{\textit{\textbf{Bloco B: Latência de Handshake e Session Resumption (Objeto 1~KB via \texttt{curl})}}} \\
+\textbf{E04} & HTTPS (HTTP/2 TCP+TLS) & WAN (50~ms, 0\% perda) & TTFB (ms) & $163{,}57$ & $\pm 2{,}73$ & --- & --- \\
+\textbf{E05} & HTTP/3 Cold (1-RTT) & WAN (50~ms, 0\% perda) & TTFB (ms) & $112{,}36$ & $\pm 0{,}99$ & --- & --- \\
+\textbf{E06} & HTTP/3 Warm / Resumed & WAN (50~ms, 0\% perda) & TTFB (ms) & $61{,}46$ & $\pm 0{,}95$ & --- & --- \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\subsection{Análise do Bloco A: TCP CUBIC vs. TCP BBR (Tanenbaum Seções 6.5.11 e 6.6.2)}
+
+A Figura~\ref{fig:bloco_a} apresenta o Gráfico~1 comparando a vazão média e as barras de erro de desvio padrão dos ensaios \textbf{E01}, \textbf{E02} e \textbf{E03}. No cenário ideal de Rede Local (\textbf{E01}: RTT de 1~ms e 0\% de perda), o TCP CUBIC atinge vazão média de $21945{,}80 \pm 2486{,}81$~Mbps ($\approx 21{,}95$~Gbps na bridge virtual Docker), estabelecendo a capacidade máxima de referência do ambiente.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.84\textwidth]{fig1_bloco_a_vazao_cc.png}
+\caption{Gráfico 1 (Bloco A): Vazão média (Mbps) comparando TCP CUBIC (LAN/WAN) e TCP BBR (WAN), com barras de erro representando o desvio padrão ($N=5$).}
+\label{fig:bloco_a}
+\end{figure}
+
+Todavia, ao aplicar o cenário WAN degradado com $\text{RTT} = 50$~ms e $2\%$ de perda estocástica (\textbf{E02}), a vazão do \textbf{TCP CUBIC} sofre um colapso de $99{,}99\%$, despencando para apenas $\mathbf{2{,}63 \pm 0{,}56}$~\textbf{Mbps}. A fundamentação teórica desse fenômeno reside na \textbf{Seção 6.5.11 de \cite{tanenbaum2021}}: como o CUBIC interpreta qualquer pacote descartado como congestionamento de fila, cada perda aleatória de 2\% aciona o decréscimo multiplicativo da Equação~\ref{eq:cubic} ($cwnd \leftarrow 0{,}7\,W_{\max}$). Com RTT de 50~ms e probabilidade de perda $p = 0{,}02$, a janela jamais consegue percorrer a curva cúbica para recuperar o BDP do enlace: os logs JSON do \texttt{iperf3} confirmam que a \textit{cwnd} do CUBIC em \textbf{E02} permaneceu estrangulada entre $15$~KB e $36$~KB durante todos os 15~s, alinhando-se ao limite clássico de fluxos baseados em perda ($\text{Throughput} \approx \frac{\text{MSS}}{\text{RTT}\sqrt{p}} \approx 1{,}65$~Mbps).
+
+Em contraste, quando o algoritmo é alterado para \textbf{TCP BBR} sob exatamente o mesmo canal WAN com 50~ms de RTT e 2\% de perda (\textbf{E03}), a vazão média salta para $\mathbf{303{,}13 \pm 18{,}87}$~\textbf{Mbps} --- um desempenho \textbf{115,3 vezes superior} ao do TCP CUBIC (Figura~\ref{fig:bloco_a}b). Conforme fundamentado na \textbf{Seção 6.6.2 de \cite{tanenbaum2021}}, o BBR não utiliza descartes isolados como sinal para contrair o fluxo; ele estima continuamente a banda de gargalo ($\widehat{\text{BtlBw}}$) e o RTT mínimo ($\widehat{\text{RTprop}} = 50$~ms), mantendo a janela \textit{inflight} dimensionada no Produto Largura de Banda-Atraso (Equação~\ref{eq:bdp}, operando com \textit{cwnd} entre $3$~MB e $7$~MB nos logs do \texttt{iperf3}). A análise do \textbf{Total de Retransmissões} na Tabela~\ref{tab:resumo_n3} corrobora esse mecanismo: no teste \textbf{E02} (CUBIC), ocorreram apenas $390$ retransmissões totais ($78{,}0/\text{fluxo}$) porque o protocolo ficou estrangulado e transmitiu apenas $\approx 24{,}7$~MB nos 5 fluxos de 15~s. Já no teste \textbf{E03} (BBR), o total de $39095$ retransmissões ($7819{,}0/\text{fluxo}$) reflete diretamente o fato de o BBR ter transferido $\approx 2{,}84$~GB sobre um canal que descarta fisicamente 2\% dos segmentos enviados, retransmitindo prontamente os pacotes perdidos sem ociosidade do enlace.
+
+\subsection{Análise do Bloco B: Handshake e 0-RTT no QUIC (Tanenbaum Seção 6.6.1)}
+
+A Figura~\ref{fig:bloco_b} apresenta o Gráfico~2 com o TTFB médio (\texttt{time\_starttransfer}) e as barras de erro de desvio padrão para a transferência do objeto de 1~KB sob o Cenário~3 (WAN com $\text{RTT} = 50$~ms e $0\%$ de perda). O isolamento da perda revela uma escada empírica precisa em múltiplos do RTT de 50~ms, validando a \textbf{Seção 6.6.1 de \cite{tanenbaum2021}}:
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.60\textwidth]{fig2_bloco_b_ttfb_handshake.png}
+\caption{Gráfico 2 (Bloco B): TTFB médio (ms) comparando HTTP/2 vs. HTTP/3 Cold (1-RTT) vs. HTTP/3 Warm/Resumed (0-RTT), com barras de erro de desvio padrão ($N=5$).}
+\label{fig:bloco_b}
+\end{figure}
+
+\begin{itemize}
+  \item \textbf{E04 --- HTTPS / HTTP/2 sobre TCP+TLS 1.3 ($\mathbf{163{,}57 \pm 2{,}73}$~ms):} Exige \textbf{3~RTTs} ($\approx 150$~ms de propagação $+ 13{,}57$~ms de processamento): 1~RTT (50~ms) para o handshake TCP (\texttt{SYN}/\texttt{SYN-ACK}), 1~RTT (50~ms) para o handshake TLS~1.3 e 1~RTT (50~ms) para a requisição HTTP/2 \texttt{GET /1KB.bin} e recepção do primeiro byte.
+  \item \textbf{E05 --- HTTP/3 Cold 1-RTT ($\mathbf{112{,}36 \pm 0{,}99}$~ms):} Exige apenas \textbf{2~RTTs} ($\approx 100$~ms de propagação $+ 12{,}36$~ms de processamento). Ao integrar o handshake TLS~1.3 no pacote inicial QUIC sobre UDP, o estabelecimento completo consome 1~RTT, seguido de 1~RTT para a requisição/resposta. A redução empírica frente ao HTTP/2 (E04) é de $\Delta \text{TTFB}_{\text{E04} \to \text{E05}} = 163{,}57 - 112{,}36 = \mathbf{51{,}21\text{ ms}} \approx \mathbf{1\text{ RTT}}$ ($\mathbf{-31{,}3\%}$).
+  \item \textbf{E06 --- HTTP/3 Warm / Session Resumption 0-RTT ($\mathbf{61{,}46 \pm 0{,}95}$~ms):} Exige apenas \textbf{1~RTT} ($\approx 50$~ms de propagação $+ 11{,}46$~ms de processamento). Com o reaproveitamento da sessão QUIC/TLS (0~RTT de handshake), a redução adicional frente ao HTTP/3 Cold (E05) é de $\Delta \text{TTFB}_{\text{E05} \to \text{E06}} = 112{,}36 - 61{,}46 = \mathbf{50{,}90\text{ ms}} \approx \mathbf{1\text{ RTT}}$, totalizando uma economia de $\mathbf{102{,}11\text{ ms}}$ ($\approx \mathbf{2\text{ RTTs}}$, ou $\mathbf{-62{,}4\%}$) frente ao HTTP/2 tradicional (E04).
+\end{itemize}
+
+% ==============================================================================
+\section{Conclusões}
+% ==============================================================================
+
+Os resultados empíricos desta 3ª Avaliação demonstraram com alto rigor estatístico a eficácia dos mecanismos modernos de transporte em enlaces WAN degradados. No Bloco~A, comprovou-se que a reação baseada em perda do \textbf{TCP CUBIC} (Seção 6.5.11 de \cite{tanenbaum2021}) colapsa a janela \textit{cwnd} sob 2\% de perda estocástica ($2{,}63$~Mbps), enquanto o modelo baseado em BDP e RTT mínimo do \textbf{TCP BBR} (Seção 6.6.2 de \cite{tanenbaum2021}) sustenta $303{,}13$~Mbps ($115{,}3\times$ superior). No Bloco~B, verificou-se em milissegundos que o handshake integrado do \textbf{QUIC} (Seção 6.6.1 de \cite{tanenbaum2021}) economiza exatamente 1~RTT ($\approx 51{,}21$~ms) no modo Cold (1-RTT) e 2~RTTs ($\approx 102{,}11$~ms) via retomada de sessão / 0-RTT frente ao HTTP/2 sobre TCP+TLS.
+
+{\small
+\bibliographystyle{sbc}
+\bibliography{relatorio}
+}
+
+\end{document}

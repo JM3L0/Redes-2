@@ -1,0 +1,15 @@
+{
+    admin off
+    auto_https off
+    servers :443 {
+        protocols h1 h2 h3
+    }
+}
+
+https://:443 {
+    tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
+    root * /usr/share/caddy
+    file_server
+    header Cache-Control "no-store, no-cache, must-revalidate"
+    header Alt-Svc "h3=\":443\"; ma=86400"
+}

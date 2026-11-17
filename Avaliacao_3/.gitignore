@@ -1,0 +1,13 @@
+# Exclusões de cache e artefatos temporários de compilação LaTeX / Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+data_backup_n3/
+relatorio/*.aux
+relatorio/*.bbl
+relatorio/*.blg
+relatorio/*.log
+relatorio/*.out
+relatorio/*.synctex.gz

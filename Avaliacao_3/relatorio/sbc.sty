@@ -1,0 +1,85 @@
+% sbc.sty - Estilo para artigos da Sociedade Brasileira de Computação (SBC)
+% Padrão oficial adotado no Simpósio Brasileiro de Redes de Computadores (SBRC)
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{sbc}[2002/08/13 - Sociedade Brasileira de Computacao]
+
+\RequirePackage{times}
+
+\typeout{Document Style `sbc' <13 Aug 2002>.}
+
+% Margens da SBC
+\setlength{\paperheight}{297mm}
+\setlength{\paperwidth}{210mm}
+\setlength{\topmargin}{1.5cm}
+\setlength{\headheight}{0pt}
+\setlength{\headsep}{0pt}
+\setlength{\topskip}{0pt}
+\setlength{\textheight}{23.7cm}
+\setlength{\textwidth}{15cm}
+\setlength{\oddsidemargin}{3.0cm}
+\setlength{\evensidemargin}{3.0cm}
+
+\addtolength{\topmargin}{-1in}
+\addtolength{\oddsidemargin}{-1in}
+\addtolength{\evensidemargin}{-1in}
+
+\setlength{\parindent}{0.7cm}
+\setlength{\parskip}{0pt}
+
+\newcommand{\inst}[1]{\unskip$^{#1}$}
+\newcommand{\address}[1]{\gdef\@address{#1}}
+\newcommand{\email}[1]{\gdef\@email{\texttt{#1}}}
+
+\def\maketitle{\par
+ \begingroup
+   \def\thefootnote{\fnsymbol{footnote}}
+   \def\@makefnmark{\hbox to 0pt{$^{\@thefnmark}$\hss}}
+   \long\def\@makefntext##1{\parindent 1em\noindent
+            \hb@xt@1.8em{%
+                \hss\@textsuperscript{\normalfont\@thefnmark}}##1}
+   \newpage
+   \global\@topnum\z@
+   \@maketitle
+   \@thanks
+ \endgroup
+ \setcounter{footnote}{0}
+ \let\maketitle\relax
+ \let\@maketitle\relax
+ \gdef\@thanks{}\gdef\@author{}\gdef\@title{}\let\thanks\relax}
+
+\def\@maketitle{\newpage
+ \null
+ \begin{center}
+  \vspace{0cm}
+  {\bfseries\Large \@title \par}
+  \vskip 1.5em
+  {\lineskip .5em
+   \large
+   \begin{tabular}[t]{c}\@author
+   \end{tabular}\par}
+  \vskip 1em
+  {\small \@address \par}
+ \end{center}
+ \par
+ \vskip 1.5em}
+
+\def\abstract{\fontsize{10pt}{12pt}\selectfont
+ \list{}{\labelwidth\z@
+   \leftmargin 0.7cm
+   \rightmargin 0.7cm
+   \listparindent 0.7cm
+   \itemindent\listparindent}
+ \item[]\bfseries Resumo. \normalfont}
+\def\endabstract{\endlist}
+
+\def\englishabstract{\fontsize{10pt}{12pt}\selectfont
+ \list{}{\labelwidth\z@
+   \leftmargin 0.7cm
+   \rightmargin 0.7cm
+   \listparindent 0.7cm
+   \itemindent\listparindent}
+ \item[]\bfseries Abstract. \normalfont}
+\def\endenglishabstract{\endlist}
+
+\endinput
